@@ -72,11 +72,8 @@ if __name__ == '__main__':
         matches = res.json()['explore_vintage']['matches']
 
         # Opens the output file with append
-
         with open(output_file, 'a') as f:
             # Iterates over every match
             for match in matches:
                 # Dumps the URL to file
-
-                
                 f.write(f'{c.BASE_URL}w/{match["vintage"]["wine"]["id"]}\n')
