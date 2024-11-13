@@ -60,8 +60,6 @@ if __name__ == '__main__':
     print(f'Number of total matches: {n_matches}')
     print(f'Number of pages: {int(n_matches / c.RECORDS_PER_PAGE)}\n')
 
-    exit()
-
     # Creates a dictionary to hold the data
     data = {}
     data['vintages'] = []
