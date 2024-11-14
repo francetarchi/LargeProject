@@ -40,8 +40,8 @@ if __name__ == '__main__':
         # "min_rating": 3.5,
         "order_by": "ratings_average",
         "order": "desc",
-        # "price_range_min": 22,
-        # "price_range_max": 22,
+        "price_range_min": 80,
+        # "price_range_max": 80,
         # "region_ids[]": 383,
         # "wine_style_ids[]": 98,
         # "wine_type_ids[]": 1,
@@ -55,10 +55,11 @@ if __name__ == '__main__':
     # Performs an initial request to get the number of records (wines)
     res = r.get('explore/explore?', params=payload)
     n_matches = res.json()['explore_vintage']['records_matched']
+    n_pages = int(n_matches / c.RECORDS_PER_PAGE)
 
     print(f'\n')
     print(f'Number of total matches: {n_matches}')
-    print(f'Number of pages: {int(n_matches / c.RECORDS_PER_PAGE)}\n')
+    print(f'Number of pages: {n_pages}\n')
 
     # Creates a dictionary to hold the data
     data = {}
@@ -74,7 +75,7 @@ if __name__ == '__main__':
         res = r.get('explore/explore', params=payload)
         matches = res.json()['explore_vintage']['matches']
         
-        print(f'\nPage: {payload["page"]}')
+        print(f'\nPage: {payload["page"]}/{n_pages} ({payload["page"]/n_pages*100:.2f}%)')
         print(f"    --> num of matches: {len(matches)}")
 
         # printings di controllo
