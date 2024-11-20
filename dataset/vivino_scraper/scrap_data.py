@@ -205,7 +205,7 @@ if __name__ == '__main__':
     # Opens the output .json file in write mode
     with open(output_file, 'w') as f:
         # Dumps the data to the file
-        json.dump(data, f)
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
     # Closes the file
     f.close()
