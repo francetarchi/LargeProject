@@ -3,7 +3,7 @@
 import json
 
 # Apro il file
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\reviews.json', encoding='utf-8') as f:
     data = json.load(f)
 
 # Chiudo il file
@@ -16,14 +16,13 @@ elementi_mancanti = 0
 # elementi_mancanti_1 = 0
 
 # Itero su ogni elemento dell'array
-for wine in data:
-    if 'reviews' not in wine or wine['reviews'] is None or wine['reviews'] == []:
-        print("--- WRN: chiave 'reviews' assente.")
-        elementi_mancanti += 1
-        continue
+for review in data:
+    # if 'reviews' not in wine or wine['reviews'] is None or wine['reviews'] == []:
+    #     print("--- WRN: chiave 'reviews' assente.")
+    #     elementi_mancanti += 1
+    #     continue
 
-    for review in wine['reviews']:
-        review.pop('language', None)
+    review.pop('id', None)
     counter += 1
     
     # if 'taster_twitter_handle' not in wine:
@@ -38,15 +37,15 @@ percentage = counter / (len(data) - elementi_mancanti) * 100
 # percentage_1 = counter / (len(data) - elementi_mancanti_1) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di chiavi 'language' mancanti: {elementi_mancanti}")
+print(f"Numero di chiavi 'id' mancanti: {elementi_mancanti}")
 # print(f"Numero di chiavi 'taster_twitter_handle' mancanti: {elementi_mancanti_1}")
-print(f"Numero di chiavi 'language' eliminate: {counter}")
+print(f"Numero di chiavi 'id' eliminate: {counter}")
 # print(f"Numero di chiavi 'taster_twitter_handle' eliminate: {counter_1}")
 print(f"Percentuale: {percentage:.2f}%")
 # print(f"Percentuale_1: {percentage_1:.2f}%")
 
 # Apro il file in scrittura
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\reviews.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
 
 # Chiudo il file
