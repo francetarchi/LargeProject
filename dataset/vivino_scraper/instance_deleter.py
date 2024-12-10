@@ -3,7 +3,7 @@
 import json
 
 # Apro il file
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\scraped_data_from_vivino\scraped_wines\scraped_wines.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', encoding='utf-8') as f:
     data = json.load(f)
 
 # Chiudo il file
@@ -11,31 +11,42 @@ f.close()
 
 # Inizializzo il contatore dei valori eliminati
 counter = 0
-style_mancanti = 0
+# counter_1 = 0
+elementi_mancanti = 0
+# elementi_mancanti_1 = 0
 
 # Itero su ogni elemento dell'array
 for wine in data:
-    if 'style' not in wine or wine['style'] is None:
-        print("--- WRN: chiave 'style' assente.")
-        style_mancanti += 1
-        continue
-    if 'background_image' not in wine['style']:
-        print("--- WRN: chiave 'background_image' assente.")
+    if 'reviews' not in wine or wine['reviews'] is None or wine['reviews'] == []:
+        print("--- WRN: chiave 'reviews' assente.")
+        elementi_mancanti += 1
         continue
 
-    value = wine['style'].pop('background_image', None)
+    for review in wine['reviews']:
+        review.pop('language', None)
     counter += 1
+    
+    # if 'taster_twitter_handle' not in wine:
+    #     print("--- WRN: chiave 'taster_twitter_handle' assente.")
+    #     elementi_mancanti_1 += 1
+    #     continue
+    # wine.pop('taster_twitter_handle', None)
+    # counter_1 += 1
 
 # Calcolo la percentuale dei valori eliminati correttamente
-percentage = counter / (len(data) - style_mancanti) * 100
+percentage = counter / (len(data) - elementi_mancanti) * 100
+# percentage_1 = counter / (len(data) - elementi_mancanti_1) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di chiavi 'style' mancanti: {style_mancanti}")
-print(f"Numero di chiavi 'background_image' eliminate: {counter}")
-print(f"Percentuale_bi: {percentage:.2f}%")
+print(f"Numero di chiavi 'language' mancanti: {elementi_mancanti}")
+# print(f"Numero di chiavi 'taster_twitter_handle' mancanti: {elementi_mancanti_1}")
+print(f"Numero di chiavi 'language' eliminate: {counter}")
+# print(f"Numero di chiavi 'taster_twitter_handle' eliminate: {counter_1}")
+print(f"Percentuale: {percentage:.2f}%")
+# print(f"Percentuale_1: {percentage_1:.2f}%")
 
 # Apro il file in scrittura
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\scraped_data_from_vivino\scraped_wines\scraped_wines.json', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
 
 # Chiudo il file
