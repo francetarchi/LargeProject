@@ -28,7 +28,7 @@ driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
 
 # URL di base
 base_url = "https://www.bereilvino.it/database/cantine/regione/"
-current_region = "piemonte"
+current_region = "sardegna"
 
 # URL con regione
 url = base_url + current_region + "/"
