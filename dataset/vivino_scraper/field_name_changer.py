@@ -1,3 +1,6 @@
+# Il codice apre un file con all'interno un JSON e scorre tutti gli elementi al suo interno: per ogni elemento modifica la chiave di un campo, sostituendola con un'altra.
+# Mantiene l'ordine dei campi.
+
 import json
 from collections import OrderedDict
 
