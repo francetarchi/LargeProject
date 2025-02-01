@@ -3,7 +3,7 @@
 import json
 
 # Apro il file
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', encoding='utf-8') as f:
     data = json.load(f)
 
 # Chiudo il file
@@ -16,14 +16,19 @@ elementi_mancanti = 0
 # elementi_mancanti_1 = 0
 
 # Itero su ogni elemento dell'array
-for wine in data:
+for winery in data:
     # if 'wines' not in wine or wine['wines'] is None or wine['wines'] == []:
     #     print("--- WRN: chiave 'wines' assente.")
     #     elementi_mancanti += 1
     #     continue
 
-    wine.pop('key', None)
-    counter += 1
+    # se la chiave esiste e il valore è diverso da null
+    if 'instagram' not in winery:
+        elementi_mancanti += 1
+        continue
+    if winery['instagram'] is None or winery['instagram'] == '':
+        winery.pop('instagram', None)
+        counter += 1
     
     # if 'taster_twitter_handle' not in wine:
     #     print("--- WRN: chiave 'taster_twitter_handle' assente.")
@@ -37,15 +42,15 @@ percentage = counter / (len(data) - elementi_mancanti) * 100
 # percentage_1 = counter / (len(data) - elementi_mancanti_1) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di chiavi 'key' mancanti: {elementi_mancanti}")
+print(f"Numero di chiavi 'instagram' mancanti: {elementi_mancanti}")
 # print(f"Numero di chiavi 'taster_twitter_handle' mancanti: {elementi_mancanti_1}")
-print(f"Numero di chiavi 'key' eliminate: {counter}")
+print(f"Numero di chiavi 'instagram' eliminate: {counter}")
 # print(f"Numero di chiavi 'taster_twitter_handle' eliminate: {counter_1}")
 print(f"Percentuale: {percentage:.2f}%")
 # print(f"Percentuale_1: {percentage_1:.2f}%")
 
 # Apro il file in scrittura
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
 
 # Chiudo il file

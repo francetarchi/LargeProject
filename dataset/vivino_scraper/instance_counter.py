@@ -4,7 +4,7 @@
 import json
 
 # Apro il file
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\scraped_data_from_vivino\scraped_wines\scraped_wines.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', encoding='utf-8') as f:
     data = json.load(f)
 
 # Chiudo il file
@@ -15,24 +15,19 @@ counter = 0
 
 # Itero su ogni elemento dell'array
 array = []
-for wine in data:
-    if 'style' not in wine or wine['style'] is None:
-        print("--- WRN: chiave 'style' assente.")
+for winery in data:
+    # se la chiave esiste e il valore è diverso da null
+    if 'facebook' not in winery:
+        array.append(winery)
         continue
-    if 'image' not in wine['style']:
-        print("--- WRN: chiave 'image' assente.")
-        continue
-
-    if wine['style']['image'] is None:
+    if winery['facebook'] is None or winery['facebook'] == '':
         counter += 1
-    else:
-        array.append(wine['style']['image'])
 
 # Calcolo la percentuale
 percentage = counter / len(data) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di elementi con 'image' uguale a null: {counter}")
+print(f"Numero di elementi con 'facebook' uguale a null: {counter}")
 print(f"Percentuale: {percentage:.2f}%")
-print(f"Array di elementi con 'image' diverso da null: {array}")
-print(f"Numero di elementi con 'image' diverso da null: {len(array)}")
+# print(f"Array di elementi senza 'facebook': {array}")
+print(f"Numero di elementi senza 'facebook': {len(array)}")
