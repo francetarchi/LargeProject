@@ -4,7 +4,7 @@
 import json
 
 # Apro il file
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', encoding='utf-8') as f:
     data = json.load(f)
 
 # Chiudo il file
@@ -15,19 +15,19 @@ counter = 0
 
 # Itero su ogni elemento dell'array
 array = []
-for winery in data:
+for wine in data:
     # se la chiave esiste e il valore è diverso da null
-    if 'facebook' not in winery:
-        array.append(winery)
+    if 'style' not in wine or wine['style'] is None or wine['style'] == []:
+        array.append(wine)
         continue
-    if winery['facebook'] is None or winery['facebook'] == '':
+    if wine['style']['blurb'] is None or wine['style']['blurb'] == '':
         counter += 1
 
 # Calcolo la percentuale
 percentage = counter / len(data) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di elementi con 'facebook' uguale a null: {counter}")
+print(f"Numero di elementi con 'blurb' uguale a null: {counter}")
 print(f"Percentuale: {percentage:.2f}%")
-# print(f"Array di elementi senza 'facebook': {array}")
-print(f"Numero di elementi senza 'facebook': {len(array)}")
+# print(f"Array di elementi senza 'blurb': {array}")
+print(f"Numero di elementi senza 'blurb': {len(array)}")

@@ -15,23 +15,24 @@ def change_field_name(element, old_field_name, new_field_name):
     return new_element
 
 # Leggi il file JSON
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines.json', encoding='utf-8') as f:
     data = json.load(f)
 f.close()
 
 new_data = []
-for winery in data:
-    if 'telefono' not in winery:
-        new_data.append(winery)
+for wine in data:
+    if 'style' not in wine or wine['style'] is None or wine['style'] == []:
+        new_data.append(wine)
         continue
 
-    new_winery = []
-    new_winery.append(change_field_name(winery, 'telefono', 'telephone'))
-    new_data.append(new_winery[0])
+    new_wine = wine
+    new_style = change_field_name(wine['style'], 'statistics', 'wines_count')
+    new_wine['style'] = new_style
+    new_data.append(new_wine)
 
 # Salva il risultato nel file JSON
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wineries_1.json', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines_1.json', 'w', encoding='utf-8') as f:
     json.dump(new_data, f, ensure_ascii=False, indent=4)
 f.close()
 
-print("Il file è stato modificato e salvato come 'wineries_1.json'.")
+print("Il file è stato modificato e salvato come 'wines_1.json'.")
