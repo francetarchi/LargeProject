@@ -12,22 +12,64 @@ f.close()
 
 # Inizializzo il contatore
 counter = 0
+mancanti = 0
+# min_ = 1
+# max_ = 4824
 
 # Itero su ogni elemento dell'array
 array = []
 for wine in data:
-    # se la chiave esiste e il valore è diverso da null
-    if 'style' not in wine or wine['style'] is None or wine['style'] == []:
-        array.append(wine)
+    # # se la chiave esiste e il valore è diverso da null
+    # if 'style' not in wine or wine['style'] is None or wine['style'] == []:
+    #     array.append(wine)
+    #     continue
+    # if wine['style']['blurb'] is None or wine['style']['blurb'] == '':
+    #     counter += 1
+    
+    if not wine.get("type_id"):
+        mancanti += 1
         continue
-    if wine['style']['blurb'] is None or wine['style']['blurb'] == '':
-        counter += 1
+    
+    # if wine["type_id"] < min_:
+    #     min_ = wine["type_id"]
+    
+    # if wine["type_id"] > max_:
+    #     max_ = wine["type_id"]
+    
+    counter += 1
 
-# Calcolo la percentuale
+    trovato = False
+    for i in range(0, len(array)):
+        if len(array) == 0:
+            break
+        if wine["type_id"] == array[i]["TYPE_ID"]:
+            trovato = True
+
+            num_wines_this_type = len(array[i]) - 1
+            if num_wines_this_type < 11:
+                # aggiungo il nome del vino corrente al dizionario
+                array[i][f"name_{num_wines_this_type + 1}"] = wine["name"]
+
+            break
+    
+    if not trovato:
+        array.append({ "TYPE_ID": wine["type_id"], "name_1": wine["name"] })
+
+# Riordino l'array in base al TYPE_ID di ogni elemento
+array.sort(key=lambda x: x["TYPE_ID"])
+
+# Calcolo la percentuale di elementi presenti
 percentage = counter / len(data) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di elementi con 'blurb' uguale a null: {counter}")
-print(f"Percentuale: {percentage:.2f}%")
-# print(f"Array di elementi senza 'blurb': {array}")
-print(f"Numero di elementi senza 'blurb': {len(array)}")
+print(f"Numero di elementi con 'type_id' presente: {counter}")
+print(f"Percentuale di elementi presenti: {percentage:.2f}%")
+
+print(f"Numero di elementi senza 'type_id': {mancanti}")
+# print(f"Array di elementi senza 'type_id': {array}")
+
+# print(f"Min: {min_}")
+# print(f"Max: {max_}")
+
+# Stampo in formato JSON
+print(json.dumps(array, indent=4, ensure_ascii=False))

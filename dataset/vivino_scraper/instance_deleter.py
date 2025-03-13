@@ -23,13 +23,11 @@ for wine in data:
     #     continue
 
     # se la chiave esiste e il valore è diverso da null
-    if 'reviews' not in wine or wine['reviews'] is None or wine['reviews'] == []:
+    if not wine.get("reviews"):
         elementi_mancanti += 1
         continue
 
-    for review in wine['reviews']:
-        review.pop('wine_id', None)
-    
+    wine.pop("reviews", None)
     counter += 1
     
     # if 'taster_twitter_handle' not in wine:
@@ -44,15 +42,15 @@ percentage = counter / (len(data) - elementi_mancanti) * 100
 # percentage_1 = counter / (len(data) - elementi_mancanti_1) * 100
 
 print(f"Numero di elementi totali: {len(data)}")
-print(f"Numero di chiavi 'wine_id' mancanti: {elementi_mancanti}")
+print(f"Numero di chiavi 'reviews' mancanti: {elementi_mancanti}")
 # print(f"Numero di chiavi 'taster_twitter_handle' mancanti: {elementi_mancanti_1}")
-print(f"Numero di chiavi 'wine_id' eliminate: {counter}")
+print(f"Numero di chiavi 'reviews' eliminate: {counter}")
 # print(f"Numero di chiavi 'taster_twitter_handle' eliminate: {counter_1}")
 print(f"Percentuale: {percentage:.2f}%")
 # print(f"Percentuale_1: {percentage_1:.2f}%")
 
 # Apro il file in scrittura
-with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines_1.json', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\franc\OneDrive - University of Pisa\Documenti\_Progetti magistrale\Large\datasets\wines_new.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
 
 # Chiudo il file
