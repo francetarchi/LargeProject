@@ -1,9 +1,14 @@
 package com.wineadvisor.wineadvisor.model;
 
-import jakarta.persistence.Id;
+import java.util.ArrayList;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import lombok.Data;
 
 @Data
+@Document(collection = "users")
 public class User {
     @Id
     private Long _id;
@@ -21,5 +26,5 @@ public class User {
 
     private Picture picture;
 
-    private Review reviews;
+    private ArrayList<Review> reviews;
 }
