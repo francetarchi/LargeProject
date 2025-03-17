@@ -13,8 +13,8 @@ import java.util.Date;
 public class Review {
     @Id
     private ObjectId id;
-    private UserInfo user;
-    private WineInfo wine;
+    private UserId user;
+    private WineId wine;
     private double rating;
     private String text;
     private Date createdAt;

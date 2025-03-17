@@ -99,6 +99,36 @@ public class ReviewService {
         }
     }
 
+    // Aggiorna solo il testo di una recensione nella collection "reviews" del db
+    public void updateReviewText(ObjectId reviewId, String text) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+        
+        Bson matchfilter = Filters.eq("_id", reviewId);
+        Bson updatefilter = Updates.set("text", text);
+
+        UpdateResult result = collection.updateOne(matchfilter, updatefilter);
+        if (result.getModifiedCount() == 0) {
+            System.out.println("Recensione non trovata.");
+        } else {
+            System.out.println("Recensione aggiornata.");
+        }
+    }
+
+    // Aggiorna solo il rating di una recensione nella collection "reviews" del db
+    public void updateReviewRating(ObjectId reviewId, double rating) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+        
+        Bson matchfilter = Filters.eq("_id", reviewId);
+        Bson updatefilter = Updates.set("rating", rating);
+
+        UpdateResult result = collection.updateOne(matchfilter, updatefilter);
+        if (result.getModifiedCount() == 0) {
+            System.out.println("Recensione non trovata.");
+        } else {
+            System.out.println("Recensione aggiornata.");
+        }
+    }
+
     // Aggiunge un like a una recensione
     public void addLike(ObjectId reviewId) {
         MongoCollection<Document> collection = database.getCollection("reviews");
@@ -170,40 +200,114 @@ public class ReviewService {
     }
 
     // Ottiene tutte le recensioni dalla collection "reviews" del database
-    public List<Document> getReviews() {
+    public ArrayList<Document> getReviews() {
         MongoCollection<Document> collection = database.getCollection("reviews");
 
-        List<Document> reviews = collection.find().into(new ArrayList<>());
+        ArrayList<Document> reviews = collection.find().into(new ArrayList<>());
         return reviews;
     }
 
     // Ottiene tutte le recensioni di un vino specifico dalla collection "reviews" del database
-    public List<Document> getReviewsByWine(int wineId) {
+    public ArrayList<Document> getReviewsByWine(int wineId) {
         MongoCollection<Document> collection = database.getCollection("reviews");
 
         Bson filter = Filters.eq("wine_id.id", wineId);
-        List<Document> reviews = collection.find(filter).into(new ArrayList<>());
+        ArrayList<Document> reviews = collection.find(filter).into(new ArrayList<>());
         return reviews;
     }
 
     // Ottiene tutte le recensioni di un utente specifico dalla collection "reviews" del database
-    public List<Document> getReviewsByUser(String username) {
+    public ArrayList<Document> getReviewsByUser(String username) {
         MongoCollection<Document> collection = database.getCollection("reviews");
 
         Bson filter = Filters.eq("user_id.username", username);
-        List<Document> reviews = collection.find(filter).into(new ArrayList<>());
+        ArrayList<Document> reviews = collection.find(filter).into(new ArrayList<>());
         return reviews;
     }
 
     // Ottiene tutte le recensioni di un utente specifico per un vino specifico dalla collection "reviews" del database
-    public List<Document> getReviewsByUserAndWine(String username, int wineId) {
+    public ArrayList<Document> getReviewsByUserAndWine(String username, int wineId) {
         MongoCollection<Document> collection = database.getCollection("reviews");
 
         Bson filter = Filters.and(
             Filters.eq("user_id.username", username),
             Filters.eq("wine_id.id", wineId)
         );
+        ArrayList<Document> reviews = collection.find(filter).into(new ArrayList<>());
+        return reviews;
+    }
+
+    // Ottiene il numero totale di recensioni fatte per un determinato vino
+    public long getReviewsCountByWine(int wineId) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.eq("wine_id.id", wineId);
+        long count = collection.countDocuments(filter);
+        return count;
+    }
+
+    // Ottiene il numero totale di recensioni di un determinato utente
+    public long getReviewsCountByUser(String username) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.eq("user_id.username", username);
+        long count = collection.countDocuments(filter);
+        return count;
+    }
+
+    // Calcola e restituisce la media dei rating di un vino
+    public double getAverageRatingByWine(int wineId) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.eq("wine_id.id", wineId);
         List<Document> reviews = collection.find(filter).into(new ArrayList<>());
+        
+        double sum = 0;
+        for (Document review : reviews) {
+            sum += review.getDouble("rating");
+        }
+        double average = sum / reviews.size();
+        return average;
+    }
+
+    // Restituisce le num recensioni più recenti
+    public ArrayList<Document> getRecentReviews(int num) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        ArrayList<Document> reviews = collection.find().sort(new Document("created_at", -1)).limit(num).into(new ArrayList<>());
+        return reviews;
+    }
+
+    // Restituisce le num recensioni più recenti di un utente specifico
+    public ArrayList<Document> getRecentReviewsByUser(String username, int num) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.eq("user_id.username", username);
+        ArrayList<Document> reviews = collection.find(filter).sort(new Document("created_at", -1)).limit(num).into(new ArrayList<>());
+        return reviews;
+    }
+
+    // Restituisce le num recensioni più popolari (con più like) di un vino specifico di un'annata specifica
+    public ArrayList<Document> getPopularReviewsByWineAndYear(int wineId, int vintageYear, int num) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.and(
+            Filters.eq("wine_id.id", wineId),
+            Filters.eq("wine_id.year", vintageYear)
+        );
+        ArrayList<Document> reviews = collection.find(filter).sort(new Document("likes_count", -1)).limit(num).into(new ArrayList<>());
+        return reviews;
+    }
+
+    // Restituisce le 3 recensioni più recenti di un'annata specifica di un vino specifico
+    public ArrayList<Document> getRecentReviewsByWineAndYear(int wineId, int vintageYear) {
+        MongoCollection<Document> collection = database.getCollection("reviews");
+
+        Bson filter = Filters.and(
+            Filters.eq("wine_id.id", wineId),
+            Filters.eq("wine_id.year", vintageYear)
+        );
+        ArrayList<Document> reviews = collection.find(filter).sort(new Document("created_at", -1)).limit(3).into(new ArrayList<>());
         return reviews;
     }
 

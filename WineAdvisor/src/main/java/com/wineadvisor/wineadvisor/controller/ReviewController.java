@@ -14,5 +14,4 @@ public class ReviewController {
     public ReviewController(ReviewService revService) {
         this.reviewService = revService;
     }
-
 }

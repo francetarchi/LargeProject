@@ -3,7 +3,7 @@ package com.wineadvisor.wineadvisor.model;
 import lombok.Data;
 
 @Data
-public class WineInfo {
+public class WineId {
     private int id;
     private String name;
     private int year;
