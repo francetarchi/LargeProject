@@ -1,7 +1,9 @@
 package com.wineadvisor.wineadvisor.repository;
 
 import com.wineadvisor.wineadvisor.model.Wine;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-public interface WineRepository extends JpaRepository<Wine, Long> {
+@Repository
+public interface WineRepository extends MongoRepository<Wine, Long> {
 }
