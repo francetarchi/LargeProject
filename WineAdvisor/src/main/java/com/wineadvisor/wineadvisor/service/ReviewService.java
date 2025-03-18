@@ -1,24 +1,18 @@
 package com.wineadvisor.wineadvisor.service;
 
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
-import com.mongodb.client.MongoDatabase;
 import com.wineadvisor.wineadvisor.model.Review;
-import com.wineadvisor.wineadvisor.model.WineId;
 
 import lombok.RequiredArgsConstructor;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
     private final ReviewRepository reviewRepository;
-    private final MongoDatabase database;
 
     // CRUD operations
     // Funzioni per l'utente
@@ -95,7 +89,7 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un vino specifico di un'annata specifica dalla collection "reviews" del database
-    public ArrayList<Review> getReviewsByWineAndYear(Long wineId, int vintageYear) {
+    public ArrayList<Review> getReviewsByVintage(Long wineId, int vintageYear) {
         return reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
 
@@ -125,7 +119,7 @@ public class ReviewService {
     }
 
     // Restituisce il numero di recensioni di una determinata annata di un vino
-    public Long getReviewsCountByWineAndYear(Long wineId, int vintageYear) {
+    public Long getReviewsCountByVintage(Long wineId, int vintageYear) {
         return reviewRepository.countByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
 
@@ -178,14 +172,14 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più popolari (con più like) di un'annata specifica per un determinato vino
-    public ArrayList<Review> getPopularReviewsByWineAndYear(Long wineId, int vintageYear, int num) {
+    public ArrayList<Review> getPopularReviewsByVintage(Long wineId, int vintageYear, int num) {
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
         ArrayList<Review> popularReviews = sortReviewsByField(reviews, "likesCount", false);
         return new ArrayList<Review>(popularReviews.subList(0, num));
     }
 
     // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
-    public ArrayList<Review> getRecentReviewsByWineAndYear(Long wineId, int vintageYear, int num) {
+    public ArrayList<Review> getRecentReviewsByVintage(Long wineId, int vintageYear, int num) {
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
         ArrayList<Review> recentReviews = sortReviewsByField(reviews, "createdAt", false);
         return new ArrayList<Review>(recentReviews.subList(0, num));
@@ -193,7 +187,12 @@ public class ReviewService {
 
     // Restituisce le recensioni di un vino specifico in un range di rating specifico
     public ArrayList<Review> getReviewsByWineAndRatingRange(Long wineId, double minRating, double maxRating) {
-        
+        return reviewRepository.findByWineId_IdAndRatingBetween(wineId, minRating, maxRating);
+    }
+
+    // Restituisce le recensioni di un'annata specifica per un determinato vino in un range di rating specifico
+    public ArrayList<Review> getReviewsByVintageAndRatingRange(Long wineId, int year, double minRating, double maxRating) {
+        return reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(wineId, year, minRating, maxRating);
     }
 
     // Cancella tutte le recensioni
@@ -208,17 +207,17 @@ public class ReviewService {
 
     // Cancella tutte le recensioni di un vino specifico
     public void deleteReviewsByWine(Long wineId) {
-        
+        reviewRepository.deleteByWineId_Id(wineId);
     }
 
     // Cancella tutte le recensioni di un utente specifico
     public void deleteReviewsByUser(String username) {
-        
+        reviewRepository.deleteByUserId_Username(username);
     }
 
     // Cancella tutte le recensioni di un'annata specifica di un vino specifico
-    public void deleteReviewsByWineAndYear(Long wineId, int vintageYear) {
-        
+    public void deleteReviewsByVintage(Long wineId, int vintageYear) {
+        reviewRepository.deleteByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
 
 }

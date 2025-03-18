@@ -10,9 +10,11 @@ import java.util.Date;
 @Document(collection = "reviews")
 public class Review {
     @Id
-    private Long id;
+    private Long _id;
+
     private UserId userId;
     private WineId wineId;
+    
     private double rating;
     private String text;
     private Date createdAt;

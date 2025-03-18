@@ -29,5 +29,18 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
     // metodo che restituisce il conto delle recensioni relative ad un'annata di un vino
     Long countByWineId_IdAndWineId_Year(Long wineId, int year);
 
-    // 
+    // metodo che restituisce le recensioni di un vino sotto un certo rating e sopra un certo rating
+    ArrayList<Review> findByWineId_IdAndRatingBetween(Long wineId, double minRating, double maxRating);
+
+    // metodo che restituisce le recensioni di un'annata specifica di un determinato vino sotto un certo rating e sopra un certo rating
+    ArrayList<Review> findByWineId_IdAndWineId_YearAndRatingBetween(Long wineId, int year, double minRating, double maxRating);
+
+    // metodo che elimina tutte le recensioni di un vino
+    void deleteByWineId_Id(Long wineId);
+
+    // metodo che elimina tutte le recensioni di un utente
+    void deleteByUserId_Username(String username);
+
+    // metodo che elimina tutte le recensioni di un'annata specifica di un determinato vino
+    void deleteByWineId_IdAndWineId_Year(Long wineId, int year);
 }
