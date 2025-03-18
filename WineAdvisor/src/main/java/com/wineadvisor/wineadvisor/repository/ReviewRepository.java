@@ -19,4 +19,15 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
 
     // metodo findByUserId_UsernameAndWineId_Id: restituisce una lista di recensioni relative ad un utente e ad un vino
     ArrayList<Review> findByUserId_UsernameAndWineId_Id(String username, Long wineId);
+
+    // metodo che restituisce il conto delle recensioni relative ad un vino
+    Long countByWineId_Id(Long wineId);
+
+    // metodo che restituisce il conto delle recensioni relative ad un utente
+    Long countByUserId_Username(String username);
+
+    // metodo che restituisce il conto delle recensioni relative ad un'annata di un vino
+    Long countByWineId_IdAndWineId_Year(Long wineId, int year);
+
+    // 
 }
