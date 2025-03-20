@@ -68,8 +68,6 @@ public class ReviewController {
         @PathVariable 
         @Parameter(description = "ID della recensione", example = "1") 
         Long id) {     
-            // Stampo l'ID della recensione
-            System.out.println("ID della recensione: " + id);
             try {
                 return reviewService.getReviewById(id)
                     .map(ResponseEntity::ok)

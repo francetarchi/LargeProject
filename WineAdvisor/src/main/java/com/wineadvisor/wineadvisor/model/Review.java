@@ -26,9 +26,9 @@ public class Review {
     private double rating;
     private String text;
 
+    // @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     @Field("created_at")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private ZonedDateTime createdAt;
+    private String createdAt;
 
     @Field("likes_count")
     private int likesCount;
