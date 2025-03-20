@@ -1,5 +1,6 @@
 package com.wineadvisor.wineadvisor.model;
 
+
 import lombok.Data;
 
 @Data

@@ -8,7 +8,7 @@ public class WineAdvisorApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(WineAdvisorApplication.class, args);
-		
+		System.out.println("\nApplicazione avviata.");
 	}
 
 }

@@ -3,11 +3,13 @@ package com.wineadvisor.wineadvisor.controller;
 import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.model.Review;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
+// import org.bson.types.ObjectId;
 // import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,14 +64,25 @@ public class ReviewController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<Review>> getReviewById(@PathVariable Long id) {
-        return ResponseEntity.ok(reviewService.getReviewById(id));
+    public ResponseEntity<Review> getReviewById(
+        @PathVariable 
+        @Parameter(description = "ID della recensione", example = "1") 
+        Long id) {     
+            // Stampo l'ID della recensione
+            System.out.println("ID della recensione: " + id);
+            try {
+                return reviewService.getReviewById(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build(); // Se l'ID non è valido, restituisce 400
+            }
     }
 
-    @GetMapping
-    public ResponseEntity<ArrayList<Review>> getAllReviews() {
-        return ResponseEntity.ok(reviewService.getAllReviews());
-    }
+    // @GetMapping
+    // public ResponseEntity<ArrayList<Review>> getAllReviews() {
+    //     return ResponseEntity.ok(reviewService.getAllReviews());
+    // }
 
     @GetMapping("/wine/{wineId}/vintage/{vintageYear}")
     public ResponseEntity<ArrayList<Review>> getReviewsByVintage(@PathVariable Long wineId, @PathVariable int vintageYear) {
