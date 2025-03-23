@@ -86,11 +86,13 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni dalla collection "reviews" del database
+    // Provata: Ci vorrebbe la paginazione per gestire il fatto che ci sono tantissime recensioni
     public ArrayList<Review> getAllReviews() {
         return (ArrayList<Review>) reviewRepository.findAll();
     }
 
     // Restituisce tutte le recensioni di un vino specifico di un'annata specifica dalla collection "reviews" del database
+    // Provata: OK
     public ArrayList<Review> getReviewsByVintage(Long wineId, int vintageYear) {
         return reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
@@ -102,11 +104,13 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un utente specifico dalla collection "reviews" del database
+    // Provata: OK
     public ArrayList<Review> getReviewsByUser(String username) {
         return reviewRepository.findByUserId_Username(username);
     }
 
     // Restituisce tutte le recensioni di un utente specifico per un vino specifico dalla collection "reviews" del database
+    // Provata: OK
     public ArrayList<Review> getReviewsByUserAndWine(String username, Long wineId) {
         return reviewRepository.findByUserId_UsernameAndWineId_Id(username, wineId);
     }
@@ -164,28 +168,40 @@ public class ReviewService {
     public ArrayList<Review> getRecentReviews(int num) {
         ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
         reviews.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
-        return new ArrayList<Review>(reviews.subList(0, num));
+
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, reviews.size()); // Evita IndexOutOfBoundsException
+        return new ArrayList<>(reviews.subList(0, limit));
     }
 
     // Restituisce le num recensioni più recenti di un utente specifico
     public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
         ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
         reviews.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
-        return new ArrayList<Review>(reviews.subList(0, num));
+        
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, reviews.size()); // Evita IndexOutOfBoundsException
+        return new ArrayList<>(reviews.subList(0, limit));
     }
 
     // Restituisce le num recensioni più popolari (con più like) di un'annata specifica per un determinato vino
     public ArrayList<Review> getPopularReviewsByVintage(Long wineId, int vintageYear, int num) {
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
         ArrayList<Review> popularReviews = sortReviewsByField(reviews, "likesCount", false);
-        return new ArrayList<Review>(popularReviews.subList(0, num));
+        
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, popularReviews.size()); 
+        return new ArrayList<>(popularReviews.subList(0, limit));
     }
 
     // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
     public ArrayList<Review> getRecentReviewsByVintage(Long wineId, int vintageYear, int num) {
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
         ArrayList<Review> recentReviews = sortReviewsByField(reviews, "createdAt", false);
-        return new ArrayList<Review>(recentReviews.subList(0, num));
+        
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, recentReviews.size()); 
+        return new ArrayList<>(recentReviews.subList(0, limit));
     }
 
     // Restituisce le recensioni di un vino specifico in un range di rating specifico

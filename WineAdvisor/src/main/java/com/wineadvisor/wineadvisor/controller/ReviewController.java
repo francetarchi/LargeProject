@@ -63,7 +63,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.removeDislike(id));
     }
 
-    @GetMapping("/{id}") // OK
+    @GetMapping("/{id}") // Provata: OK
     public ResponseEntity<Review> getReviewById(
         @PathVariable 
         @Parameter(description = "ID della recensione", example = "1") 
@@ -77,12 +77,12 @@ public class ReviewController {
             }
     }
 
-    // @GetMapping
+    // @GetMapping // Provata: Va gestita con le pagine
     // public ResponseEntity<ArrayList<Review>> getAllReviews() {
     //     return ResponseEntity.ok(reviewService.getAllReviews());
     // }
 
-    @GetMapping("/wine/{wineId}/vintage/{vintageYear}") // OK
+    @GetMapping("/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getReviewsByVintage(@PathVariable Long wineId, @PathVariable int vintageYear) {
         ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByVintage(wineId, vintageYear));
         if (reviews.isEmpty()) {
@@ -91,59 +91,74 @@ public class ReviewController {
         return ResponseEntity.ok(reviews); // Altrimenti 200 OK con la lista di recensioni
     }
 
-    @GetMapping("/wine/{wineId}") // OK
+    @GetMapping("/wine/{wineId}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getReviewsByWine(@PathVariable Long wineId) {
         ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByWine(wineId));
         if (reviews.isEmpty()) {
             return ResponseEntity.notFound().build(); // 404 se non ci sono recensioni per quel vino  
         }
-
         return ResponseEntity.ok(reviews); // 200 OK con la lista di recensioni
     }
 
-    @GetMapping("/user/{username}")
+    @GetMapping("/user/{username}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getReviewsByUser(@PathVariable String username) {
-        return ResponseEntity.ok(reviewService.getReviewsByUser(username));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByUser(username));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); // 404 se non ci sono recensioni fatte da quell'utente 
+        }
+        return ResponseEntity.ok(reviews); // 200 OK con la lista di recensioni
     }
 
-    @GetMapping("/user/{username}/wine/{wineId}")
+    @GetMapping("/user/{username}/wine/{wineId}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getReviewsByUserAndWine(@PathVariable String username, @PathVariable Long wineId) {
-        return ResponseEntity.ok(reviewService.getReviewsByUserAndWine(username, wineId));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByUserAndWine(username, wineId));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); 
+        }
+        return ResponseEntity.ok(reviews); 
     }
 
-    @GetMapping("/count/wine/{wineId}")
+    @GetMapping("/count/wine/{wineId}") // Provata: OK
     public ResponseEntity<Long> getReviewsCountByWine(@PathVariable Long wineId) {
         return ResponseEntity.ok(reviewService.getReviewsCountByWine(wineId));
     }
 
-    @GetMapping("/count/user/{username}")
+    @GetMapping("/count/user/{username}") // Provata: OK
     public ResponseEntity<Long> getReviewsCountByUser(@PathVariable String username) {
         return ResponseEntity.ok(reviewService.getReviewsCountByUser(username));
     }
 
-    @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}")
+    @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
     public ResponseEntity<Long> getReviewsCountByVintage(@PathVariable Long wineId, @PathVariable int vintageYear) {
         return ResponseEntity.ok(reviewService.getReviewsCountByVintage(wineId, vintageYear));
     }
 
-    @GetMapping("/sort")
-    public ResponseEntity<ArrayList<Review>> sortReviewsByField(@RequestParam String field, @RequestParam boolean ascendingOrder) {
-        return ResponseEntity.ok(reviewService.sortReviewsByField(reviewService.getAllReviews(), field, ascendingOrder));
-    }
+    // @GetMapping("/sort")
+    // public ResponseEntity<ArrayList<Review>> sortReviewsByField(@RequestParam String field, @RequestParam boolean ascendingOrder) {
+    //     return ResponseEntity.ok(reviewService.sortReviewsByField(reviewService.getAllReviews(), field, ascendingOrder));
+    // }
 
-    @GetMapping("/average/wine/{wineId}/year/{year}")
+    @GetMapping("/average/wine/{wineId}/year/{year}") // Provata: OK
     public ResponseEntity<Double> getAverageRatingByWine(@PathVariable Long wineId, @PathVariable int year) {
         return ResponseEntity.ok(reviewService.getAverageRatingByWine(wineId, year));
     }
 
-    @GetMapping("/recent/{num}")
+    @GetMapping("/recent/{num}") // Provata: problema, restituisce 500 Internal Server Error
     public ResponseEntity<ArrayList<Review>> getRecentReviews(@PathVariable int num) {
-        return ResponseEntity.ok(reviewService.getRecentReviews(num));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getRecentReviews(num));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); 
+        }
+        return ResponseEntity.ok(reviews);
     }
 
-    @GetMapping("/recent/user/{username}/{num}")
+    @GetMapping("/recent/user/{username}/{num}") // Provata: problema sul limite, se il limite è maggiore del numero di recensioni dell'utente, restituisce 500
     public ResponseEntity<ArrayList<Review>> getRecentReviewsByUser(@PathVariable String username, @PathVariable int num) {
-        return ResponseEntity.ok(reviewService.getRecentReviewsByUser(username, num));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getRecentReviewsByUser(username, num));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); 
+        }
+        return ResponseEntity.ok(reviews);
     }
 
     @DeleteMapping("/all")
