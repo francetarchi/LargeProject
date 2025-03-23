@@ -80,6 +80,7 @@ public class ReviewService {
 
     // Funzioni di utilità e funzioni per utente root
     // Cerca una recensione per id nella collection "reviews" del database
+    // Provata: OK
     public Optional<Review> getReviewById(Long id){
         return reviewRepository.findById(id);
     }
@@ -95,6 +96,7 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un vino specifico dalla collection "reviews" del database
+    // Provata: OK
     public ArrayList<Review> getReviewsByWine(Long wineId) {
         return reviewRepository.findByWineId_Id(wineId);
     }

@@ -63,7 +63,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.removeDislike(id));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}") // OK
     public ResponseEntity<Review> getReviewById(
         @PathVariable 
         @Parameter(description = "ID della recensione", example = "1") 
@@ -82,14 +82,23 @@ public class ReviewController {
     //     return ResponseEntity.ok(reviewService.getAllReviews());
     // }
 
-    @GetMapping("/wine/{wineId}/vintage/{vintageYear}")
+    @GetMapping("/wine/{wineId}/vintage/{vintageYear}") // OK
     public ResponseEntity<ArrayList<Review>> getReviewsByVintage(@PathVariable Long wineId, @PathVariable int vintageYear) {
-        return ResponseEntity.ok(reviewService.getReviewsByVintage(wineId, vintageYear));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByVintage(wineId, vintageYear));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); // Se non ci sono recensioni, restituisco 404
+        }
+        return ResponseEntity.ok(reviews); // Altrimenti 200 OK con la lista di recensioni
     }
 
-    @GetMapping("/wine/{wineId}")
+    @GetMapping("/wine/{wineId}") // OK
     public ResponseEntity<ArrayList<Review>> getReviewsByWine(@PathVariable Long wineId) {
-        return ResponseEntity.ok(reviewService.getReviewsByWine(wineId));
+        ArrayList<Review> reviews = new ArrayList<>(reviewService.getReviewsByWine(wineId));
+        if (reviews.isEmpty()) {
+            return ResponseEntity.notFound().build(); // 404 se non ci sono recensioni per quel vino  
+        }
+
+        return ResponseEntity.ok(reviews); // 200 OK con la lista di recensioni
     }
 
     @GetMapping("/user/{username}")
