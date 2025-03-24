@@ -8,6 +8,9 @@ public class WineAdvisorApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(WineAdvisorApplication.class, args);
+
+		System.out.println("\n\n------------- WineAdvisor Application Started -------------");
+		System.out.println("\n\n");
 	}
 
 }

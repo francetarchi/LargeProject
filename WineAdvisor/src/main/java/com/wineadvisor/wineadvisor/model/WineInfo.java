@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class WineInfo {
-    private int id;
+    private Long id;
     private String name;
     private int year;
     private String image;
