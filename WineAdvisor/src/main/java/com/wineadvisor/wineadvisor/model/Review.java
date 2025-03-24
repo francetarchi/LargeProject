@@ -2,12 +2,11 @@ package com.wineadvisor.wineadvisor.model;
 
 import lombok.Data;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field; // per rinominare i campi come preferisco
+import org.springframework.data.mongodb.core.mapping.Field; // per rinominare i campi
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 
 @Data
@@ -26,9 +25,8 @@ public class Review {
     private double rating;
     private String text;
 
-    // @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     @Field("created_at")
-    private String createdAt;
+    private LocalDateTime createdAt;
 
     @Field("likes_count")
     private int likesCount;

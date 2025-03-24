@@ -16,17 +16,14 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     // CRUD operations
-    // Funzioni per l'utente
+
+    // CREATE
     // Aggiunge una recensione alla collection "reviews" del database
     public Review addReview(Review review) {
         return reviewRepository.save(review);
     }
 
-    // Rimuove una recensione dalla collection "reviews" del database
-    public void deleteReview(Long id) {
-        reviewRepository.deleteById(id);        
-    }
-
+    // UPDATE
     // Aggiorna una recensione nella collection "reviews" del db
     public Review updateReview(Long id, Review updatedReview) {
         return reviewRepository.findById(id)
@@ -78,7 +75,7 @@ public class ReviewService {
             }).orElseThrow(() -> new RuntimeException("Review not found"));
     }
 
-    // Funzioni di utilità e funzioni per utente root
+    // READ
     // Cerca una recensione per id nella collection "reviews" del database
     // Provata: OK
     public Optional<Review> getReviewById(Long id){
@@ -116,21 +113,25 @@ public class ReviewService {
     }
 
     // Restituisce il numero di recensioni fatte per un determinato vino
+    // Provata: OK
     public Long getReviewsCountByWine(Long wineId) {
         return reviewRepository.countByWineId_Id(wineId);
     }
 
     // Restituisce il numero di recensioni di un determinato utente
+    // Provata: OK
     public Long getReviewsCountByUser(String username) {
         return reviewRepository.countByUserId_Username(username);
     }
 
     // Restituisce il numero di recensioni di una determinata annata di un vino
+    // Provata: OK
     public Long getReviewsCountByVintage(Long wineId, int vintageYear) {
         return reviewRepository.countByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
 
     // Ordina e restituisce le recensioni ordinate sulla base del campo specificato, in ordine crescente o decrescente (terzo parametro)
+    // Provata: OK
     public ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
         reviews.sort((r1, r2) -> {
             switch (field) {
@@ -155,6 +156,7 @@ public class ReviewService {
     }
 
     // Calcola e restituisce la media dei rating di un'annata di un vino
+    // Provata: OK
     public double getAverageRatingByWine(Long wineId, int year){
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, year);
         double sum = 0;
@@ -165,23 +167,29 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più recenti
+    // Provata: OK
     public ArrayList<Review> getRecentReviews(int num) {
         ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
-        reviews.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
+        // Controllo se reviews è vuoto
+        if (reviews.isEmpty()) {
+            return new ArrayList<>();
+        }
+        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
 
         // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, reviews.size()); // Evita IndexOutOfBoundsException
-        return new ArrayList<>(reviews.subList(0, limit));
+        int limit = Math.min(num, sortedReviews.size()); // Evita IndexOutOfBoundsException
+        return new ArrayList<>(sortedReviews.subList(0, limit));
     }
 
     // Restituisce le num recensioni più recenti di un utente specifico
+    // Provata: OK
     public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
         ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
-        reviews.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
+        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
         
         // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, reviews.size()); // Evita IndexOutOfBoundsException
-        return new ArrayList<>(reviews.subList(0, limit));
+        int limit = Math.min(num, sortedReviews.size());
+        return new ArrayList<>(sortedReviews.subList(0, limit));
     }
 
     // Restituisce le num recensioni più popolari (con più like) di un'annata specifica per un determinato vino
@@ -195,6 +203,7 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
+    // Provata: OK
     public ArrayList<Review> getRecentReviewsByVintage(Long wineId, int vintageYear, int num) {
         ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
         ArrayList<Review> recentReviews = sortReviewsByField(reviews, "createdAt", false);
@@ -214,27 +223,33 @@ public class ReviewService {
         return reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(wineId, year, minRating, maxRating);
     }
 
+    // DELETE
     // Cancella tutte le recensioni
+    // Provata: OK
     public void deleteAllReviews() {
         reviewRepository.deleteAll();
     }
 
     // Cancella una recensione specifica
+    // Provata: OK
     public void deleteReviewById(Long id) {
         reviewRepository.deleteById(id);
     }
 
     // Cancella tutte le recensioni di un vino specifico
+    // Provata: OK
     public void deleteReviewsByWine(Long wineId) {
         reviewRepository.deleteByWineId_Id(wineId);
     }
 
     // Cancella tutte le recensioni di un utente specifico
+    // Provata: OK
     public void deleteReviewsByUser(String username) {
         reviewRepository.deleteByUserId_Username(username);
     }
 
     // Cancella tutte le recensioni di un'annata specifica di un vino specifico
+    // Provata: OK
     public void deleteReviewsByVintage(Long wineId, int vintageYear) {
         reviewRepository.deleteByWineId_IdAndWineId_Year(wineId, vintageYear);
     }

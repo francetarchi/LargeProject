@@ -1,14 +1,19 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
+import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.Review;
+import com.wineadvisor.wineadvisor.model.UserId;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 // import org.bson.types.ObjectId;
 // import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,21 +26,44 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+
 @RestController
 @RequestMapping("/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
     private final ReviewService reviewService;
+    private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<Review> addReview(@RequestBody Review review) {
-        return ResponseEntity.ok(reviewService.addReview(review));
-    }
+    public ResponseEntity<?> addReview(@RequestBody Review review) {
+        try {
+            review.setId(null);
+            review.setLikesCount(0);
+            review.setDislikesCount(0);
+            review.setCreatedAt(LocalDateTime.now());
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
-        reviewService.deleteReview(id);
-        return ResponseEntity.noContent().build();
+            // Prendo lo username dell'utente che ha fatto la richiesta
+            String username = ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            User user = null;
+            try {
+                user = userService.getUserByUsername(username);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non trovato."); // 401 Unauthorized
+            }
+
+            review.getUserId().setUsername(username);
+            review.getUserId().setThumbnail(user.getPicture().getThumbnail());
+
+
+            Review savedReview = reviewService.addReview(review);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedReview); // 201 Created
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // 400 Bad Request
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // 500 Internal Server Error
+        }
     }
 
     @PutMapping("/{id}")
@@ -48,7 +76,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.addLike(id));
     }
 
-    @DeleteMapping("/{id}/like")
+    @PutMapping("/{id}/like")
     public ResponseEntity<Review> removeLike(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.removeLike(id));
     }
@@ -58,7 +86,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.addDislike(id));
     }
 
-    @DeleteMapping("/{id}/dislike")
+    @PutMapping("/{id}/dislike")
     public ResponseEntity<Review> removeDislike(@PathVariable Long id) {
         return ResponseEntity.ok(reviewService.removeDislike(id));
     }
@@ -143,7 +171,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getAverageRatingByWine(wineId, year));
     }
 
-    @GetMapping("/recent/{num}") // Provata: problema, restituisce 500 Internal Server Error
+    @GetMapping("/recent/{num}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getRecentReviews(@PathVariable int num) {
         ArrayList<Review> reviews = new ArrayList<>(reviewService.getRecentReviews(num));
         if (reviews.isEmpty()) {
@@ -152,7 +180,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
-    @GetMapping("/recent/user/{username}/{num}") // Provata: problema sul limite, se il limite è maggiore del numero di recensioni dell'utente, restituisce 500
+    @GetMapping("/recent/user/{username}/{num}") // Provata: OK
     public ResponseEntity<ArrayList<Review>> getRecentReviewsByUser(@PathVariable String username, @PathVariable int num) {
         ArrayList<Review> reviews = new ArrayList<>(reviewService.getRecentReviewsByUser(username, num));
         if (reviews.isEmpty()) {
@@ -161,9 +189,53 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
-    @DeleteMapping("/all")
+    @DeleteMapping("/{id}") // Provata: OK
+    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+        try {
+            reviewService.deleteReviewById(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/wine/{wineId}") // Provata: OK
+    public ResponseEntity<Void> deleteReviewsByWine(@PathVariable Long wineId) {
+        try {
+            reviewService.deleteReviewsByWine(wineId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/user/{username}") // Provata: OK
+    public ResponseEntity<Void> deleteReviewsByUser(@PathVariable String username) {
+        try {
+            reviewService.deleteReviewsByUser(username);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
+    public ResponseEntity<Void> deleteReviewsByVintage(@PathVariable Long wineId, @PathVariable int vintageYear) {
+        try {
+            reviewService.deleteReviewsByVintage(wineId, vintageYear);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/all") // Provata: OK
     public ResponseEntity<Void> deleteAllReviews() {
-        reviewService.deleteAllReviews();
-        return ResponseEntity.noContent().build();
+        try {
+            reviewService.deleteAllReviews();
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
