@@ -112,6 +112,12 @@ public class ReviewService {
         return reviewRepository.findByUserId_UsernameAndWineId_Id(username, wineId);
     }
 
+    // Restituisce il numero di recensioni totali presenti nella collection.
+    // Provata: OK
+    public Long getReviewsCount() {
+        return reviewRepository.count();
+    }
+
     // Restituisce il numero di recensioni fatte per un determinato vino
     // Provata: OK
     public Long getReviewsCountByWine(Long wineId) {

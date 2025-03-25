@@ -2,8 +2,10 @@ package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.service.UserService;
+import com.wineadvisor.wineadvisor.service.WineService;
 import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.UserId;
+import com.wineadvisor.wineadvisor.model.Wine;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -35,6 +37,7 @@ import org.springframework.security.core.userdetails.User;
 public class ReviewController {
     private final ReviewService reviewService;
     private final UserService userService;
+    private final WineService wineService;
 
     @PostMapping
     public ResponseEntity<?> addReview(@RequestBody Review review) {
@@ -56,6 +59,32 @@ public class ReviewController {
             review.getUserId().setUsername(username);
             review.getUserId().setThumbnail(user.getPicture().getThumbnail());
 
+            // Devo controllare che l'utente abbia indicato un vino e un'annata esistenti
+            Wine wine = null;
+            try {
+                wine = wineService.getWineByVintage(review.getWineId().getId(), review.getWineId().getYear());
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Vino non trovato."); // 404 Not Found
+            }
+            // Prendo la image (dell'annata) del vino per la recensione
+            String image = null;
+            for (int i = 0; i < wine.getVintages().size(); i++) {
+                if (wine.getVintages().get(i).getYear() == review.getWineId().getYear()) {
+                    image = wine.getVintages().get(i).getImage();
+                    break;
+                }
+            }
+            review.getWineId().setImage(image);
+
+            review.getWineId().setName(wine.getName());
+
+            // Controllo sul rating
+            if (review.getRating() < 0 || review.getRating() > 5) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Il rating deve essere compreso tra 1 e 5."); // 400 Bad Request
+            }
+
+            // Setto l'id della recensione contando il numero di recensioni presenti nel database
+            review.setId(reviewService.getReviewsCount() + 1);
 
             Review savedReview = reviewService.addReview(review);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedReview); // 201 Created
