@@ -70,6 +70,8 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+
+		<!--     SWAGGER     -->
 		<!--   SpringDoc OpenAPI for Swagger integration   -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
