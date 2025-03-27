@@ -46,7 +46,7 @@ Scrivere i blocchi 'catch' appropriati per ogni eccezione che lanciamo, inserend
 * _BadRequestException_ (nel Controller) se i campi passati nelle richieste HTTP (sia come path variable, che come parametro, che nel body) non rispettano i pattern imposti
 * _BadRequestException_ (nel Controller) se manca un campo (== null) necessario per andare avanti nella gestione della richiesta HTTP
 * _IllegalArgumentException_ (nel Service) se i campi passati come argomenti delle funzioni non sono validi (ad es. la data di nascita è nel futuro o altri controlli)
-* _ResourceNotFoundException_ se la risorsa con l'id richiesto non esiste
+* _ResourceNotFoundException_ se la risorsa con l'id richiesto non esiste (creata da noi, attualmente nel package "exception")
 * _AccessDeniedException_ se l'utente non ha le autorizzazioni necessarie per accedere ad una certa API
 * _AccessDeniedException_ se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa)
 
