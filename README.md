@@ -54,5 +54,5 @@ Inserirne altre se le usate, ora non me ne vengono in mente altre.
 
 
 ## Formato scrittura risposte
-Usare ```ResponseEntity.status(HttpStatus.STATO).body("Messaggio")``` come sintassi per il settaggio della risposta HTTP.
+Usare ```ResponseEntity.status(HttpStatus.STATO).body("Messaggio")``` come sintassi per il settaggio della risposta HTTP.  
 NON le funzioni ```.ok()```, ```.created()```, ```.badRequest()```, ...
