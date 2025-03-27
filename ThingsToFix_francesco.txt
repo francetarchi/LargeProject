@@ -1,0 +1,22 @@
+//////////////////// DA FARE ////////////////////
+- Cambiare il modo in cui vengono fatti i controlli sugli input:
+        a. nel CONTROLLER   ==>     controlli sulla presenza dei dati (controllare che i dati obbligatori non siano null)
+                                    controlli sul pattern degli input;
+                                    controlli sul ruolo degli utenti (controllare che un utente possa accedere all'API richiesta)
+        b. nel SERVICE      ==>     controlli sulla validità dell'id passato (ad es. controllare che non esista già un utente con l'username richiesto durante la creazione di un nuovo utente)
+                                    controlli sull'integrità dei dati (ad es. controllare che esista l'utente con lo username richiesto, o la recensione con l'id passato come argomento)
+                                    controlli sulla coerenza dei dati (ad es. controllare che la data di nascita sia passata)
+                                    controlli sulla proprietà di una risorsa (controllare che l'utente che ha effettuato la richiesta, ovvero quello loggato, sia effettivamente il proprietario della risorsa che intende modificare/eliminare)
+- Aggiungere @Autowired.
+- Cambiare le eccezioni lanciate con quelle più appropriate, scritte nel README.md.
+- Cambiare il modo in cui setto gli stati delle risposte HTTP, usando ".status(HttpStatus.STATO)".
+- Cercare di capire se posso unire le funzioni che cercano gli utenti per nome e per cognome.
+- Cambiare la gestione delle eccezioni nelle catch ("(Exception e)" sempre per ultima, che ritorna HttpStatus.InternalServerError).
+- Aggiungere il supporto all'autenticazione dell'utente.
+- Modificare le API in modo che, quelle in cui è necessario, controllano che l'utente autenticato possa eseguire le operazioni richieste. Controllare anche che non ci siano incongruenze fra utente autenticato e proprietario della risorsa richiesta.
+- Aggiungere una funzione che calcoli l'age di una data e la ritorna in formato intero.
+- Trasformare questo file in un markdown.
+
+
+//////////////////// FATTO ////////////////////
+- Aggiungere il @PathVariable per passare lo username in tutte le funzioni che necessitano di identificare una risorsa presente nel db.

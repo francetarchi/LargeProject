@@ -5,9 +5,6 @@ import lombok.Data;
 
 @Data
 public class UpdatePasswordRequest {
-    @Schema(description = "Username", example = "user123")
-    private String username;
-
     @Schema(description = "Old password", example = "oldPass123!")
     private String oldPass;
 

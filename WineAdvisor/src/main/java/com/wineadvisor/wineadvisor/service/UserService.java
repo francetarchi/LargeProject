@@ -7,8 +7,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.config.PasswordUtils;
-import com.wineadvisor.wineadvisor.model.User;
+import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
+import com.wineadvisor.wineadvisor.model.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,10 +41,10 @@ public class UserService {
         //     throw new IllegalArgumentException("User with id \"" + newUser.get_id() + "\" already exists");
         // }
         if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
-            throw new IllegalArgumentException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists");
+            throw new IllegalArgumentException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
         }
         if (!PasswordUtils.passwordPatternVerifier(newUser.getLogin().getPassword())) {
-            throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among !@#$%^&*()-_=+");
+            throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
         }
 
         newUser.set_id(null);
@@ -58,10 +59,10 @@ public class UserService {
     //     }
     //     for (User user : newUsers) {
     //         if (userRepository.existsById(user.get_id())) {
-    //             throw new IllegalArgumentException("User with id \"" + user.get_id() + "\" already exists");
+    //             throw new IllegalArgumentException("User with id \"" + user.get_id() + "\" already exists.");
     //         }
     //         if (userRepository.findByLogin_Username(user.getLogin().getUsername()).isPresent()) {
-    //             throw new IllegalArgumentException("User with username \"" + user.getLogin().getUsername() + "\" already exists");
+    //             throw new IllegalArgumentException("User with username \"" + user.getLogin().getUsername() + "\" already exists.");
     //         }
     //     }
     //     return (ArrayList<User>) userRepository.saveAll(newUsers);
@@ -91,7 +92,7 @@ public class UserService {
         User user = userRepository.findByLogin_Username(username).orElse(null);
         
         if (user == null) {
-            throw new IllegalArgumentException("User with username \"" + username + "\" not found");
+            throw new IllegalArgumentException("User with username \"" + username + "\" not found.");
         }
 
         return user;
@@ -102,7 +103,7 @@ public class UserService {
         ArrayList<User> result = userRepository.findByName_First(first_name);
         
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with first name \"" + first_name + "\" not found");
+            throw new IllegalArgumentException("Users with first name \"" + first_name + "\" not found.");
         }
 
         return result;
@@ -113,7 +114,7 @@ public class UserService {
         ArrayList<User> result = userRepository.findByName_Last(last_name);
         
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with last name \"" + last_name + "\" not found");
+            throw new IllegalArgumentException("Users with last name \"" + last_name + "\" not found.");
         }
         
         return result;
@@ -123,52 +124,56 @@ public class UserService {
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
     public User updateUser(User updatedUser) {
-        User user = userRepository.findByLogin_Username(updatedUser.getLogin().getUsername()).orElse(null);
+        return userRepository
+            .findByLogin_Username(updatedUser.getLogin().getUsername())
+            .map(targetUser -> {
+                targetUser.setName(updatedUser.getName());
+                targetUser.setLocation(updatedUser.getLocation());
+                targetUser.setEmail(updatedUser.getEmail());
+                targetUser.setTelephone(updatedUser.getTelephone());
+                targetUser.setDob(updatedUser.getDob());
+                targetUser.setPicture(updatedUser.getPicture());
 
-        if (user == null) {
-            throw new IllegalArgumentException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist");
-        }
-        
-        updatedUser.set_id(user.get_id());
-        updatedUser.getLogin().setPassword(user.getLogin().getPassword());
-        return userRepository.save(updatedUser);
+                return userRepository.save(targetUser);
+            })
+            .orElseThrow(() -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist."));
     }
 
     // Cerca il documento di un utente e ne modifica la password
     public User updateUserPassword(String username, String oldPass, String newPass, String confirmPass) {
-        User user = userRepository.findByLogin_Username(username).orElse(null);
-        
-        if (user == null) {
-            throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because user does not exist");
-        }
-        if (!passwordEncoder.matches(oldPass, user.getLogin().getPassword())) {
-            throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because old password is wrong");
-        }
-        if (newPass.equals(oldPass)) {
-            throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new password is the same as the old one");
-        }
-        if (!newPass.equals(confirmPass)) {
-            throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match");
-        }
-        if (!PasswordUtils.passwordPatternVerifier(newPass)) {
-            throw new IllegalArgumentException("Password does not meet the minimum requirements (at least 8 digit, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \'!@#$%^&*()-_=+\'')");
-        }
+        return userRepository
+            .findByLogin_Username(username)
+            .map(targetUser -> {
+                if (!passwordEncoder.matches(oldPass, targetUser.getLogin().getPassword())) {
+                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because old password is wrong.");
+                }
+                if (newPass.equals(oldPass)) {
+                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new password is the same as the old one.");
+                }
+                if (!newPass.equals(confirmPass)) {
+                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match.");
+                }
+                if (!PasswordUtils.passwordPatternVerifier(newPass)) {
+                    throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
+                }
 
-        user.getLogin().setPassword(passwordEncoder.encode(newPass));
-        return userRepository.save(user);
+                targetUser.getLogin().setPassword(passwordEncoder.encode(newPass));
+                return userRepository.save(targetUser);
+            })
+            .orElseThrow(() -> new ResourceNotFoundException("User with username \"" + username + "\" not updatable because it does not exist."));
     }
 
 
     /// DELETE operations ///
     // Elimina un utente con un determinato username
     public void deleteUser(String username) {
-        User user = userRepository.findByLogin_Username(username).orElse(null);
+        User targetUser = userRepository.findByLogin_Username(username).orElse(null);
 
-        if (user == null) {
-            throw new IllegalArgumentException("User with username \"" + username + "\" not deletable because user does not exists");
+        if (targetUser == null) {
+            throw new IllegalArgumentException("User with username \"" + username + "\" not deletable because user does not exists.");
         }
 
-        userRepository.delete(user);;
+        userRepository.delete(targetUser);
     }
 
 

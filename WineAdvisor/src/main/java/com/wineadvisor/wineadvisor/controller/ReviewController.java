@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.controller;
 import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.Review;
+import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.UserId;
 
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
+
 
 @RestController
 @RequestMapping("/reviews")
@@ -45,7 +46,7 @@ public class ReviewController {
             review.setCreatedAt(LocalDateTime.now());
 
             // Prendo lo username dell'utente che ha fatto la richiesta
-            String username = ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             User user = null;
             try {
                 user = userService.getUserByUsername(username);

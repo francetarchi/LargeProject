@@ -35,5 +35,5 @@ public class User {
 
     private Picture picture;
 
-    // private ArrayList<Review> reviews;
+    private ArrayList<Review> reviews;
 }
