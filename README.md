@@ -6,12 +6,13 @@ In pratica, quando in una classe (ad es. EntityService) etichetto il campo "priv
 # Come usarlo
 Il concetto è lo stesso spiegato, ma invece che etichettare in una classe direttamente i campi della classe "di livello inferiore", è consigliato scrivere il costruttore della classe in cui sono e etichettare quello con @Autowired, per vari motivi che non ho voglia di scrivere ma sono facilmente reperibili sul Veb.  
 
-Scrivere quindi una cosa del tipo:  
+Scrivere quindi una cosa come sotto.  
+```java
 @Autowired  
 public ReviewService(ReviewRepository reviewRepository) {  
     this.reviewRepository = reviewRepository;  
-}.  
-
+}
+```
 
 ## Usare il seguente schema per organizzare i controlli che vengono fatti sugli input (cose passate nelle richieste HTTP sia come body che come parametri o path variable)
 NEL CONTROLLER
