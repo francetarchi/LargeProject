@@ -5,6 +5,7 @@ L'annotazione @Autowired è usata in tutti i progetti vecchi che ho visto e vien
 In pratica, quando in una classe (ad es. EntityService) etichetto il campo "private EntityRepository entityRepository" con @Autowired, sto diecendo a Spring che la classe "EntityService" dipende da EntityRepository e inizializza la classe "EntityRepository" e l'istanza "entityRepository" prima di "EntityService". Praticamente genera una specie di dipendenza a catena gestita da SpringBoot in cui ogni classe dipende da quella di livello inferiore.  
 # Come usarlo
 Il concetto è lo stesso spiegato, ma invece che etichettare in una classe direttamente i campi della classe "di livello inferiore", è consigliato scrivere il costruttore della classe in cui sono e etichettare quello con @Autowired, per vari motivi che non ho voglia di scrivere ma sono facilmente reperibili sul Veb.  
+
 Scrivere quindi una cosa del tipo:  
 @Autowired  
 public ReviewService(ReviewRepository reviewRepository) {  
