@@ -51,3 +51,8 @@ Scrivere i blocchi 'catch' appropriati per ogni eccezione che lanciamo, inserend
 * _AccessDeniedException_ se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa)
 
 Inserirne altre se le usate, ora non me ne vengono in mente altre.
+
+
+## Formato scrittura risposte
+Usare ```java ResponseEntity.status(HttpStatus.STATO).body("Messaggio")``` come sintassi per il settaggio della risposta HTTP.
+NON le funzioni ```java .ok()```, ```java .created()```, ```java .badRequest()```, ...
