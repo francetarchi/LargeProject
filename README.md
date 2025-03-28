@@ -24,7 +24,10 @@ Il fatto è che noi usiamo le annotazioni ```@RequiredArgsConstructor``` e ```@A
 * ```@AllArgsConstructor``` genera automaticamente per la classe annotata un costruttore che inizializza TUTTI i campi.  
 L'utilizzo di queste due annotazioni in tutte le classi genera la catena discendente di dipendenze che dovremmo generare a mano scrivendo i costruttori e annotandoli con ```@Autowired```.  
 
-Inoltre, esiste anche l'annotazione ```@NoArgsConstructor```: genera automaticamente per la classe annotata un costruttore che non inizializza NESSUN campo. Alle volte, viene usato in combinata con ```@AllArgsConstructor``` per generare il costruttore che non inizializza nulla e quello che inizializza tutto. In generale, credo sia meglio usare per tutte le classi ```@RequiredArgsConstructor```.
+Inoltre, esiste anche l'annotazione ```@NoArgsConstructor```: genera automaticamente per la classe annotata un costruttore che non inizializza NESSUN campo. Alle volte, viene usato in combinata con ```@AllArgsConstructor``` per generare il costruttore che non inizializza nulla e quello che inizializza tutto.  
+  
+In generale, credo sia meglio usare ```@RequiredArgsConstructor``` per le classi **Controller** e **Service**, in quanto necessario per l'iniezione delle dipendenze.  
+Al contrario, credo sia meglio usare ```@NoArgsConstructor``` & ```@NoArgsConstructor``` per la classe **Model**, in quanto l'obiettivo per questa classe è avere classi semplici che rappresentino i dati e non abbiamo bisogno di iniettare dipendenze.
 
 
 ## CONTROLLI: usare il seguente schema per organizzare i controlli che vengono fatti sugli input (cose passate nelle richieste HTTP sia come body che come parametri o path variable)
