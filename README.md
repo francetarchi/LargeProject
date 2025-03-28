@@ -1,5 +1,8 @@
 # LargeProject
 
+Questo file contiene delle linee guida per la scrittura del codice del progetto, in modo da renderlo più uniforme possibile nelle parti scritte da persone diverse.  
+Il contenuto di questo file dovrà essere eliminato prima della consegna.  
+
 ## ```@Autowired``` (ATTENZIONE, leggere tutto questo paragrafo)
 L'annotazione ```@Autowired``` è usata in tutti i progetti vecchi che ho visto e viene inserita anche da Geppetto ogni volta che scrive una funzione. Non è estremamente necessaria ma fortemente consigliata.  
 In pratica, quando in una classe (ad es. ```EntityService```) etichetto il campo ```private EntityRepository entityRepository``` con ```@Autowired```, sto dicendo a Spring che la classe ```EntityService``` dipende da ```EntityRepository```, in modo che Spring inizializzi automaticamente il campo ```entityRepository``` alla creazione di un'istanza della classe ```EntityService```.  
