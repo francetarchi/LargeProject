@@ -27,7 +27,8 @@ L'utilizzo di queste due annotazioni in tutte le classi genera la catena discend
 Inoltre, esiste anche l'annotazione ```@NoArgsConstructor```: genera automaticamente per la classe annotata un costruttore che non inizializza NESSUN campo. Alle volte, viene usato in combinata con ```@AllArgsConstructor``` per generare il costruttore che non inizializza nulla e quello che inizializza tutto.  
   
 In generale, credo sia meglio usare ```@RequiredArgsConstructor``` per le classi **Controller** e **Service**, in quanto necessario per l'iniezione delle dipendenze.  
-Al contrario, credo sia meglio usare ```@NoArgsConstructor``` & ```@NoArgsConstructor``` per la classe **Model**, in quanto l'obiettivo per questa classe è avere classi semplici che rappresentino i dati e non abbiamo bisogno di iniettare dipendenze.
+Al contrario, credo sia meglio usare ```@NoArgsConstructor``` & ```@AllArgsConstructor``` per la classe **Model**, in quanto l'obiettivo per questa classe è avere classi semplici che rappresentino i dati e non abbiamo bisogno di iniettare dipendenze.  
+La **Repository**, invece, non ha bisogno di niente perché è una _interface_ (le suddette annotazioni si possono applicare solo a _class_ e _enum_).  
 
 
 ## CONTROLLI: usare il seguente schema per organizzare i controlli che vengono fatti sugli input (cose passate nelle richieste HTTP sia come body che come parametri o path variable)
