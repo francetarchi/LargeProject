@@ -10,6 +10,6 @@ public class WineId {
     private Long id;
     
     private String name;
-    private int year;
+    private Integer year;
     private String image;
 }
