@@ -2,7 +2,7 @@
 
 ## ```@Autowired``` (ATTENZIONE, leggere tutto questo paragrafo)
 L'annotazione ```@Autowired``` è usata in tutti i progetti vecchi che ho visto e viene inserita anche da Geppetto ogni volta che scrive una funzione. Non è estremamente necessaria ma fortemente consigliata.  
-In pratica, quando in una classe (ad es. EntityService) etichetto il campo ```private EntityRepository entityRepository``` con ```@Autowired```, sto dicendo a Spring che la classe ```EntityService``` dipende da ```EntityRepository```, in modo che Spring inizializzi automaticamente il campo ```entityRepository``` alla creazione di un'istanza della classe ```EntityService```.  
+In pratica, quando in una classe (ad es. ```EntityService```) etichetto il campo ```private EntityRepository entityRepository``` con ```@Autowired```, sto dicendo a Spring che la classe ```EntityService``` dipende da ```EntityRepository```, in modo che Spring inizializzi automaticamente il campo ```entityRepository``` alla creazione di un'istanza della classe ```EntityService```.  
 Praticamente genera una specie di dipendenza a catena gestita da SpringBoot in cui ogni classe dipende da quella di livello inferiore.  
 ### Come usarlo
 Il concetto è lo stesso spiegato, ma invece che etichettare in una classe direttamente i campi della classe "di livello inferiore", è consigliato scrivere il costruttore della classe in cui sono e etichettare quello con ```@Autowired```, per vari motivi che non ho voglia di scrivere ma sono facilmente reperibili sul Veb.  
