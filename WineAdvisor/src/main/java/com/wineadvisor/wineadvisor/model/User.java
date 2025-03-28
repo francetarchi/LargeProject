@@ -2,18 +2,24 @@ package com.wineadvisor.wineadvisor.model;
 
 import java.util.ArrayList;
 
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.bson.types.ObjectId;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 @Data
 @Document(collection = "users")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     @Id
     private ObjectId _id;

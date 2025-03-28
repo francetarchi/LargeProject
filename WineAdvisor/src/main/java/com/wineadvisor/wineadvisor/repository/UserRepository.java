@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.MongoRepository;
+
 import org.springframework.stereotype.Repository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.wineadvisor.wineadvisor.model.User;
 

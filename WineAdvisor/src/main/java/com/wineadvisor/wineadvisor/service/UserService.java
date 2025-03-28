@@ -2,6 +2,8 @@ package com.wineadvisor.wineadvisor.service;
 
 import java.util.ArrayList;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,8 +12,6 @@ import com.wineadvisor.wineadvisor.config.PasswordUtils;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.model.User;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
