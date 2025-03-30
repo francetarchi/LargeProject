@@ -21,7 +21,7 @@ import com.wineadvisor.wineadvisor.model.User;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
@@ -31,8 +31,12 @@ public class UserController {
     public ResponseEntity<?> addUser(@RequestBody User newUser) {
         try {
             if (newUser == null) {
-                throw new BadRequestException("User cannot be null");
+                throw new BadRequestException("User cannot be null.");
             }
+
+            newUser.checkDataPresence();
+            newUser.checkDataPatterns();
+            newUser.adjustDates();
             
             return ResponseEntity.created(URI.create("/api/user/" + newUser.getLogin().getUsername())).body(userService.addUser(newUser));
         } catch (Exception e) {
@@ -48,23 +52,28 @@ public class UserController {
             return ResponseEntity.ok().body(userService.getAllUsers());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body("No users found");
+            return ResponseEntity.badRequest().body("No users found.");
         }
     }
 
-    @GetMapping
-    public ResponseEntity<?> getUsersByFirstName(@RequestParam String firstName) {
+    @GetMapping("/search")
+    public ResponseEntity<?> getUsersByName(
+            @RequestParam(required = false, name = "firstName") String firstName,
+            @RequestParam(required = false, name = "lastName") String lastName
+        ) {
         try {
-            return ResponseEntity.ok().body(userService.getUsersByFirstName(firstName));
-        } catch (Exception e) {
-            System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+            if (firstName == null && lastName == null) {
+                throw new BadRequestException("firstName and lastName cannot be both null.");
+            }
 
-    @GetMapping
-    public ResponseEntity<?> getUsersByLastName(@RequestParam String lastName) {
-        try {
+            if (firstName != null && !firstName.isEmpty()) {
+                if (lastName != null && !lastName.isEmpty()) {
+                    return ResponseEntity.ok().body(userService.getUsersByFullName(firstName, lastName));
+                }
+                
+                return ResponseEntity.ok().body(userService.getUsersByFirstName(firstName));
+            }
+            
             return ResponseEntity.ok().body(userService.getUsersByLastName(lastName));
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
@@ -76,7 +85,7 @@ public class UserController {
     public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
         try {
             if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty");
+                throw new BadRequestException("Username cannot be null or empty.");
             }
 
             return ResponseEntity.ok().body(userService.getUserByUsername(username));
@@ -92,10 +101,10 @@ public class UserController {
     public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody User user) {
         try {
             if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty");
+                throw new BadRequestException("Username cannot be null or empty.");
             }
             if (user == null) {
-                throw new BadRequestException("User cannot be null");
+                throw new BadRequestException("User cannot be null.");
             }
 
             user.getLogin().setUsername(username);
@@ -110,16 +119,16 @@ public class UserController {
     public ResponseEntity<?> updateUserPassword(@PathVariable String username, @RequestBody UpdatePasswordRequest updatePasswordRequest) {
         try {
             if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty");
+                throw new BadRequestException("Username cannot be null or empty.");
             }
             if (updatePasswordRequest.getOldPass() == null || updatePasswordRequest.getOldPass().isEmpty()) {
-                throw new BadRequestException("Old password cannot be null or empty");
+                throw new BadRequestException("Old password cannot be null or empty.");
             }
             if (updatePasswordRequest.getNewPass() == null || updatePasswordRequest.getNewPass().isEmpty()) {
-                throw new BadRequestException("New password cannot be null or empty");
+                throw new BadRequestException("New password cannot be null or empty.");
             }
             if (updatePasswordRequest.getConfirmPass() == null || updatePasswordRequest.getConfirmPass().isEmpty()) {
-                throw new BadRequestException("Confirm password cannot be null or empty");
+                throw new BadRequestException("Confirm password cannot be null or empty.");
             }
 
             return ResponseEntity.ok().body(userService.updateUserPassword(username, updatePasswordRequest.getOldPass(), updatePasswordRequest.getNewPass(), updatePasswordRequest.getConfirmPass()));
@@ -136,11 +145,11 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable String username) {
         try {
             if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty");
+                throw new BadRequestException("Username cannot be null or empty.");
             }
 
             userService.deleteUser(username);
-            return ResponseEntity.ok().body("Utente eliminato correttamente");
+            return ResponseEntity.ok().body("Utente eliminato correttamente.");
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());

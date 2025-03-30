@@ -43,30 +43,11 @@ public class UserService {
         if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
             throw new IllegalArgumentException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
         }
-        if (!PasswordUtils.passwordPatternVerifier(newUser.getLogin().getPassword())) {
-            throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
-        }
 
         newUser.set_id(null);
         newUser.getLogin().setPassword(passwordEncoder.encode(newUser.getLogin().getPassword()));
         return userRepository.save(newUser);
     }
-
-    // Aggiunge più utenti alla collection "users" del database
-    // public ArrayList<User> addUsers(ArrayList<User> newUsers) {
-    //     if (newUsers.isEmpty()) {
-    //         throw new IllegalArgumentException("Given users list is empty");
-    //     }
-    //     for (User user : newUsers) {
-    //         if (userRepository.existsById(user.get_id())) {
-    //             throw new IllegalArgumentException("User with id \"" + user.get_id() + "\" already exists.");
-    //         }
-    //         if (userRepository.findByLogin_Username(user.getLogin().getUsername()).isPresent()) {
-    //             throw new IllegalArgumentException("User with username \"" + user.getLogin().getUsername() + "\" already exists.");
-    //         }
-    //     }
-    //     return (ArrayList<User>) userRepository.saveAll(newUsers);
-    // }
     
     
     /// READ operations ///
@@ -87,6 +68,40 @@ public class UserService {
     //     return userRepository.findById(id).orElse(null);
     // }
 
+    // Restituisce tutti gli utenti con un determinato nome
+    public ArrayList<User> getUsersByFirstName(String firstName) {
+        ArrayList<User> result = userRepository.findByName_First(firstName);
+        
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("Users with first name \"" + firstName + "\" not found.");
+        }
+
+        return result;
+    }
+
+    // Restituisce tutti gli utenti con un determinato cognome
+    public ArrayList<User> getUsersByLastName(String lastName) {
+        ArrayList<User> result = userRepository.findByName_Last(lastName);
+        
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("Users with last name \"" + lastName + "\" not found.");
+        }
+        
+        return result;
+    }
+
+    // Restituisce tutti gli utenti con un determinato nome e cognome
+    public ArrayList<User> getUsersByFullName(String firstName, String lastName) {
+        ArrayList<User> result = userRepository.findByName_Last(lastName);
+        result.removeIf(user -> !user.getName().getFirst().equals(firstName));
+
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
+        }
+
+        return result;
+    }
+
     // Restituisce un utente con un determinato username
     public User getUserByUsername(String username) {
         User user = userRepository.findByLogin_Username(username).orElse(null);
@@ -97,29 +112,6 @@ public class UserService {
 
         return user;
     }
-
-    // Restituisce tutti gli utenti con un determinato nome
-    public ArrayList<User> getUsersByFirstName(String first_name) {
-        ArrayList<User> result = userRepository.findByName_First(first_name);
-        
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with first name \"" + first_name + "\" not found.");
-        }
-
-        return result;
-    }
-
-    // Restituisce tutti gli utenti con un determinato cognome
-    public ArrayList<User> getUsersByLastName(String last_name) {
-        ArrayList<User> result = userRepository.findByName_Last(last_name);
-        
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with last name \"" + last_name + "\" not found.");
-        }
-        
-        return result;
-    }
-
 
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento

@@ -1,11 +1,11 @@
 package com.wineadvisor.wineadvisor.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PasswordUtils {
-    @Bean
     public static Boolean passwordPatternVerifier(String password) {
         // La password deve essere lunga almeno 8 caratteri
         if (password.length() < 8) {
@@ -30,7 +30,6 @@ public class PasswordUtils {
         return true;
     }
 
-    @Bean
     public static PasswordEncoder passwordEncoder() {
         // Setting BCRYPT as password encoder algorithm.
         // Call SecurityConfig.passwordEncoder() to create an instance of an encoder using BCRYPT algorithm.
