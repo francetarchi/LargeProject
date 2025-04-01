@@ -58,7 +58,7 @@ public class User {
 
     ///////////// METODI /////////////
     // Controlla se la data di registrazione è presente e se è quella odierna: se trova un problema, lo corregge inserendo il timestamp attuale
-    public void adjustDates() {
+    public void adjustRegistrationDate() {
         if (this.getRegistered() == null || this.getRegistered().getDateTime() == null || this.getRegistered().getDateTime().toLocalDate().isBefore(LocalDateTime.now().toLocalDate())) {
             this.getRegistered().setDateTime(LocalDateTime.now());
         }

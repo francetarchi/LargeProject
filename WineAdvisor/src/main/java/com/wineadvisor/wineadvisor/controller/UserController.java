@@ -37,7 +37,7 @@ public class UserController {
                 throw new BadRequestException("User cannot be null.");
             }
 
-            newUser.adjustDates();
+            newUser.adjustRegistrationDate();
             
             return ResponseEntity.created(URI.create("/api/user/" + newUser.getLogin().getUsername())).body(userService.addUser(newUser));
         } catch (ConstraintViolationException e) {
