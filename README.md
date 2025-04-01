@@ -69,9 +69,13 @@ Scrivere i blocchi 'catch' appropriati per ogni eccezione che lanciamo, inserend
 * ```ResourceNotFoundException``` se la risorsa con l'id richiesto non esiste (creata da noi, attualmente nel package "exception")
 * ```AccessDeniedException``` se l'utente non ha le autorizzazioni necessarie per accedere ad una certa API
 * ```AccessDeniedException``` se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa)
+* ```ConflictException``` se si tenta di creare una risorsa con un campo unique già presente nel database.
 
+### !!!!!! ATTENZIONE !!!!!!
+Se si usano le annotazioni ```@Pattern```, ```@Email```, ```@NotBlank```... del package _jakarta_ per la validazione degli input (consigliato per evitare codice boilerplate) bisogna intercettare nelle catch un'eccezione di tipo ```ConstraintViolationException``` (le annotazioni sollevano appunto un'eccezione di questo tipo).  
+Nella ```ResponseEntity``` dobbiamo comunque inserire lo stato ```BAD_REQUEST```.  
+  
 Inserirne altre se le usate, ora non me ne vengono in mente altre.
-
 
 
 ## Formato scrittura risposte
