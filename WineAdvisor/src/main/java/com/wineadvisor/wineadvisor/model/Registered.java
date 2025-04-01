@@ -1,5 +1,5 @@
 package com.wineadvisor.wineadvisor.model;
 
-public class Registered extends DatePattern {
+public class Registered extends DateTimePattern {
 
 }

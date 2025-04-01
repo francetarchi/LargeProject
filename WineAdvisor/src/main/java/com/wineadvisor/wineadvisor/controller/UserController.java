@@ -1,8 +1,9 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import java.net.URI;
+import com.wineadvisor.wineadvisor.config.UpdatePasswordRequest;
+import com.wineadvisor.wineadvisor.service.UserService;
+import com.wineadvisor.wineadvisor.model.User;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,11 +15,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import com.wineadvisor.wineadvisor.config.UpdatePasswordRequest;
-import com.wineadvisor.wineadvisor.service.UserService;
-import com.wineadvisor.wineadvisor.model.User;
-
 import lombok.RequiredArgsConstructor;
+
+import org.apache.coyote.BadRequestException;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/users")
@@ -28,20 +31,24 @@ public class UserController {
 
     ////////////// POST //////////////
     @PostMapping
-    public ResponseEntity<?> addUser(@RequestBody User newUser) {
+    public ResponseEntity<?> addUser(@Valid @RequestBody User newUser) {
         try {
             if (newUser == null) {
                 throw new BadRequestException("User cannot be null.");
             }
 
-            newUser.checkDataPresence();
-            newUser.checkDataPatterns();
             newUser.adjustDates();
             
             return ResponseEntity.created(URI.create("/api/user/" + newUser.getLogin().getUsername())).body(userService.addUser(newUser));
-        } catch (Exception e) {
+        } catch (ConstraintViolationException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (BadRequestException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -52,7 +59,7 @@ public class UserController {
             return ResponseEntity.ok().body(userService.getAllUsers());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body("No users found.");
+            return ResponseEntity.internalServerError().body("No users found.");
         }
     }
 
@@ -77,7 +84,7 @@ public class UserController {
             return ResponseEntity.ok().body(userService.getUsersByLastName(lastName));
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -91,7 +98,7 @@ public class UserController {
             return ResponseEntity.ok().body(userService.getUserByUsername(username));
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -111,7 +118,7 @@ public class UserController {
             return ResponseEntity.ok().body(userService.updateUser(user));
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -134,8 +141,7 @@ public class UserController {
             return ResponseEntity.ok().body(userService.updateUserPassword(username, updatePasswordRequest.getOldPass(), updatePasswordRequest.getNewPass(), updatePasswordRequest.getConfirmPass()));
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -152,7 +158,7 @@ public class UserController {
             return ResponseEntity.ok().body("Utente eliminato correttamente.");
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 }

@@ -27,6 +27,7 @@ public class PasswordUtils {
         if (!password.matches(".*[!@#$%^&*()-_=+].*")) {
             return false;
         }
+        
         return true;
     }
 

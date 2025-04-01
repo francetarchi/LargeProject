@@ -4,11 +4,13 @@ import java.util.ArrayList;
 
 import lombok.RequiredArgsConstructor;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.config.PasswordUtils;
+import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.model.User;
@@ -33,15 +35,15 @@ public class UserService {
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
-    public User addUser(User newUser) {
-        if (newUser == null) {
-            throw new IllegalArgumentException("Given user is empty");
-        }
-        // if (userRepository.existsById(newUser.get_id())) {
-        //     throw new IllegalArgumentException("User with id \"" + newUser.get_id() + "\" already exists");
-        // }
+    public User addUser(User newUser) throws BadRequestException, ResourceAlreadyExistsException {
         if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
-            throw new IllegalArgumentException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
+            throw new ResourceAlreadyExistsException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
+        }
+        if (userRepository.findByEmail(newUser.getEmail()).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with email \"" + newUser.getEmail() + "\" already exists.");
+        }
+        if (!PasswordUtils.passwordPatternVerifier(newUser.getLogin().getPassword())) {
+            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
         }
 
         newUser.set_id(null);

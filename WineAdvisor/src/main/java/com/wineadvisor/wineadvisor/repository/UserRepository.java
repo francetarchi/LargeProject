@@ -13,6 +13,7 @@ import com.wineadvisor.wineadvisor.model.User;
 @Repository
 public interface UserRepository extends MongoRepository<User, ObjectId> {
     Optional<User> findByLogin_Username(String username);
+    Optional<User> findByEmail(String email);
 
     ArrayList<User> findByName_First(String name);
     ArrayList<User> findByName_Last(String last_name);
