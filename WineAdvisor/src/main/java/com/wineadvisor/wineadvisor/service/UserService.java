@@ -35,7 +35,7 @@ public class UserService {
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
-    public User addUser(User newUser) throws BadRequestException, ResourceAlreadyExistsException {
+    public User addUser(User newUser) throws ResourceAlreadyExistsException, BadRequestException {
         if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
             throw new ResourceAlreadyExistsException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
         }
@@ -54,11 +54,11 @@ public class UserService {
     
     /// READ operations ///
     // Restituisce tutti gli utenti presenti nella collection "users" del database
-    public ArrayList<User> getAllUsers() throws NotFoundException {
+    public ArrayList<User> getAllUsers() throws ResourceNotFoundException {
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
 
         if (users.size() == 0) {
-            throw new NotFoundException();
+            throw new ResourceNotFoundException("No users found.");
         }
 
         return new ArrayList<>(users.subList(0, 9));
@@ -71,45 +71,45 @@ public class UserService {
     // }
 
     // Restituisce tutti gli utenti con un determinato nome
-    public ArrayList<User> getUsersByFirstName(String firstName) {
+    public ArrayList<User> getUsersByFirstName(String firstName) throws ResourceNotFoundException {
         ArrayList<User> result = userRepository.findByName_First(firstName);
         
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with first name \"" + firstName + "\" not found.");
+            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" not found.");
         }
 
         return result;
     }
 
     // Restituisce tutti gli utenti con un determinato cognome
-    public ArrayList<User> getUsersByLastName(String lastName) {
+    public ArrayList<User> getUsersByLastName(String lastName) throws ResourceNotFoundException {
         ArrayList<User> result = userRepository.findByName_Last(lastName);
         
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with last name \"" + lastName + "\" not found.");
+            throw new ResourceNotFoundException("Users with last name \"" + lastName + "\" not found.");
         }
         
         return result;
     }
 
     // Restituisce tutti gli utenti con un determinato nome e cognome
-    public ArrayList<User> getUsersByFullName(String firstName, String lastName) {
+    public ArrayList<User> getUsersByFullName(String firstName, String lastName) throws ResourceNotFoundException {
         ArrayList<User> result = userRepository.findByName_Last(lastName);
         result.removeIf(user -> !user.getName().getFirst().equals(firstName));
 
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
+            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
         }
 
         return result;
     }
 
     // Restituisce un utente con un determinato username
-    public User getUserByUsername(String username) {
+    public User getUserByUsername(String username) throws ResourceNotFoundException {
         User user = userRepository.findByLogin_Username(username).orElse(null);
         
         if (user == null) {
-            throw new IllegalArgumentException("User with username \"" + username + "\" not found.");
+            throw new ResourceNotFoundException("User with username \"" + username + "\" not found.");
         }
 
         return user;

@@ -1,6 +1,7 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.config.UpdatePasswordRequest;
+import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.User;
 
@@ -57,6 +58,10 @@ public class UserController {
     public ResponseEntity<?> getAllUsers() {
         try {
             return ResponseEntity.ok().body(userService.getAllUsers());
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body("No users found.");
@@ -72,9 +77,18 @@ public class UserController {
             if (firstName == null && lastName == null) {
                 throw new BadRequestException("firstName and lastName cannot be both null.");
             }
+            if ((firstName != null && firstName.isEmpty()) || (lastName != null && lastName.isEmpty())) {
+                throw new BadRequestException("firstName and lastName cannot be empty.");
+            }
+            if (firstName != null && !firstName.matches("^[a-zA-ZÀ-ÿ'\\-\\s]+$")) {
+                throw new BadRequestException("First name must contain only letters, spaces, hyphens, and apostrophes.");
+            }
+            if (lastName != null && !lastName.matches("^[a-zA-ZÀ-ÿ'\\-\\s]+$")) {
+                throw new BadRequestException("First name must contain only letters, spaces, hyphens, and apostrophes.");
+            }
 
-            if (firstName != null && !firstName.isEmpty()) {
-                if (lastName != null && !lastName.isEmpty()) {
+            if (firstName != null) {
+                if (lastName != null) {
                     return ResponseEntity.ok().body(userService.getUsersByFullName(firstName, lastName));
                 }
                 
@@ -82,6 +96,13 @@ public class UserController {
             }
             
             return ResponseEntity.ok().body(userService.getUsersByLastName(lastName));
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (BadRequestException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
@@ -94,8 +115,18 @@ public class UserController {
             if (username == null || username.isEmpty()) {
                 throw new BadRequestException("Username cannot be null or empty.");
             }
+            if (!username.matches("^[a-zA-Z0-9_]{3,50}$")) {
+                throw new BadRequestException("Username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.");
+            }
 
             return ResponseEntity.ok().body(userService.getUserByUsername(username));
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (BadRequestException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
