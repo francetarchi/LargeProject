@@ -2,19 +2,12 @@ package com.wineadvisor.wineadvisor.repository;
 
 import com.wineadvisor.wineadvisor.model.Review;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import java.util.*;
 
 @Repository
-public interface ReviewRepository extends MongoRepository<Review, Long> { 
-
-    // metodo findById: restituisce una recensione dato l'id
-    Optional<Review> findById(Long id);
-
-    // metodo deleteById: elimina una recensione dato l'id
-    void deleteById(Long id);
+public interface ReviewRepository extends MongoRepository<Review, Long> {
     
     // metodo findByWineId_IdAndWineId_Year: restituisce una lista di recensioni relative ad un'annata di un vino specifica
     ArrayList<Review> findByWineId_IdAndWineId_Year(Long wineId, int year);

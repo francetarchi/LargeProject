@@ -4,7 +4,6 @@ import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.UserId;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.security.core.context.SecurityContextHolder;
