@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 
 import org.apache.coyote.BadRequestException;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -64,12 +63,6 @@ public class UserService {
         return new ArrayList<>(users.subList(0, 9));
     }
 
-    /////////////////////// Commentata perché non so se tenerla: nella collection "users" il campo unique che usiamo è il login.username //////////////////////
-    // // Restituisce un utente con un determinato id
-    // public User getUserById(Long id) {
-    //     return userRepository.findById(id).orElse(null);
-    // }
-
     // Restituisce tutti gli utenti con un determinato nome
     public ArrayList<User> getUsersByFirstName(String firstName) throws ResourceNotFoundException {
         ArrayList<User> result = userRepository.findByName_First(firstName);
@@ -117,54 +110,66 @@ public class UserService {
 
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
-    public User updateUser(User updatedUser) {
+    public User updateUser(User updatedUser) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with email \"" + updatedUser.getEmail() + "\" already exists.");
+        }
+
         return userRepository
             .findByLogin_Username(updatedUser.getLogin().getUsername())
-            .map(targetUser -> {
-                targetUser.setName(updatedUser.getName());
-                targetUser.setLocation(updatedUser.getLocation());
-                targetUser.setEmail(updatedUser.getEmail());
-                targetUser.setTelephone(updatedUser.getTelephone());
-                targetUser.setDob(updatedUser.getDob());
-                targetUser.setPicture(updatedUser.getPicture());
+            .map(
+                targetUser -> {
+                    targetUser.setName(updatedUser.getName());
+                    targetUser.setLocation(updatedUser.getLocation());
+                    targetUser.setEmail(updatedUser.getEmail());
+                    targetUser.setTelephone(updatedUser.getTelephone());
+                    targetUser.setDob(updatedUser.getDob());
+                    targetUser.setPicture(updatedUser.getPicture());
 
-                return userRepository.save(targetUser);
-            })
-            .orElseThrow(() -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist."));
+                    return userRepository.save(targetUser);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist.")
+            );
     }
 
     // Cerca il documento di un utente e ne modifica la password
-    public User updateUserPassword(String username, String oldPass, String newPass, String confirmPass) {
+    public User updateUserPassword(String username, String oldPass, String newPass, String confirmPass) throws IllegalArgumentException, ResourceNotFoundException {
         return userRepository
             .findByLogin_Username(username)
-            .map(targetUser -> {
-                if (!passwordEncoder.matches(oldPass, targetUser.getLogin().getPassword())) {
-                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because old password is wrong.");
-                }
-                if (newPass.equals(oldPass)) {
-                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new password is the same as the old one.");
-                }
-                if (!newPass.equals(confirmPass)) {
-                    throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match.");
-                }
-                if (!PasswordUtils.passwordPatternVerifier(newPass)) {
-                    throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
-                }
+            .map(
+                targetUser -> {
+                    if (!passwordEncoder.matches(oldPass, targetUser.getLogin().getPassword())) {
+                        throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because old password is wrong.");
+                    }
+                    if (newPass.equals(oldPass)) {
+                        throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new password is the same as the old one.");
+                    }
+                    if (!newPass.equals(confirmPass)) {
+                        throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match.");
+                    }
+                    if (!PasswordUtils.passwordPatternVerifier(newPass)) {
+                        throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
+                    }
 
-                targetUser.getLogin().setPassword(passwordEncoder.encode(newPass));
-                return userRepository.save(targetUser);
-            })
-            .orElseThrow(() -> new ResourceNotFoundException("User with username \"" + username + "\" not updatable because it does not exist."));
+                    targetUser.getLogin().setPassword(passwordEncoder.encode(newPass));
+                    return userRepository.save(targetUser);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with username \"" + username + "\" not updatable because it does not exist.")
+            );
     }
 
 
     /// DELETE operations ///
     // Elimina un utente con un determinato username
-    public void deleteUser(String username) {
+    public void deleteUser(String username) throws ResourceNotFoundException {
         User targetUser = userRepository.findByLogin_Username(username).orElse(null);
 
         if (targetUser == null) {
-            throw new IllegalArgumentException("User with username \"" + username + "\" not deletable because user does not exists.");
+            throw new ResourceNotFoundException("User with username \"" + username + "\" not deletable because user does not exists.");
         }
 
         userRepository.delete(targetUser);

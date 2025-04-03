@@ -1,6 +1,7 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.config.UpdatePasswordRequest;
+import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.User;
@@ -20,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 
 import org.apache.coyote.BadRequestException;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
 
 import java.net.URI;
@@ -32,18 +35,17 @@ public class UserController {
 
     ////////////// POST //////////////
     @PostMapping
-    public ResponseEntity<?> addUser(@Valid @RequestBody User newUser) {
+    public ResponseEntity<?> addUser(@NotNull(message = "User cannot be null.") @Valid @RequestBody User newUser) {
         try {
-            if (newUser == null) {
-                throw new BadRequestException("User cannot be null.");
-            }
-
             newUser.adjustRegistrationDate();
-            
-            return ResponseEntity.created(URI.create("/api/user/" + newUser.getLogin().getUsername())).body(userService.addUser(newUser));
+            return ResponseEntity.created(URI.create("/api/user/" + newUser.getLogin().getUsername()))
+                    .body(userService.addUser(newUser));
         } catch (ConstraintViolationException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceAlreadyExistsException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.conflict().body(e.getMessage());
         } catch (BadRequestException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -64,37 +66,30 @@ public class UserController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.internalServerError().body("No users found.");
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
     @GetMapping("/search")
     public ResponseEntity<?> getUsersByName(
             @RequestParam(required = false, name = "firstName") String firstName,
-            @RequestParam(required = false, name = "lastName") String lastName
-        ) {
+            @RequestParam(required = false, name = "lastName") String lastName) {
         try {
             if (firstName == null && lastName == null) {
                 throw new BadRequestException("firstName and lastName cannot be both null.");
             }
-            if ((firstName != null && firstName.isEmpty()) || (lastName != null && lastName.isEmpty())) {
+            if ((firstName != null && firstName.isBlank()) || (lastName != null && lastName.isBlank())) {
                 throw new BadRequestException("firstName and lastName cannot be empty.");
-            }
-            if (firstName != null && !firstName.matches("^[a-zA-ZÀ-ÿ'\\-\\s]+$")) {
-                throw new BadRequestException("First name must contain only letters, spaces, hyphens, and apostrophes.");
-            }
-            if (lastName != null && !lastName.matches("^[a-zA-ZÀ-ÿ'\\-\\s]+$")) {
-                throw new BadRequestException("First name must contain only letters, spaces, hyphens, and apostrophes.");
             }
 
             if (firstName != null) {
                 if (lastName != null) {
                     return ResponseEntity.ok().body(userService.getUsersByFullName(firstName, lastName));
                 }
-                
+
                 return ResponseEntity.ok().body(userService.getUsersByFirstName(firstName));
             }
-            
+
             return ResponseEntity.ok().body(userService.getUsersByLastName(lastName));
         } catch (ResourceNotFoundException e) {
             System.err.println("--- ERR: " + e.getMessage());
@@ -110,23 +105,17 @@ public class UserController {
     }
 
     @GetMapping("/{username}")
-    public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<?> getUserByUsername(
+            @NotBlank(message = "Username cannot be null or empty.") @PathVariable String username) {
         try {
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-            if (!username.matches("^[a-zA-Z0-9_]{3,50}$")) {
-                throw new BadRequestException("Username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.");
-            }
-
             return ResponseEntity.ok().body(userService.getUserByUsername(username));
+        } catch (ConstraintViolationException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (ResourceNotFoundException e) {
             System.err.println("--- ERR: " + e.getMessage());
             // return ResponseEntity.notFound().body(e.getMessage());
             return ResponseEntity.notFound().build();
-        } catch (BadRequestException e) {
-            System.err.println("--- ERR: " + e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
@@ -136,17 +125,22 @@ public class UserController {
     
     ////////////// PUT //////////////
     @PutMapping("/{username}")
-    public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(
+            @NotBlank(message = "Username cannot be null or empty.") @PathVariable String username,
+            @NotNull(message = "User cannot be null.") @Valid @RequestBody User user) {
         try {
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-            if (user == null) {
-                throw new BadRequestException("User cannot be null.");
-            }
-
             user.getLogin().setUsername(username);
             return ResponseEntity.ok().body(userService.updateUser(user));
+        } catch (ConstraintViolationException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (ResourceAlreadyExistsException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.conflict().body(e.getMessage());
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
@@ -154,22 +148,21 @@ public class UserController {
     }
 
     @PutMapping("{username}/password/update")
-    public ResponseEntity<?> updateUserPassword(@PathVariable String username, @RequestBody UpdatePasswordRequest updatePasswordRequest) {
+    public ResponseEntity<?> updateUserPassword(
+            @NotBlank(message = "Username cannot be null or empty.") @PathVariable String username,
+            @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody UpdatePasswordRequest updatePasswordRequest) {
         try {
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-            if (updatePasswordRequest.getOldPass() == null || updatePasswordRequest.getOldPass().isEmpty()) {
-                throw new BadRequestException("Old password cannot be null or empty.");
-            }
-            if (updatePasswordRequest.getNewPass() == null || updatePasswordRequest.getNewPass().isEmpty()) {
-                throw new BadRequestException("New password cannot be null or empty.");
-            }
-            if (updatePasswordRequest.getConfirmPass() == null || updatePasswordRequest.getConfirmPass().isEmpty()) {
-                throw new BadRequestException("Confirm password cannot be null or empty.");
-            }
-
             return ResponseEntity.ok().body(userService.updateUserPassword(username, updatePasswordRequest.getOldPass(), updatePasswordRequest.getNewPass(), updatePasswordRequest.getConfirmPass()));
+        } catch (ConstraintViolationException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
@@ -179,14 +172,18 @@ public class UserController {
 
     ////////////// DELETE //////////////
     @DeleteMapping
-    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+    public ResponseEntity<?> deleteUser(
+            @NotBlank(message = "Username cannot be null or empty.") @PathVariable String username) {
         try {
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
             userService.deleteUser(username);
             return ResponseEntity.ok().body("Utente eliminato correttamente.");
+        } catch (ConstraintViolationException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            // return ResponseEntity.notFound().body(e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.internalServerError().body(e.getMessage());
