@@ -63,12 +63,13 @@ Scrivere i blocchi 'catch' appropriati per ogni eccezione che lanciamo, inserend
 
 
 ## ECCEZIONI da lanciare
-* ```BadRequestException``` (nel Controller) se i campi passati nelle richieste HTTP (sia come path variable, che come parametro, che nel body) non rispettano i pattern imposti
-* ```BadRequestException``` (nel Controller) se manca un campo (== null) necessario per andare avanti nella gestione della richiesta HTTP
-* ```IllegalArgumentException``` (nel Service) se i campi passati come argomenti delle funzioni non sono validi (ad es. la data di nascita è nel futuro o altri controlli)
-* ```ResourceNotFoundException``` se la risorsa con l'id richiesto non esiste (creata da noi, attualmente nel package "exception")
-* ```AccessDeniedException``` se l'utente non ha le autorizzazioni necessarie per accedere ad una certa API
-* ```AccessDeniedException``` se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa)
+* ```BadRequestException``` se i campi passati nelle richieste HTTP (sia come path variable, che come parametro, che nel body) non rispettano i pattern imposti.
+* ```BadRequestException``` se manca un campo (== null) necessario per andare avanti nella gestione della richiesta HTTP.
+* ```IllegalArgumentException``` da usare solamente nelle lambda function passate alla .map(): in queste funzioni non si può lanciare ```BadRequestException``` in quanto è una checked exception e non c'è modo di inserire ```throws BadRequestException``` nella firma della funzione (in quanto le lambda function banalmente non hanno una firma).
+* ```ResourceNotFoundException``` se la risorsa (o le risorse) ricercata in base ad un qualsiasi campo non esiste (creata da noi, attualmente nel package _exception_).
+* ```ResourceAlreadyExistsException``` se la risorsa che sto creando fa conflitto con un'altra risorsa già esistente su un campo che deve essere unique nel database (creata da noi, attualmente nel package _exception_).
+* ```AccessDeniedException``` se l'utente non ha le autorizzazioni necessarie per accedere ad una certa API.
+* ```AccessDeniedException``` se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa).
 * ```ConflictException``` se si tenta di creare una risorsa con un campo unique già presente nel database.
 
 ### !!!!!! ATTENZIONE !!!!!!
