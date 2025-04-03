@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model;
+package com.wineadvisor.wineadvisor.model.fields;
 
 import java.time.LocalDateTime;
 import java.time.Period;

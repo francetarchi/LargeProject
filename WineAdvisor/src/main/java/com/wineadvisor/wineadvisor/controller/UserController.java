@@ -24,6 +24,7 @@ import org.apache.coyote.BadRequestException;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.Valid;
 
 @RestController
@@ -126,6 +127,27 @@ public class UserController {
         try {
             user.getLogin().setUsername(username);
             return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(user));
+        } catch (ConstraintViolationException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (ResourceAlreadyExistsException e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("--- ERR: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("{username}/username/update")
+    public ResponseEntity<?> updateUserUsername(
+            @NotBlank(message = "Username cannot be null or empty.") @PathVariable String targetUsername,
+            @NotBlank(message = "New username cannot be null or empty.") @Valid @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "The new username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.") @RequestParam(required = true, name = "newUsername") String newUsername) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserUsername(targetUsername, newUsername));
         } catch (ConstraintViolationException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

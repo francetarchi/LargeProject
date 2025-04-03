@@ -11,8 +11,13 @@ import org.springframework.stereotype.Service;
 import com.wineadvisor.wineadvisor.config.PasswordUtils;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
+import com.wineadvisor.wineadvisor.repository.WineRepository;
+import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
+import com.wineadvisor.wineadvisor.model.Wine;
+import com.wineadvisor.wineadvisor.model.fields.user.ReviewForUser;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,8 @@ public class UserService {
     /////////// VARIABLES //////////
     ////////////////////////////////
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
+    private final WineRepository wineRepository;
     private final PasswordEncoder passwordEncoder = PasswordUtils.passwordEncoder();
 
 
@@ -112,10 +119,10 @@ public class UserService {
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
     public User updateUser(User updatedUser) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with email \"" + updatedUser.getEmail() + "\" already exists.");
+            throw new ResourceAlreadyExistsException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because email \"" + updatedUser.getEmail() + "\" is already used by another user.");
         }
 
-        return userRepository
+        final User user = userRepository
             .findByLogin_Username(updatedUser.getLogin().getUsername())
             .map(
                 targetUser -> {
@@ -125,6 +132,11 @@ public class UserService {
                     targetUser.setTelephone(updatedUser.getTelephone());
                     targetUser.setDob(updatedUser.getDob());
                     targetUser.setPicture(updatedUser.getPicture());
+                    if (targetUser.getReviews().size() > 0) {
+                        for (ReviewForUser review : targetUser.getReviews()) {
+                            review.getUserId().setThumbnail(updatedUser.getPicture().getThumbnail());
+                        }
+                    }
 
                     return userRepository.save(targetUser);
                 }
@@ -132,6 +144,97 @@ public class UserService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist.")
             );
+
+        // // Controllo se l'utente ha scritto almeno una recensione
+        // if (!user.getReviews().isEmpty()) {
+        //     reviewRepository
+        //         .findByUserId_Username(user.getLogin().getUsername())
+        //         .forEach(
+        //             review -> {
+        //                 // Aggiorno la recensione nella collection "reviews"
+        //                 review.getUserId().setThumbnail(user.getPicture().getThumbnail());
+        //                 reviewRepository.save(review);
+
+        //                 // Aggiorno la recensione nel vino (qualora sia presente)
+        //                 Long reviewId = review.getId();
+        //                 Integer year = review.getWineId().getYear();
+                        
+        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
+        //                 if (wine != null) {
+        //                     for (Vintage v : wine.getVintages()) {
+        //                         if (v.getYear() == year) {
+        //                             for (Review r : v.getReviews()) {
+        //                                 if (r.getId() == reviewId) {
+        //                                     r.getUserId().setThumbnail(user.getPicture().getThumbnail());
+        //                                     break;
+        //                                 }
+        //                             }
+        //                             break;
+        //                         }
+        //                     }
+        //                 }
+
+        //                 wineRepository.save(wine);
+        //             }
+        //         );
+        // }
+
+        return user;
+    }
+
+    // Cerca il documento di un utente e ne modifica lo username
+    public Object updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException{
+        if (userRepository.findByLogin_Username(newUsername).isPresent()) {
+            throw new ResourceAlreadyExistsException("Username not updatable because \"" + newUsername + "\" is already used by another user.");
+        }
+
+        final User user = userRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetUser -> {
+                    targetUser.getLogin().setUsername(newUsername);
+                    return userRepository.save(targetUser);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Username not updatable because \"" + targetUsername + "\" no user uses it.")
+            );
+
+        // // Controllo se l'utente ha scritto almeno una recensione
+        // if (!user.getReviews().isEmpty()) {
+        //     reviewRepository
+        //         .findByUserId_Username(targetUsername)
+        //         .forEach(
+        //             review -> {
+        //                 // Aggiorno la recensione nella collection "reviews"
+        //                 review.getUserId().setUsername(user.getLogin().getUsername());
+        //                 reviewRepository.save(review);
+
+        //                 // Aggiorno la recensione nel vino (qualora sia presente)
+        //                 Long reviewId = review.getId();
+        //                 Integer year = review.getWineId().getYear();
+                        
+        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
+        //                 if (wine != null) {
+        //                     for (Vintage v : wine.getVintages()) {
+        //                         if (v.getYear() == year) {
+        //                             for (Review r : v.getReviews()) {
+        //                                 if (r.getId() == reviewId) {
+        //                                     r.getUserId().setUsername(user.getLogin().getUsername());
+        //                                     break;
+        //                                 }
+        //                             }
+        //                             break;
+        //                         }
+        //                     }
+        //                 }
+
+        //                 wineRepository.save(wine);
+        //             }
+        //         );
+        // }
+        
+        return user;
     }
 
     // Cerca il documento di un utente e ne modifica la password
@@ -173,7 +276,41 @@ public class UserService {
         }
 
         userRepository.delete(targetUser);
+
+        // // Controllo se l'utente ha scritto almeno una recensione
+        // if (!targetUser.getReviews().isEmpty()) {
+        //     reviewRepository
+        //         .findByUserId_Username(username)
+        //         .forEach(
+        //             review -> {
+        //                 // Elimino la recensione dalla collection "reviews"
+        //                 reviewRepository.delete(review);
+
+        //                 // Elimino la recensione dal vino (qualora sia presente)
+        //                 Long reviewId = review.getId();
+        //                 Integer year = review.getWineId().getYear();
+                            
+        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
+        //                 if (wine != null) {
+        //                     for (Vintage v : wine.getVintages()) {
+        //                         if (v.getYear() == year) {
+        //                             for (Review r : v.getReviews()) {
+        //                                 if (r.getId() == reviewId) {
+        //                                     v.getReviews().remove(r);
+        //                                     break;
+        //                                 }
+        //                             }
+        //                             break;
+        //                         }
+        //                     }
+        //                 }
+
+        //                 wineRepository.save(wine);
+        //             }
+        //         );
+        // }
     }
+
 
 
     //// END of crud operations ////
