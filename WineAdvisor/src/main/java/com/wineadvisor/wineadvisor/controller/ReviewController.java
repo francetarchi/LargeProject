@@ -96,7 +96,7 @@ public class ReviewController {
                 throw new BadRequestException("Rating must be between 0 and 5.");
             }
 
-            return ResponseEntity.ok(reviewService.updateReview(updatedReview));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(updatedReview)); // 200 OK
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
         } catch (IllegalArgumentException e) {
@@ -119,7 +119,7 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.addLike(id));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addLike(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -142,7 +142,7 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.removeLike(id));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeLike(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -165,7 +165,7 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.addDislike(id));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addDislike(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -188,7 +188,7 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.removeDislike(id));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeDislike(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
@@ -211,7 +211,7 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewById(id));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -242,7 +242,7 @@ public class ReviewController {
                 throw new BadRequestException("Year must be greater than or equal to 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByVintage(wineId, vintageYear));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(wineId, vintageYear));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -265,7 +265,7 @@ public class ReviewController {
                 throw new BadRequestException("Wine ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByWine(wineId));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(wineId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -285,7 +285,7 @@ public class ReviewController {
                 throw new BadRequestException("Username cannot be null or empty.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByUser(username));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -313,7 +313,7 @@ public class ReviewController {
                 throw new BadRequestException("Wine ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByUserAndWine(username, wineId));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(username, wineId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
@@ -328,7 +328,7 @@ public class ReviewController {
     @GetMapping("/count") // Provata: OK
     public ResponseEntity<?> getReviewsCount() {
         try {
-            return ResponseEntity.ok(reviewService.getReviewsCount());
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCount());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
@@ -345,7 +345,7 @@ public class ReviewController {
                 throw new BadRequestException("Wine ID must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsCountByWine(wineId));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByWine(wineId));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -363,7 +363,7 @@ public class ReviewController {
                 throw new BadRequestException("Username cannot be null or empty.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsCountByUser(username));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByUser(username));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -389,7 +389,7 @@ public class ReviewController {
                 throw new BadRequestException("Year must be greater than or equal to 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsCountByVintage(wineId, vintageYear));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByVintage(wineId, vintageYear));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -420,7 +420,7 @@ public class ReviewController {
                 throw new BadRequestException("Year must be greater than or equal to 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getAverageRatingByVintage(wineId, year));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -438,7 +438,7 @@ public class ReviewController {
                 throw new BadRequestException("Number of reviews must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getRecentReviews(num));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviews(num));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -461,7 +461,7 @@ public class ReviewController {
                 throw new BadRequestException("Number of reviews must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getRecentReviewsByUser(username, num));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviewsByUser(username, num));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -492,7 +492,7 @@ public class ReviewController {
                 throw new BadRequestException("Number of reviews must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getRecentReviewsByVintage(wineId, vintageYear, num));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviewsByVintage(wineId, vintageYear, num));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -518,7 +518,7 @@ public class ReviewController {
                 throw new BadRequestException("Rating must be between 0 and 5.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByWineAndRatingRange(wineId, minRating, maxRating));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(wineId, minRating, maxRating));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -549,7 +549,7 @@ public class ReviewController {
                 throw new BadRequestException("Rating must be between 0 and 5.");
             }
 
-            return ResponseEntity.ok(reviewService.getReviewsByVintageAndRatingRange(wineId, vintageYear, minRating, maxRating));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(wineId, vintageYear, minRating, maxRating));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -580,7 +580,7 @@ public class ReviewController {
                 throw new BadRequestException("Number of reviews must be greater than 0.");
             }
 
-            return ResponseEntity.ok(reviewService.getPopularReviewsByVintage(wineId, year, num));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){

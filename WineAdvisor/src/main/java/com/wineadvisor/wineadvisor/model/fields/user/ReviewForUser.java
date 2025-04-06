@@ -1,24 +1,18 @@
-package com.wineadvisor.wineadvisor.model;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+package com.wineadvisor.wineadvisor.model.fields.user;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.wineadvisor.wineadvisor.model.fields.review.UserId;
 import com.wineadvisor.wineadvisor.model.fields.review.WineId;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 @Data
-@Document(collection = "reviews")
-@AllArgsConstructor
-@NoArgsConstructor
-public class Review {
+public class ReviewForUser {
     @Id
     @Field("_id")
     private Long id;
@@ -29,22 +23,21 @@ public class Review {
     @Field("wine_id")
     private WineId wineId;
     
+    @Schema(description = "rating", example = "4.5")
     private Double rating;
 
+    @Schema(description = "text", example = "This wine is amazing!")
     private String text;
 
     @Field("created_at")
+    @Schema(description = "createdAt", example = "2023-10-01T12:00:00Z")
     private LocalDateTime createdAt;
 
     @Field("likes_count")
-    private Long likesCount;
+    @Schema(description = "likesCount", example = "10")
+    private Integer likesCount;
 
     @Field("dislikes_count")
-    private Long dislikesCount;
-
-    @Field("liked_by")
-    private ArrayList<String> likedBy;
-
-    @Field("disliked_by")
-    private ArrayList<String> dislikedBy;
+    @Schema(description = "dislikesCount", example = "2")
+    private Integer dislikesCount;
 }
