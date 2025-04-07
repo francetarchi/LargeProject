@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.fields.user;
+package com.wineadvisor.wineadvisor.model.fields;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-public class ReviewForUser {
+public class ReviewEmbedded {
     @Id
     @Field("_id")
     private Long id;

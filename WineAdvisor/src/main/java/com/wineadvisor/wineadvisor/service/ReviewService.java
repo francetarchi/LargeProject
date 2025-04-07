@@ -24,23 +24,29 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
-    private final WineService wineService;
 
     // CRUD operations
 
     // CREATE
     // Aggiunge una recensione alla collection "reviews" del database
     public Review addReview(Review review) {
-        User user = userService.getUserByUsername(review.getUserId().getUsername());        
+        Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername()); 
+
+        // Controllo se l'utente esiste   
+        if (user_to_find.isEmpty()) {
+            throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+        }
+        // L'utente esiste: faccio diventare l'oggetto user un oggetto Optional<User> User
+        User user = user_to_find.get();
 
         review.getUserId().setThumbnail(user.getPicture().getThumbnail());
 
         // Devo controllare che l'utente abbia indicato un vino e un'annata esistenti
-        Wine wine = wineService.getWineByVintage(review.getWineId().getId(), review.getWineId().getYear());
-        if (wine == null) {
+        Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear());
+        if (wine_to_find.isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
         }
+        Wine wine = wine_to_find.get();
         
         // Prendo la image (dell'annata) del vino per la recensione
         String image = null;

@@ -7,8 +7,6 @@ import com.wineadvisor.wineadvisor.model.Review;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
-import java.util.*;
-
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
