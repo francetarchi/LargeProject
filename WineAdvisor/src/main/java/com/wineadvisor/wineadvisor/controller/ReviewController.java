@@ -588,7 +588,47 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/")
+    @GetMapping("/liked_by/{id}")
+    public ResponseEntity<?> getLikedBy(@PathVariable Long id) {
+        try {
+            // Controllo sull'ID
+            if (id == null) {
+                throw new BadRequestException("ID cannot be null.");
+            }
+            if (id <= 0) {
+                throw new BadRequestException("ID must be greater than 0.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getLikedBy(id));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (BadRequestException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/disliked_by/{id}")
+    public ResponseEntity<?> getDislikedBy(@PathVariable Long id) {
+        try {
+            // Controllo sull'ID
+            if (id == null) {
+                throw new BadRequestException("ID cannot be null.");
+            }
+            if (id <= 0) {
+                throw new BadRequestException("ID must be greater than 0.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getDislikedBy(id));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (BadRequestException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 
     @DeleteMapping("/{id}") // Provata: OK
     public ResponseEntity<?> deleteReview(@PathVariable Long id) {

@@ -2,11 +2,10 @@ package com.wineadvisor.wineadvisor.model.fields;
 
 import java.time.LocalDateTime;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import com.wineadvisor.wineadvisor.model.fields.review.UserId;
-import com.wineadvisor.wineadvisor.model.fields.review.WineId;
+import com.wineadvisor.wineadvisor.model.fields.reviews.UserId;
+import com.wineadvisor.wineadvisor.model.fields.reviews.WineId;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -17,9 +16,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReviewEmbedded {
-    @Id
-    @Field("_id")
-    private Long id;
+    @Field("review_id")
+    private Long reviewId;
 
     @Field("user_id")
     private UserId userId;

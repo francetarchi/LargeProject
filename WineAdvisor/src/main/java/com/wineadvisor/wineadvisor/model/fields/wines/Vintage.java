@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.fields.wine;
+package com.wineadvisor.wineadvisor.model.fields.wines;
 
 import java.util.ArrayList;
 
