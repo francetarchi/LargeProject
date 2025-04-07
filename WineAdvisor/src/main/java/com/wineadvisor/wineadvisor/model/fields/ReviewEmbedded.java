@@ -9,9 +9,14 @@ import com.wineadvisor.wineadvisor.model.fields.reviews.UserId;
 import com.wineadvisor.wineadvisor.model.fields.reviews.WineId;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReviewEmbedded {
     @Id
     @Field("_id")
@@ -35,9 +40,9 @@ public class ReviewEmbedded {
 
     @Field("likes_count")
     @Schema(description = "likesCount", example = "10")
-    private Integer likesCount;
+    private Long likesCount;
 
     @Field("dislikes_count")
     @Schema(description = "dislikesCount", example = "2")
-    private Integer dislikesCount;
+    private Long dislikesCount;
 }

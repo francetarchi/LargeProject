@@ -7,7 +7,8 @@ import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.Wine;
 import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
-import com.wineadvisor.wineadvisor.model.fields.wine.*;
+import com.wineadvisor.wineadvisor.model.fields.wines.*;
+import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
 
 import lombok.RequiredArgsConstructor;
 

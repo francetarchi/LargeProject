@@ -10,7 +10,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import com.wineadvisor.wineadvisor.model.fields.wine.*;
+import com.wineadvisor.wineadvisor.model.fields.wines.Region;
+import com.wineadvisor.wineadvisor.model.fields.wines.Style;
+import com.wineadvisor.wineadvisor.model.fields.wines.Taste;
+import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
+import com.wineadvisor.wineadvisor.model.fields.wines.Winery;
 
 @Data
 @Document(collection = "wines")
