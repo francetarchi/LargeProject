@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.fields.user;
+package com.wineadvisor.wineadvisor.model.fields.users;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

@@ -33,6 +33,7 @@ import jakarta.validation.Valid;
 public class UserController {
     private final UserService userService;
 
+
     ////////////// POST //////////////
     @PostMapping
     public ResponseEntity<?> addUser(@NotNull(message = "User cannot be null.") @Valid @RequestBody User newUser) {
@@ -54,6 +55,7 @@ public class UserController {
         }
     }
 
+    
     ////////////// GET //////////////
     @GetMapping
     public ResponseEntity<?> getAllUsers() {

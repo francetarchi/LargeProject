@@ -7,8 +7,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field; // per rinominare i campi
 
-import com.wineadvisor.wineadvisor.model.fields.review.UserId;
-import com.wineadvisor.wineadvisor.model.fields.review.WineId;
+import com.wineadvisor.wineadvisor.model.fields.reviews.UserId;
+import com.wineadvisor.wineadvisor.model.fields.reviews.WineId;
 
 @Data
 @Document(collection = "reviews")

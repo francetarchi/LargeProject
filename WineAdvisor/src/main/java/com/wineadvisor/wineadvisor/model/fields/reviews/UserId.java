@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.fields.review;
+package com.wineadvisor.wineadvisor.model.fields.reviews;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wineadvisor.wineadvisor.model.fields.user.Dob;
-import com.wineadvisor.wineadvisor.model.fields.user.Location;
-import com.wineadvisor.wineadvisor.model.fields.user.Login;
-import com.wineadvisor.wineadvisor.model.fields.user.Name;
-import com.wineadvisor.wineadvisor.model.fields.user.Picture;
-import com.wineadvisor.wineadvisor.model.fields.user.Registered;
-import com.wineadvisor.wineadvisor.model.fields.user.ReviewForUser;
+import com.wineadvisor.wineadvisor.model.fields.users.Dob;
+import com.wineadvisor.wineadvisor.model.fields.users.Location;
+import com.wineadvisor.wineadvisor.model.fields.users.Login;
+import com.wineadvisor.wineadvisor.model.fields.users.Name;
+import com.wineadvisor.wineadvisor.model.fields.users.Picture;
+import com.wineadvisor.wineadvisor.model.fields.users.Registered;
+import com.wineadvisor.wineadvisor.model.fields.users.ReviewEmbedded;
 
 import org.bson.types.ObjectId;
 
@@ -59,7 +59,7 @@ public class User {
 
     private Picture picture;
 
-    private ArrayList<ReviewForUser> reviews;
+    private ArrayList<ReviewEmbedded> reviews;
     
     
 

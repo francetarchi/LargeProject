@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.fields.user;
+package com.wineadvisor.wineadvisor.model.fields.users;
 
 import com.wineadvisor.wineadvisor.model.fields.DateTimePattern;
 

@@ -17,7 +17,7 @@ import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.fields.user.ReviewForUser;
+import com.wineadvisor.wineadvisor.model.fields.users.ReviewEmbedded;
 
 @Service
 @RequiredArgsConstructor
@@ -133,7 +133,7 @@ public class UserService {
                     targetUser.setDob(updatedUser.getDob());
                     targetUser.setPicture(updatedUser.getPicture());
                     if (targetUser.getReviews().size() > 0) {
-                        for (ReviewForUser review : targetUser.getReviews()) {
+                        for (ReviewEmbedded review : targetUser.getReviews()) {
                             review.getUserId().setThumbnail(updatedUser.getPicture().getThumbnail());
                         }
                     }
