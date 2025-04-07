@@ -70,7 +70,6 @@ Scrivere i blocchi 'catch' appropriati per ogni eccezione che lanciamo, inserend
 * ```ResourceAlreadyExistsException``` se la risorsa che sto creando fa conflitto con un'altra risorsa già esistente su un campo che deve essere unique nel database (creata da noi, attualmente nel package _exception_).
 * ```AccessDeniedException``` se l'utente non ha le autorizzazioni necessarie per accedere ad una certa API.
 * ```AccessDeniedException``` se l'utente non possiede la risorsa con l'id richiesto (ovviamente per operazioni di modifica/eliminazione della risorsa).
-* ```ConflictException``` se si tenta di creare una risorsa con un campo unique già presente nel database.
 
 ### !!!!!! ATTENZIONE !!!!!!
 Se si usano le annotazioni ```@Pattern```, ```@Email```, ```@NotBlank```... del package _jakarta_ per la validazione degli input (consigliato per evitare codice boilerplate) bisogna intercettare nelle catch un'eccezione di tipo ```ConstraintViolationException``` (le annotazioni sollevano appunto un'eccezione di questo tipo).  
