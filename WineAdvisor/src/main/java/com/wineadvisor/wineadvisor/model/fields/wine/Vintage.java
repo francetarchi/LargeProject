@@ -1,12 +1,18 @@
 package com.wineadvisor.wineadvisor.model.fields.wine;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Vintage {
     private Integer year;
     private Double price;

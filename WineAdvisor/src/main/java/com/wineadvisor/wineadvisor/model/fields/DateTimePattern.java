@@ -6,10 +6,14 @@ import java.time.Period;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public abstract class DateTimePattern {
     @PastOrPresent
     // @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", message = "Date must follow the format 'yyyy-MM-ddTHH:mm:ssZ'")

@@ -6,11 +6,15 @@ import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.Wine;
+import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.fields.wine.*;
 
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.*;
+
+import javax.swing.text.html.Option;
 
 import org.apache.coyote.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
@@ -65,9 +69,11 @@ public class ReviewService {
         // Setto l'id della recensione contando il numero di recensioni presenti nel database
         review.setId(getReviewsCount() + 1);
 
+        ReviewEmbedded reviewEmbedded = new ReviewEmbedded(review.getId(), review.getUserId(), review.getWineId(), review.getRating(), review.getText(), review.getCreatedAt(), review.getLikesCount(), review.getDislikesCount());
+
         // Una volta che la nuova review è stata creata, devo aggiungerla alla lista delle recensioni (della vintage) del vino in wines eliminando
         // la recensione più vecchia se il numero di recensioni supera 3
-        vintages = wine.getVintages();
+        ArrayList<Vintage> vintages = wine.getVintages();
         for (int i = 0; i < vintages.size(); i++) {
             if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                 if (vintages.get(i).getReviews().size() > 3) {
@@ -75,7 +81,8 @@ public class ReviewService {
                     vintages.get(i).getReviews().remove(vintages.get(i).getReviews().get(0));
                 }
                 // Aggiungo la recensione alla lista delle recensioni della vintage
-                vintages.get(i).getReviews().add(review);
+                
+                vintages.get(i).getReviews().add(reviewEmbedded);
                 break;
             }
         }
@@ -86,7 +93,7 @@ public class ReviewService {
         if(user.getReviews().size() > 3) {
             user.getReviews().remove(user.getReviews().get(0));
         }
-        user.getReviews().add(review);
+        user.getReviews().add(reviewEmbedded);
         userRepository.save(user);
 
         return reviewRepository.save(review);
@@ -103,11 +110,18 @@ public class ReviewService {
                     review.setRating(updatedReview.getRating());
                     review.setText(updatedReview.getText());
 
-                    Wine wine = wineService.getWineByVintage(review.getWineId().getId(), review.getWineId().getYear());
-                    User user = userService.getUserByUsername(review.getUserId().getUsername());
+                    Optional<Wine> wine_to_find = wineRepository.findByVintages(review.getWineId().getId(), review.getWineId().getYear());
+                    if (wine_to_find.isEmpty()) {
+                        throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
+                    }
+                    Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
+                    if (user_to_find.isEmpty()) {
+                        throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+                    }
 
                     // Se dentro a wine è presente la recensione, devo aggiornala
-                    vintages = wine.getVintages();
+                    Wine wine = wine_to_find.get();
+                    ArrayList<Vintage> vintages = wine.getVintages();
                     for (int i = 0; i < vintages.size(); i++) {
                         if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                             for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
@@ -124,6 +138,7 @@ public class ReviewService {
                     wineRepository.save(wine);
 
                     // Se dentro a user è presente la recensione, devo aggiornarla
+                    User user = user_to_find.get();
                     for (int i = 0; i < user.getReviews().size(); i++) {
                         if (user.getReviews().get(i).getId() == updatedReview.getId()) {
                             user.getReviews().get(i).setRating(updatedReview.getRating());
@@ -159,11 +174,16 @@ public class ReviewService {
                 review.setLikesCount(review.getLikesCount() + 1);
 
                 // Se dentro a wine è presente la recensione, devo aggiornala
-                vintages = wine.getVintages();
+                Optional<Wine> wine_to_find = wineRepository.findByVintages(review.getWineId().getId(), review.getWineId().getYear());
+                if (wine_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
+                }
+                Wine wine = wine_to_find.get();
+                ArrayList<Vintage> vintages = wine.getVintages();
                 for (int i = 0; i < vintages.size(); i++) {
                     if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                         for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getId() == updatedReview.getId()) {
+                            if (vintages.get(i).getReviews().get(j).getId() == review.getId()) {
                                 vintages.get(i).getReviews().get(j).setLikesCount(review.getLikesCount());
                                 vintages.get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
                                 break;
@@ -176,7 +196,11 @@ public class ReviewService {
                 wineRepository.save(wine);
 
                 // Se dentro a user è presente la recensione, devo aggiornarla
-                User user = userService.getUserByUsername(review.getUserId().getUsername());
+                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
+                if (user_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+                }
+                User user = user_to_find.get();
                 for (int i = 0; i < user.getReviews().size(); i++) {
                     if (user.getReviews().get(i).getId() == id) {
                         user.getReviews().get(i).setLikesCount(review.getLikesCount());
@@ -204,11 +228,16 @@ public class ReviewService {
                 review.setLikesCount(review.getLikesCount() - 1);
 
                 // Se dentro a wine è presente la recensione, devo aggiornala
-                vintages = wine.getVintages();
+                Optional<Wine> wine_to_find = wineRepository.findByVintages(review.getWineId().getId(), review.getWineId().getYear());
+                if (wine_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
+                }
+                Wine wine = wine_to_find.get();
+                ArrayList<Vintage> vintages = wine.getVintages();
                 for (int i = 0; i < vintages.size(); i++) {
                     if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                         for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getId() == updatedReview.getId()) {
+                            if (vintages.get(i).getReviews().get(j).getId() == review.getId()) {
                                 vintages.get(i).getReviews().get(j).setLikesCount(review.getLikesCount());
                                 break;
                             }
@@ -220,7 +249,11 @@ public class ReviewService {
                 wineRepository.save(wine);
 
                 // Se dentro a user è presente la recensione, devo aggiornarla
-                User user = userService.getUserByUsername(review.getUserId().getUsername());
+                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
+                if (user_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+                }
+                User user = user_to_find.get();
                 for (int i = 0; i < user.getReviews().size(); i++) {
                     if (user.getReviews().get(i).getId() == id) {
                         user.getReviews().get(i).setLikesCount(review.getLikesCount());
@@ -254,11 +287,16 @@ public class ReviewService {
                 review.setDislikesCount(review.getDislikesCount() + 1);
 
                 // Se dentro a wine è presente la recensione, devo aggiornala
-                vintages = wine.getVintages();
+                Optional<Wine> wine_to_find = wineRepository.findByVintages(review.getWineId().getId(), review.getWineId().getYear());
+                if (wine_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
+                }
+                Wine wine = wine_to_find.get();
+                ArrayList<Vintage> vintages = wine.getVintages();
                 for (int i = 0; i < vintages.size(); i++) {
                     if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                         for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getId() == updatedReview.getId()) {
+                            if (vintages.get(i).getReviews().get(j).getId() == review.getId()) {
                                 vintages.get(i).getReviews().get(j).setLikesCount(review.getDislikesCount());
                                 vintages.get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
                                 break;
@@ -271,7 +309,11 @@ public class ReviewService {
                 wineRepository.save(wine);
 
                 // Se dentro a user è presente la recensione, devo aggiornarla
-                User user = userService.getUserByUsername(review.getUserId().getUsername());
+                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
+                if (user_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+                }
+                User user = user_to_find.get();
                 for (int i = 0; i < user.getReviews().size(); i++) {
                     if (user.getReviews().get(i).getId() == id) {
                         user.getReviews().get(i).setLikesCount(review.getLikesCount());
@@ -299,11 +341,16 @@ public class ReviewService {
                 review.setDislikesCount(review.getDislikesCount() - 1);
 
                 // Se dentro a wine è presente la recensione, devo aggiornala
-                vintages = wine.getVintages();
+                Optional<Wine> wine_to_find = wineRepository.findByVintages(review.getWineId().getId(), review.getWineId().getYear());
+                if (wine_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
+                }
+                Wine wine = wine_to_find.get();
+                ArrayList<Vintage> vintages = wine.getVintages();
                 for (int i = 0; i < vintages.size(); i++) {
                     if (vintages.get(i).getYear() == review.getWineId().getYear()) {
                         for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getId() == updatedReview.getId()) {
+                            if (vintages.get(i).getReviews().get(j).getId() == review.getId()) {
                                 vintages.get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
                                 break;
                             }
@@ -315,7 +362,11 @@ public class ReviewService {
                 wineRepository.save(wine);
 
                 // Se dentro a user è presente la recensione, devo aggiornarla
-                User user = userService.getUserByUsername(review.getUserId().getUsername());
+                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
+                if (user_to_find.isEmpty()) {
+                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
+                }
+                User user = user_to_find.get();
                 for (int i = 0; i < user.getReviews().size(); i++) {
                     if (user.getReviews().get(i).getId() == id) {
                         user.getReviews().get(i).setLikesCount(review.getLikesCount());
@@ -395,7 +446,7 @@ public class ReviewService {
     // Provata: OK
     public Long getReviewsCountByWine(Long wineId) {
         // Controllo se il vino esiste
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
         return reviewRepository.countByWineId_Id(wineId);
@@ -405,7 +456,7 @@ public class ReviewService {
     // Provata: OK
     public Long getReviewsCountByUser(String username) {
         // Controllo se l'utente esiste
-        if (userService.getUserByUsername(username) == null) {
+        if (userRepository.findByLogin_Username(username).isEmpty()) {
             throw new ResourceNotFoundException("User with username " + username + " not found.");
         }
         return reviewRepository.countByUserId_Username(username);
@@ -415,10 +466,10 @@ public class ReviewService {
     // Provata: OK
     public Long getReviewsCountByVintage(Long wineId, Integer vintageYear) {
         // Controllo se il vino esiste e se l'annata esiste
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, vintageYear) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
         }
 
@@ -454,10 +505,10 @@ public class ReviewService {
     // Provata: OK
     public double getAverageRatingByVintage(Long wineId, Integer year){
         // Controllo se il vino e la vintage esistono
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, year) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, year).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
         }
 
@@ -490,7 +541,7 @@ public class ReviewService {
     // Provata: OK
     public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
         // Controllo se l'utente esiste
-        if (userService.getUserByUsername(username) == null) {
+        if (userRepository.findByLogin_Username(username).isEmpty()) {
             throw new ResourceNotFoundException("User with username " + username + " not found.");
         }
         
@@ -512,10 +563,10 @@ public class ReviewService {
     // Provata: OK
     public ArrayList<Review> getRecentReviewsByVintage(Long wineId, Integer vintageYear, int num) {
         // Controllo se il vino e la vintage esistono
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, vintageYear) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear) == null) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
         }
 
@@ -537,7 +588,7 @@ public class ReviewService {
     // Restituisce le recensioni di un vino specifico in un range di rating specifico
     public ArrayList<Review> getReviewsByWineAndRatingRange(Long wineId, Double minRating, Double maxRating) {
         // Controllo se il vino esiste
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
         ArrayList<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(wineId, minRating, maxRating);
@@ -552,10 +603,10 @@ public class ReviewService {
     // Restituisce le recensioni di un'annata specifica per un determinato vino in un range di rating specifico
     public ArrayList<Review> getReviewsByVintageAndRatingRange(Long wineId, Integer year, Double minRating, Double maxRating) {
         // Controllo se il vino e la vintage esistono
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, year) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, year) == null) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
         }
 
@@ -570,10 +621,10 @@ public class ReviewService {
     // Restituisce le num recensioni più popolari (con più like) di un'annata specifica per un determinato vino
     public ArrayList<Review> getPopularReviewsByVintage(Long wineId, Integer vintageYear, int num) {
         // Controllo se il vino e la vintage esistono
-        if (wineService.getWineById(wineId) == null) {
+        if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, vintageYear) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear) == null) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
         }
 
@@ -592,20 +643,39 @@ public class ReviewService {
         return new ArrayList<>(popularReviews.subList(0, limit));
     }
 
+    // Restituisce la lista di persone che hanno messo like a una recensione
+    public ArrayList<String> getLikedBy(Long id) {
+        return reviewRepository.findById(id)
+            .map(review -> review.getLikedBy())
+            .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
+    }
+
+    // Restituisce la lista di persone che hanno messo dislike a una recensione
+    public ArrayList<String> getDislikedBy(Long id) {
+        return reviewRepository.findById(id)
+            .map(review -> review.getDislikedBy())
+            .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
+    }
+
     // DELETE
     // Cancella una recensione specifica
     // Provata: OK
     public void deleteReviewById(Long id) {
         // Controllo se la recensione esiste
-        if (reviewRepository.findById(id).isEmpty()) {
+        Optional<Review> review = reviewRepository.findById(id);
+        if (review.isEmpty()) {
             throw new ResourceNotFoundException("Review with id " + id + " not found.");
         }
         
         // Controllo se la recensione è presente in un vino e in un utente e la rimuovo
-        Wine wine = wineService.getWineByReviewId(id);
-        vintages = wine.getVintages();
+        Optional<Wine> wine_to_find = wineRepository.findbyVintages_Reviews_Id(id);
+        if (wine_to_find.isEmpty()) {
+            throw new ResourceNotFoundException("Wine with review id " + id + " not found.");
+        }
+        Wine wine = wine_to_find.get();
+        ArrayList<Vintage> vintages = wine.getVintages();
         for (int i = 0; i < vintages.size(); i++) {
-            if (vintages.get(i).getYear() == wine.getYear()) {
+            if (vintages.get(i).getYear() == review.get().getWineId().getYear()) {
                 for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
                     if (vintages.get(i).getReviews().get(j).getId() == id) {
                         vintages.get(i).getReviews().remove(vintages.get(i).getReviews().get(j));
@@ -618,7 +688,11 @@ public class ReviewService {
         wine.setVintages(vintages);
         wineRepository.save(wine);
 
-        User user = userService.getUserByReviewId(id);
+        Optional<User> user_to_find = userRepository.findByReviews_Id(id);
+        if (user_to_find.isEmpty()) {
+            throw new ResourceNotFoundException("User with review id " + id + " not found.");
+        }
+        User user = user_to_find.get();
         for (int i = 0; i < user.getReviews().size(); i++) {
             if (user.getReviews().get(i).getId() == id) {
                 user.getReviews().remove(user.getReviews().get(i));
@@ -634,24 +708,28 @@ public class ReviewService {
     // Provata: OK
     public void deleteReviewsByWine(Long wineId) {
         // Controllo se il vino esiste
-        if (wineService.getWineById(wineId) == null) {
+        Optional<Wine> wine_to_find = wineRepository.findById(wineId);
+        if (wine_to_find.isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
 
         // Se le recensioni da rimuovere sono presenti anche in un utente o in un wine, devo rimuoverle
-        Wine wine = wineService.getWineById(wineId);
-        vintages = wine.getVintages();
+        Wine wine = wine_to_find.get();
+        ArrayList<Vintage>  vintages = wine.getVintages();
         for (int i = 0; i < vintages.size(); i++) {
-            if (vintages.get(i).getYear() == wine.getYear()) {
-                for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                    vintages.get(i).getReviews().remove(vintages.get(i).getReviews().get(j));
-                }
+            for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
+                vintages.get(i).getReviews().remove(vintages.get(i).getReviews().get(j));
             }
         }
         wine.setVintages(vintages);
         wineRepository.save(wine);       
 
-        User user = userService.getUserByWineId(wineId);
+        // Devo rimuoverle anche dagli utenti
+        Optional<User> user_to_find = userRepository.findByReviews_WineId_Id(wineId);
+        if (user_to_find.isEmpty()) {
+            throw new ResourceNotFoundException("User with wine id " + wineId + " not found.");
+        }
+        User user = user_to_find.get();
         for (int i = 0; i < user.getReviews().size(); i++) {
             if (user.getReviews().get(i).getWineId().getId() == wineId) {
                 user.getReviews().remove(user.getReviews().get(i));
@@ -666,12 +744,13 @@ public class ReviewService {
     // Provata: OK
     public void deleteReviewsByUser(String username) {
         // Controllo se l'utente esiste
-        if (userService.getUserByUsername(username) == null) {
+        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+        if (user_to_find.isEmpty()) {
             throw new ResourceNotFoundException("User with username " + username + " not found.");
         }
 
-        // Devo rimuoverle anche dai vini e dagli utenti
-        User user = userService.getUserByUsername(username);
+        // Devo rimuovere le recensioni anche dai vini e dagli utenti
+        User user = user_to_find.get();
         for (int i = 0; i < user.getReviews().size(); i++) {
             if (user.getLogin().getUsername() == username) {
                 for (int j = 0; j < user.getReviews().size(); j++){
@@ -681,11 +760,11 @@ public class ReviewService {
                 break;          
             }
         }
-        ArrayList<Wine> wines = wineService.getAllWines();
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++) {
-            vintages = wines.get(i).getVintages();
+            ArrayList<Vintage> vintages = wines.get(i).getVintages();
             for (int j = 0; j < vintages.size(); j++) {
-                reviews = vintages.get(j).getReviews();
+                ArrayList<ReviewEmbedded> reviews = vintages.get(j).getReviews();
                 for (int k = 0; k < reviews.size(); k++) {
                     if (reviews.get(k).getUserId().getUsername() == username) {
                         wines.get(i).getVintages().get(j).getReviews().remove(reviews.get(k));
@@ -704,16 +783,17 @@ public class ReviewService {
     // Provata: OK
     public void deleteReviewsByVintage(Long wineId, Integer vintageYear) {
         // Controllo se il vino e la vintage esistono
-        if (wineService.getWineById(wineId) == null) {
+        Optional<Wine> wine_to_find = wineRepository.findById(wineId);
+        if (wine_to_find.isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        if (wineService.getWineByVintage(wineId, vintageYear) == null) {
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
         }
 
         // Devo rimuoverle anche dai vini e dagli utenti
-        Wine wine = wineService.getWineByVintage(wineId, vintageYear);
-        vintages = wine.getVintages();
+        Wine wine = wine_to_find.get();
+        ArrayList<Vintage>  vintages = wine.getVintages();
         for (int i = 0; i < vintages.size(); i++) {
             if (vintages.get(i).getYear() == vintageYear) {
                 for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
@@ -725,7 +805,7 @@ public class ReviewService {
         wine.setVintages(vintages);
         wineRepository.save(wine);
 
-        ArrayList<User> users = userService.getAllUsers();
+        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (int i = 0; i < users.size(); i++) {
             for (int j = 0; j < users.get(i).getReviews().size(); j++) {
                 if (users.get(i).getReviews().get(j).getWineId().getId() == wineId && users.get(i).getReviews().get(j).getWineId().getYear() == vintageYear) {
@@ -742,11 +822,11 @@ public class ReviewService {
     // Provata: OK
     public void deleteAllReviews() {
         // Devo rimuoverle anche dai vini e dagli utenti
-        ArrayList<Wine> wines = wineService.getAllWines();
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++) {
-            vintages = wines.get(i).getVintages();
+            ArrayList<Vintage> vintages = wines.get(i).getVintages();
             for (int j = 0; j < vintages.size(); j++) {
-                reviews = vintages.get(j).getReviews();
+                ArrayList<ReviewEmbedded> reviews = vintages.get(j).getReviews();
                 for (int k = 0; k < reviews.size(); k++) {
                     vintages.get(j).getReviews().remove(reviews.get(k));
                 }
@@ -755,7 +835,7 @@ public class ReviewService {
         for (int i = 0; i < wines.size(); i++) {
             wineRepository.save(wines.get(i));
         }
-        ArrayList<User> users = userService.getAllUsers();
+        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (int i = 0; i < users.size(); i++) {
             for (int j = 0; j < users.get(i).getReviews().size(); j++) {
                 users.get(i).getReviews().remove(users.get(i).getReviews().get(j));

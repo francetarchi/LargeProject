@@ -588,6 +588,8 @@ public class ReviewController {
         }
     }
 
+    @GetMapping("/")
+
     @DeleteMapping("/{id}") // Provata: OK
     public ResponseEntity<?> deleteReview(@PathVariable Long id) {
         try {
