@@ -7,7 +7,6 @@ import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.Wine;
 import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
-import com.wineadvisor.wineadvisor.model.fields.wines.*;
 import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
 
 import lombok.RequiredArgsConstructor;
@@ -15,12 +14,7 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import javax.swing.text.html.Option;
-
-import org.apache.coyote.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
