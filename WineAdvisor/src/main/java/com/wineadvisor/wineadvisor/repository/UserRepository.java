@@ -17,6 +17,7 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
 
     ArrayList<User> findByName_First(String name);
     ArrayList<User> findByName_Last(String last_name);
-    Optional<User> findByReviews_Id(Long id);
+    
+    Optional<User> findByReviews_ReviewId(Long id);
     Optional<User> findByReviews_WineId_Id(Long wineId);
 }
