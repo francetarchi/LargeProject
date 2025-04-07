@@ -12,7 +12,6 @@ public class Login {
     @Schema(description = "Username", example = "user123")
     private String username;
 
-    @NotBlank(message = "Password cannot be blank.")
     @Schema(description = "Password", example = "Pass123!")
     private String password;
 }

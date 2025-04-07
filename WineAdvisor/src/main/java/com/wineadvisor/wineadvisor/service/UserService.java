@@ -8,7 +8,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.wineadvisor.wineadvisor.config.PasswordUtils;
+import com.wineadvisor.wineadvisor.DTO.PasswordDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
@@ -17,7 +17,7 @@ import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.fields.users.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +28,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
-    private final PasswordEncoder passwordEncoder = PasswordUtils.passwordEncoder();
+
+    private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
 
     
@@ -41,19 +42,24 @@ public class UserService {
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
-    public User addUser(User newUser) throws ResourceAlreadyExistsException, BadRequestException {
+    public User addUser(User newUser, PasswordDTO passwordDTO) throws ResourceAlreadyExistsException, BadRequestException {
         if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
             throw new ResourceAlreadyExistsException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
         }
         if (userRepository.findByEmail(newUser.getEmail()).isPresent()) {
             throw new ResourceAlreadyExistsException("User with email \"" + newUser.getEmail() + "\" already exists.");
         }
-        if (!PasswordUtils.passwordPatternVerifier(newUser.getLogin().getPassword())) {
+        if (!passwordDTO.passwordPatternVerifier()) {
             throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
+        }
+        if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
+            throw new BadRequestException("Passwords do not match.");
         }
 
         newUser.set_id(null);
-        newUser.getLogin().setPassword(passwordEncoder.encode(newUser.getLogin().getPassword()));
+        newUser.getLogin().setPassword(passwordEncoder.encode(passwordDTO.getNewPass()));
+        newUser.adjustRegistrationDate();
+
         return userRepository.save(newUser);
     }
     
@@ -238,25 +244,25 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e ne modifica la password
-    public User updateUserPassword(String username, String oldPass, String newPass, String confirmPass) throws IllegalArgumentException, ResourceNotFoundException {
+    public User updateUserPassword(String username, PasswordDTO passwordDTO) throws IllegalArgumentException, ResourceNotFoundException {
         return userRepository
             .findByLogin_Username(username)
             .map(
                 targetUser -> {
-                    if (!passwordEncoder.matches(oldPass, targetUser.getLogin().getPassword())) {
+                    if (!passwordEncoder.matches(passwordDTO.getOldPass(), targetUser.getLogin().getPassword())) {
                         throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because old password is wrong.");
                     }
-                    if (newPass.equals(oldPass)) {
+                    if (passwordDTO.getNewPass().equals(passwordDTO.getOldPass())) {
                         throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new password is the same as the old one.");
                     }
-                    if (!newPass.equals(confirmPass)) {
+                    if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
                         throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match.");
                     }
-                    if (!PasswordUtils.passwordPatternVerifier(newPass)) {
+                    if (!passwordDTO.passwordPatternVerifier()) {
                         throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
                     }
 
-                    targetUser.getLogin().setPassword(passwordEncoder.encode(newPass));
+                    targetUser.getLogin().setPassword(passwordEncoder.encode(passwordDTO.getNewPass()));
                     return userRepository.save(targetUser);
                 }
             )

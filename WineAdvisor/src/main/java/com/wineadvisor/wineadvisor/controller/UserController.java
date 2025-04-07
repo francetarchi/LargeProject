@@ -1,6 +1,7 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import com.wineadvisor.wineadvisor.config.UpdatePasswordRequest;
+import com.wineadvisor.wineadvisor.DTO.NewUserDTO;
+import com.wineadvisor.wineadvisor.DTO.PasswordDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.service.UserService;
@@ -36,10 +37,9 @@ public class UserController {
 
     ////////////// POST //////////////
     @PostMapping
-    public ResponseEntity<?> addUser(@NotNull(message = "User cannot be null.") @Valid @RequestBody User newUser) {
+    public ResponseEntity<?> addUser(@NotNull(message = "User cannot be null.") @Valid @RequestBody NewUserDTO newUserDTO) {
         try {
-            newUser.adjustRegistrationDate();
-            return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/user/" + newUser.getLogin().getUsername()).body(userService.addUser(newUser));
+            return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/user/" + newUserDTO.getNewUser().getLogin().getUsername()).body(userService.addUser(newUserDTO.getNewUser(), newUserDTO.getPasswordDTO()));
         } catch (ConstraintViolationException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -168,9 +168,13 @@ public class UserController {
     @PutMapping("{username}/password/update")
     public ResponseEntity<?> updateUserPassword(
             @NotBlank(message = "Username cannot be null or empty.") @PathVariable String username,
-            @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody UpdatePasswordRequest updatePasswordRequest) {
+            @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPassword(username, updatePasswordRequest.getOldPass(), updatePasswordRequest.getNewPass(), updatePasswordRequest.getConfirmPass()));
+            if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
+                throw new BadRequestException("Old password cannot blank.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPassword(username, passwordDTO));
         } catch (ConstraintViolationException e) {
             System.err.println("--- ERR: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

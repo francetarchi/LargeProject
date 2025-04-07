@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.fields.users.Dob;
 import com.wineadvisor.wineadvisor.model.fields.users.Location;
 import com.wineadvisor.wineadvisor.model.fields.users.Login;
 import com.wineadvisor.wineadvisor.model.fields.users.Name;
 import com.wineadvisor.wineadvisor.model.fields.users.Picture;
 import com.wineadvisor.wineadvisor.model.fields.users.Registered;
-import com.wineadvisor.wineadvisor.model.fields.users.ReviewEmbedded;
 
 import org.bson.types.ObjectId;
 
