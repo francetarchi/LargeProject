@@ -33,7 +33,7 @@ public class ReviewEmbedded {
     private String text;
 
     @Field("created_at")
-    @Schema(description = "createdAt", example = "2023-10-01T12:00:00Z")
+    @Schema(description = "createdAt", example = "2023-10-01T12:00:00.000Z")
     private LocalDateTime createdAt;
 
     @Field("likes_count")
