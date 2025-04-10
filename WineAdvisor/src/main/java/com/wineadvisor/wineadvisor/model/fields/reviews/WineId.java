@@ -1,6 +1,8 @@
 package com.wineadvisor.wineadvisor.model.fields.reviews;
 
 
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WineId {
-    private Long id;    
+    @Field("id")
+    private Long id;
     private String name;
     private Integer year;
     private String image;

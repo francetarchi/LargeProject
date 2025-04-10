@@ -4,6 +4,10 @@ import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.Review;
 
+// Per gestire la paginazione
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
@@ -198,7 +202,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/{id}") // Provata: OK
+    @GetMapping("/{id}")
     public ResponseEntity<?> getReviewById(@PathVariable Long id) {   
         try {
             // Controllo sull'ID
@@ -219,12 +223,12 @@ public class ReviewController {
         }
     }
 
-    // @GetMapping // Provata: Va gestita con le pagine
-    // public ResponseEntity<ArrayList<Review>> getAllReviews() {
-    //     return ResponseEntity.ok(reviewService.getAllReviews());
-    // }
+    @GetMapping("/all")
+    public Page<Review> getAllReviews(Pageable pageable) {
+        return reviewService.getAllReviews(pageable);
+    }
 
-    @GetMapping("/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
+    @GetMapping("/wine/{wineId}/vintage/{vintageYear}")
     public ResponseEntity<?> getReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
         try {
             // Controllo sull'ID del vino
@@ -252,7 +256,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/wine/{wineId}") // Provata: OK
+    @GetMapping("/wine/{wineId}")
     public ResponseEntity<?> getReviewsByWine(@PathVariable Long wineId) {
         try {
             // Controllo sull'ID del vino
@@ -275,7 +279,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/user/{username}") // Provata: OK
+    @GetMapping("/user/{username}")
     public ResponseEntity<?> getReviewsByUser(@PathVariable String username) {
         try {
             // Controllo su username
@@ -295,7 +299,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/user/{username}/wine/{wineId}") // Provata: OK
+    @GetMapping("/user/{username}/wine/{wineId}")
     public ResponseEntity<?> getReviewsByUserAndWine(@PathVariable String username, @PathVariable Long wineId) {
         try {
             // Controllo su username
@@ -323,7 +327,7 @@ public class ReviewController {
         } 
     }
 
-    @GetMapping("/count") // Provata: OK
+    @GetMapping("/count")
     public ResponseEntity<?> getReviewsCount() {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCount());
@@ -332,7 +336,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/count/wine/{wineId}") // Provata: OK
+    @GetMapping("/count/wine/{wineId}")
     public ResponseEntity<?> getReviewsCountByWine(@PathVariable Long wineId) {
         try {
             // Controllo sull'ID del vino
@@ -353,7 +357,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/count/user/{username}") // Provata: OK
+    @GetMapping("/count/user/{username}")
     public ResponseEntity<?> getReviewsCountByUser(@PathVariable String username) {
         try {
             // Controllo su username
@@ -371,7 +375,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
+    @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}")
     public ResponseEntity<?> getReviewsCountByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
         try {
             // Controllo sull'ID del vino
@@ -397,12 +401,7 @@ public class ReviewController {
         }
     }
 
-    // @GetMapping("/sort")
-    // public ResponseEntity<ArrayList<Review>> sortReviewsByField(@RequestParam String field, @RequestParam boolean ascendingOrder) {
-    //     return ResponseEntity.ok(reviewService.sortReviewsByField(reviewService.getAllReviews(), field, ascendingOrder));
-    // }
-
-    @GetMapping("/average/wine/{wineId}/year/{year}") // Provata: OK
+    @GetMapping("/average/wine/{wineId}/year/{year}")
     public ResponseEntity<?> getAverageRatingByVintage(@PathVariable Long wineId, @PathVariable Integer year) {
         try {
             // Controllo sull'ID del vino
@@ -428,7 +427,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/recent/{num}") // Provata: OK
+    @GetMapping("/recent/{num}")
     public ResponseEntity<?> getRecentReviews(@PathVariable int num) {
         try {
             // Controllo sul numero di recensioni
@@ -446,7 +445,7 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/recent/user/{username}/{num}") // Provata: OK
+    @GetMapping("/recent/user/{username}/{num}")
     public ResponseEntity<?> getRecentReviewsByUser(@PathVariable String username, @PathVariable int num) {
         try {
             // Controllo su username
@@ -630,7 +629,7 @@ public class ReviewController {
         }
     }
 
-    @DeleteMapping("/{id}") // Provata: OK
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteReview(@PathVariable Long id) {
         try {
             // Controllo sull'ID
@@ -652,7 +651,7 @@ public class ReviewController {
         }
     }
 
-    @DeleteMapping("/wine/{wineId}") // Provata: OK
+    @DeleteMapping("/wine/{wineId}")
     public ResponseEntity<?> deleteReviewsByWine(@PathVariable Long wineId) {
         try {
             // Controllo sull'ID del vino
@@ -674,7 +673,7 @@ public class ReviewController {
         }
     }
 
-    @DeleteMapping("/user/{username}") // Provata: OK
+    @DeleteMapping("/user/{username}")
     public ResponseEntity<?> deleteReviewsByUser(@PathVariable String username) {
         try {
             // Controllo su username
@@ -693,7 +692,7 @@ public class ReviewController {
         }
     }
 
-    @DeleteMapping("/wine/{wineId}/vintage/{vintageYear}") // Provata: OK
+    @DeleteMapping("/wine/{wineId}/vintage/{vintageYear}")
     public ResponseEntity<?> deleteReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
         try {
             // Controllo sull'ID del vino
@@ -720,7 +719,7 @@ public class ReviewController {
         }
     }
 
-    @DeleteMapping("/all") // Provata: OK
+    @DeleteMapping("/all")
     public ResponseEntity<?> deleteAllReviews() {
         try {
             reviewService.deleteAllReviews();
