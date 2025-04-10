@@ -1,16 +1,16 @@
 package com.wineadvisor.wineadvisor.service;
 
-import java.util.ArrayList;
-
 import lombok.RequiredArgsConstructor;
 
-import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.DTO.PasswordDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
@@ -50,15 +50,13 @@ public class UserService {
             throw new ResourceAlreadyExistsException("User with email \"" + newUser.getEmail() + "\" already exists.");
         }
         if (!passwordDTO.passwordPatternVerifier()) {
-            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
+            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
         }
         if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
             throw new BadRequestException("Passwords do not match.");
         }
 
-        newUser.set_id(null);
-        newUser.getLogin().setPassword(passwordEncoder.encode(passwordDTO.getNewPass()));
-        newUser.adjustRegistrationDate();
+        newUser.adjustFieldsForCreation(passwordEncoder.encode(passwordDTO.getNewPass()));
 
         return userRepository.save(newUser);
     }
@@ -66,48 +64,81 @@ public class UserService {
     
     /// READ operations ///
     // Restituisce tutti gli utenti presenti nella collection "users" del database
-    public ArrayList<User> getAllUsers() throws ResourceNotFoundException {
-        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
+    public Page<User> getAllUsers(Pageable pageable) throws ResourceNotFoundException {
+        Page<User> users = userRepository.findAll(pageable);
 
-        if (users.size() == 0) {
+        if (users.getTotalElements() == 0) {
             throw new ResourceNotFoundException("No users found.");
         }
+        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
 
-        return new ArrayList<>(users.subList(0, 9));
+        return users;
+    }    
+
+    // Restituisce tutti gli utenti con un determinato nome e cognome
+    public Page<User> getUsersByFullName(String firstName, String lastName, Pageable pageable) throws ResourceNotFoundException {
+        // ArrayList<User> result = userRepository.findByName_Last(lastName);
+        // result.removeIf(user -> !user.getName().getFirst().equals(firstName));
+
+        // if (result.isEmpty()) {
+        //     throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
+        // }
+
+        // return result;
+        Page<User> users = userRepository.findByName_FirstAndName_Last(firstName, lastName, pageable);
+
+        if (users.getTotalElements() == 0) {
+            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
+        }
+        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
+
+        return users;
     }
 
     // Restituisce tutti gli utenti con un determinato nome
-    public ArrayList<User> getUsersByFirstName(String firstName) throws ResourceNotFoundException {
-        ArrayList<User> result = userRepository.findByName_First(firstName);
+    public Page<User> getUsersByFirstName(String firstName, Pageable pageable) throws ResourceNotFoundException {
+        // ArrayList<User> result = userRepository.findByName_First(firstName);
         
-        if (result.isEmpty()) {
+        // if (result.isEmpty()) {
+        //     throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" not found.");
+        // }
+
+        // return result;
+        Page<User> users = userRepository.findByName_First(firstName, pageable);
+
+        if (users.getTotalElements() == 0) {
             throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" not found.");
         }
+        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
 
-        return result;
+        return users;
     }
 
     // Restituisce tutti gli utenti con un determinato cognome
-    public ArrayList<User> getUsersByLastName(String lastName) throws ResourceNotFoundException {
-        ArrayList<User> result = userRepository.findByName_Last(lastName);
+    public Page<User> getUsersByLastName(String lastName, Pageable pageable) throws ResourceNotFoundException {
+        // ArrayList<User> result = userRepository.findByName_Last(lastName);
         
-        if (result.isEmpty()) {
+        // if (result.isEmpty()) {
+        //     throw new ResourceNotFoundException("Users with last name \"" + lastName + "\" not found.");
+        // }
+
+        // return result;
+        Page<User> users = userRepository.findByName_Last(lastName, pageable);
+
+        if (users.getTotalElements() == 0) {
             throw new ResourceNotFoundException("Users with last name \"" + lastName + "\" not found.");
         }
-        
-        return result;
-    }
-
-    // Restituisce tutti gli utenti con un determinato nome e cognome
-    public ArrayList<User> getUsersByFullName(String firstName, String lastName) throws ResourceNotFoundException {
-        ArrayList<User> result = userRepository.findByName_Last(lastName);
-        result.removeIf(user -> !user.getName().getFirst().equals(firstName));
-
-        if (result.isEmpty()) {
-            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
+        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
         }
 
-        return result;
+        return users;
     }
 
     // Restituisce un utente con un determinato username
@@ -124,14 +155,15 @@ public class UserService {
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
     public User updateUser(User updatedUser) throws ResourceNotFoundException, ResourceAlreadyExistsException {
-        if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because email \"" + updatedUser.getEmail() + "\" is already used by another user.");
-        }
-
         final User user = userRepository
             .findByLogin_Username(updatedUser.getLogin().getUsername())
             .map(
                 targetUser -> {
+                    User userWithSameEmail = userRepository.findByEmail(updatedUser.getEmail()).orElse(null);
+                    if ( userWithSameEmail != null && !userWithSameEmail.getLogin().getUsername().equals(targetUser.getLogin().getUsername()) ) {
+                        throw new ResourceAlreadyExistsException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because email \"" + updatedUser.getEmail() + "\" is already used by another user.");
+                    }
+                    
                     targetUser.setName(updatedUser.getName());
                     targetUser.setLocation(updatedUser.getLocation());
                     targetUser.setEmail(updatedUser.getEmail());
@@ -143,6 +175,8 @@ public class UserService {
                             review.getUserId().setThumbnail(updatedUser.getPicture().getThumbnail());
                         }
                     }
+
+                    targetUser.adjustFieldsForUpdate();
 
                     return userRepository.save(targetUser);
                 }
@@ -189,7 +223,10 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e ne modifica lo username
-    public Object updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException{
+    public Object updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException{
+        if (targetUsername.equals(newUsername)) {
+            throw new BadRequestException("Username not updatable because it is the same as the old one.");
+        }
         if (userRepository.findByLogin_Username(newUsername).isPresent()) {
             throw new ResourceAlreadyExistsException("Username not updatable because \"" + newUsername + "\" is already used by another user.");
         }
@@ -198,7 +235,7 @@ public class UserService {
             .findByLogin_Username(targetUsername)
             .map(
                 targetUser -> {
-                    targetUser.getLogin().setUsername(newUsername);
+                    targetUser.getLogin().setUsername(newUsername.trim());
                     return userRepository.save(targetUser);
                 }
             )
@@ -245,6 +282,10 @@ public class UserService {
 
     // Cerca il documento di un utente e ne modifica la password
     public User updateUserPassword(String username, PasswordDTO passwordDTO) throws IllegalArgumentException, ResourceNotFoundException {
+        passwordDTO.setOldPass(passwordDTO.getOldPass().trim());
+        passwordDTO.setNewPass(passwordDTO.getNewPass().trim());
+        passwordDTO.setConfirmPass(passwordDTO.getConfirmPass().trim());
+
         return userRepository
             .findByLogin_Username(username)
             .map(
@@ -259,7 +300,7 @@ public class UserService {
                         throw new IllegalArgumentException("Password of user with username \"" + username + "\" not updatable because new passwords do not match.");
                     }
                     if (!passwordDTO.passwordPatternVerifier()) {
-                        throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()-_=+\".");
+                        throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
                     }
 
                     targetUser.getLogin().setPassword(passwordEncoder.encode(passwordDTO.getNewPass()));

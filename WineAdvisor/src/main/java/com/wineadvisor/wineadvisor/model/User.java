@@ -1,6 +1,5 @@
 package com.wineadvisor.wineadvisor.model;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import lombok.Data;
@@ -22,8 +21,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 @Data
@@ -35,10 +36,12 @@ public class User {
     @Id
     private ObjectId _id;
 
-    @NotBlank(message = "Name info cannot be blank.")
+    @NotNull(message = "Name info cannot be blank.")
+    @Valid
     private Name name;
 
-    @NotBlank(message = "Location info cannot be blank.")
+    @NotNull(message = "Location info cannot be blank.")
+    @Valid
     private Location location;
 
     @NotBlank(message = "Email cannot be blank.")
@@ -50,24 +53,73 @@ public class User {
     @Schema(description = "telephone", example = "+39 3331234567")
     private String telephone;
     
-    @NotBlank(message = "Login info cannot be blank.")
+    @NotNull(message = "Login info cannot be blank.")
+    @Valid
     private Login login;
 
+    @Valid
     private Registered registered;
     
+    @Valid
     private Dob dob;
 
     private Picture picture;
 
     private ArrayList<ReviewEmbedded> reviews;
     
-    
 
-    ///////////// METODI /////////////
-    // Controlla se la data di registrazione è presente e se è quella odierna: se trova un problema, lo corregge inserendo il timestamp attuale
-    public void adjustRegistrationDate() {
-        if (this.getRegistered() == null || this.getRegistered().getDateTime() == null || this.getRegistered().getDateTime().toLocalDate().isBefore(LocalDateTime.now().toLocalDate())) {
-            this.getRegistered().setDateTime(LocalDateTime.now());
+
+    ///////////// METODI PRIVATI /////////////
+    // Corregge i valori delle date (data di registrazione e data di nascita)
+    private void adjustDates(final Character isFrom) {
+        if (isFrom == 'C') {
+            // 'C' indica la C di CRUD, quindi Create: se ho 'C' come argomento, allora sto creando un nuovo utente e devo aggiustare anche la data di registrazione
+            this.getRegistered().adjustRegistrationDate();
         }
+        this.getDob().adjustDobDate();
+    }
+
+    // Eseguo la trim per tutti i campi passati come argomento
+    private void trimAllFields(){
+        this.name.setTitle(this.name.getTitle().trim());
+        this.name.setFirst(this.name.getFirst().trim());
+        this.name.setLast(this.name.getLast().trim());
+
+        this.location.getStreet().setNumber(this.location.getStreet().getNumber().trim());
+        this.location.getStreet().setName(this.location.getStreet().getName().trim());
+        this.location.setCity(this.location.getCity().trim());
+        this.location.setRegion(this.location.getRegion().trim());
+        this.location.setCountry(this.location.getCountry().trim());
+        this.location.setPostcode(this.location.getPostcode().trim());
+
+
+        this.email = this.email.trim();
+        
+        this.telephone = this.telephone.trim();
+
+        this.login.setUsername(this.login.getUsername().trim());
+        this.login.setPassword(this.login.getPassword().trim());
+        
+        this.picture.setLarge(this.picture.getLarge().trim());
+        this.picture.setMedium(this.picture.getMedium().trim());
+        this.picture.setThumbnail(this.picture.getThumbnail().trim());
+    }
+
+
+
+    ///////////// METODI PUBBLICI /////////////
+    // Corregge i valori da ritoccare durante la creazione di un nuovo utente per non rendere inconsistente il database
+    public void adjustFieldsForCreation(final String encodedPassword) {
+        this._id = null;
+        this.reviews = new ArrayList<>();
+        this.login.setPassword(encodedPassword);
+        this.adjustDates('C');
+        this.trimAllFields();
+    }
+
+    // Corregge i valori da ritoccare durante la modifica di un utente per non rendere inconsistente il database
+    public void adjustFieldsForUpdate() {
+        this.adjustDates('U');;
+        this.trimAllFields();
     }
 }

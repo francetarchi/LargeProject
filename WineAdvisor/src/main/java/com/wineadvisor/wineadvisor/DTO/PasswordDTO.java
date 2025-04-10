@@ -26,22 +26,26 @@ public class PasswordDTO {
     public Boolean passwordPatternVerifier() {
         // La password deve essere lunga almeno 8 caratteri
         if (this.newPass.length() < 8) {
+            System.out.println("--- INFO: PasswordDTO.passwordPatternVerifier() - Password is too short.");
             return false;
         }
         // La password deve contenere almeno un numero
-        if (!this.newPass.matches(".*\\d.*")) {
+        if (!this.newPass.matches(".*[\\d].*")) {
+            System.out.println("--- INFO: PasswordDTO.passwordPatternVerifier() - Password does not contain a number.");
             return false;
         }
         // La password deve contenere almeno una lettera minuscola
         if (!this.newPass.matches(".*[a-z].*")) {
+            System.out.println("--- INFO: PasswordDTO.passwordPatternVerifier() - Password does not contain a lowercase letter.");
             return false;
         }
         // La password deve contenere almeno una lettera maiuscola
         if (!this.newPass.matches(".*[A-Z].*")) {
+            System.out.println("--- INFO: PasswordDTO.passwordPatternVerifier() - Password does not contain an uppercase letter.");
             return false;
         }
-        // La password deve contenere almeno un carattere speciale
-        if (!this.newPass.matches(".*[!@#$%^&*()-_=+].*")) {
+        if (!this.newPass.matches(".*[!@#$%^&*()\\-_=+.,:;].*")) {
+            System.out.println("--- INFO: PasswordDTO.passwordPatternVerifier() - Password does not contain a special character.");
             return false;
         }
         

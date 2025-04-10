@@ -2,14 +2,17 @@ package com.wineadvisor.wineadvisor.DTO;
 
 import com.wineadvisor.wineadvisor.model.User;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class NewUserDTO {
-    @NotBlank(message = "User info cannot be blank.")
+    @NotNull(message = "User info cannot be blank.")
+    @Valid
     private User newUser;
 
-    @NotBlank(message = "Password info cannot be blank.")
+    @NotNull(message = "Password info cannot be blank.")
+    @Valid
     private PasswordDTO passwordDTO;
 }
