@@ -114,6 +114,14 @@ public class GlobalExceptionHandler {
     }
 
 
+    //////// DEBUG EXCEPTION (MY EXCEPTION) ////////
+    @ExceptionHandler(DebugException.class)
+    public ResponseEntity<?> handleDebugException(DebugException e) {
+        System.out.println("--- DEBUG: " + e.getMessage() + "\n");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("--- ERR: " + e.getMessage());
+    }
+
+
     //////// OTHER EXCEPTIONS (GENERIC HANDLER) ////////
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {

@@ -72,7 +72,7 @@ public class User {
     ///////////// METODI PRIVATI /////////////
     // Corregge i valori delle date (data di registrazione e data di nascita)
     private void adjustDates(final Character isFrom) {
-        if (isFrom == 'C') {
+        if (isFrom.equals('C')) {
             // 'C' indica la C di CRUD, quindi Create: se ho 'C' come argomento, allora sto creando un nuovo utente e devo aggiustare anche la data di registrazione
             this.getRegistered().adjustRegistrationDate();
         }

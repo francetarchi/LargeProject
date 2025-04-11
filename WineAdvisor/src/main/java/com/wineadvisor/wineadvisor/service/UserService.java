@@ -14,10 +14,9 @@ import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
-import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.Wine;
 import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +31,145 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
 
-    
-    ////////////////////////////////
-    ////// METHODS (services) //////
-    ////////////////////////////////
 
     ////////////////////////////////
-    /////// CRUD operations ////////
+    //////// PRIVATE METHODS ///////
+    ////////////////////////////////
+    
+    ////////////////////////////////
+    ////// Updates on wines ////////
+    
+    // Ricerca una review nella collection wines (per ogni wine, per ogni vintage ho le reviews) e ne aggiorna correttamente la thumbnail dell'utente
+    private void updateWine_Vintages_Reviews_UserId_ThumbnailByReviewId(Long targetReviewId, Integer targetYear, String updatedThumbnail) {
+        wineRepository
+            .findByVintages_Reviews_ReviewId(targetReviewId)
+            .map(
+                targetWine -> {
+                    for (Vintage v : targetWine.getVintages()) {
+                        if (v.getYear().equals(targetYear)) {
+                            for (ReviewEmbedded r : v.getReviews()) {
+                                if (r.getReviewId().equals(targetReviewId)) {
+                                    r.getUserId().setThumbnail(updatedThumbnail);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    
+                    return wineRepository.save(targetWine);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection wines (per ogni wine, per ogni vintage ho le reviews) e ne aggiorna correttamente lo username dell'utente
+    private void updateWine_Vintages_Reviews_UserId_UsernameByReviewId(Long targetReviewId, Integer targetYear, String updatedUsername) {
+        wineRepository
+            .findByVintages_Reviews_ReviewId(targetReviewId)
+            .map(
+                targetWine -> {
+                    for (Vintage v : targetWine.getVintages()) {
+                        if (v.getYear().equals(targetYear)) {
+                            for (ReviewEmbedded r : v.getReviews()) {
+                                if (r.getReviewId().equals(targetReviewId)) {
+                                    r.getUserId().setUsername(updatedUsername);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    
+                    return wineRepository.save(targetWine);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection wines (per ogni wine, per ogni vintage ho le reviews) e la elimina correttamente
+    private void deleteWine_Vintages_ReviewByReviewId(Long targetReviewId, Integer targetYear) {
+        wineRepository
+            .findByVintages_Reviews_ReviewId(targetReviewId)
+            .map(
+                targetWine -> {
+                    for (Vintage v : targetWine.getVintages()) {
+                        if (v.getYear().equals(targetYear)) {
+                            for (ReviewEmbedded r : v.getReviews()) {
+                                if (r.getReviewId().equals(targetReviewId)) {
+                                    v.getReviews().remove(r);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    
+                    return wineRepository.save(targetWine);
+                }
+            );
+    }
+
+    //// END of updates on wines ////
+    /////////////////////////////////
+
+
+    /////////////////////////////////
+    ////// Updates on reviews ///////
+    
+    // Ricerca una review nella collection reviews e ne aggiorna correttamente la thumbnail dell'utente
+    private void updateReview_UserId_ThumbnailByUsername(String targetUsername, String updatedThumbnail) {
+        reviewRepository
+            .findByUserId_Username(targetUsername)
+            .forEach(
+                review -> {
+                    review.getUserId().setThumbnail(updatedThumbnail);
+                    reviewRepository.save(review);
+
+                    // Aggiorno la review nella collection "wines" (qualora sia presente)
+                    updateWine_Vintages_Reviews_UserId_ThumbnailByReviewId(review.getId(), review.getWineId().getYear(), updatedThumbnail);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection reviews e ne aggiorna correttamente lo username dell'utente
+    private void updateReview_UserId_UsernameByUsername(String targetUsername, String updatedUsername) {
+        reviewRepository
+            .findByUserId_Username(targetUsername)
+            .forEach(
+                review -> {
+                    review.getUserId().setUsername(updatedUsername);
+                    reviewRepository.save(review);
+
+                    // Aggiorno la review nella collection "wines" (qualora sia presente)
+                    updateWine_Vintages_Reviews_UserId_UsernameByReviewId(review.getId(), review.getWineId().getYear(), updatedUsername);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection reviews e la elimina correttamente
+    private void deleteReviewByUserId_Username(String targetUsername) {
+        reviewRepository
+            .findByUserId_Username(targetUsername)
+            .forEach(
+                review -> {
+                    reviewRepository.delete(review);
+
+                    // Elimino la review dalla collection "wines" (qualora sia presente)
+                    deleteWine_Vintages_ReviewByReviewId(review.getId(), review.getWineId().getYear());
+                }
+            );
+    }
+
+    /// END of updates on reviews ///
+    /////////////////////////////////
+
+
+    
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+
+    /////////////////////////////////
+    /////// CRUD operations /////////
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
@@ -174,8 +305,12 @@ public class UserService {
                         for (ReviewEmbedded review : targetUser.getReviews()) {
                             review.getUserId().setThumbnail(updatedUser.getPicture().getThumbnail());
                         }
+
+                        // Aggiorno tutte le review dell'utente nella collection "reviews"
+                        updateReview_UserId_ThumbnailByUsername(targetUser.getLogin().getUsername(), targetUser.getPicture().getThumbnail());
                     }
 
+                    // Finalizzo gli aggiornamenti in modo da evitare incosistenze nel database
                     targetUser.adjustFieldsForUpdate();
 
                     return userRepository.save(targetUser);
@@ -184,40 +319,6 @@ public class UserService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist.")
             );
-
-        // // Controllo se l'utente ha scritto almeno una recensione
-        // if (!user.getReviews().isEmpty()) {
-        //     reviewRepository
-        //         .findByUserId_Username(user.getLogin().getUsername())
-        //         .forEach(
-        //             review -> {
-        //                 // Aggiorno la recensione nella collection "reviews"
-        //                 review.getUserId().setThumbnail(user.getPicture().getThumbnail());
-        //                 reviewRepository.save(review);
-
-        //                 // Aggiorno la recensione nel vino (qualora sia presente)
-        //                 Long reviewId = review.getId();
-        //                 Integer year = review.getWineId().getYear();
-                        
-        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
-        //                 if (wine != null) {
-        //                     for (Vintage v : wine.getVintages()) {
-        //                         if (v.getYear() == year) {
-        //                             for (Review r : v.getReviews()) {
-        //                                 if (r.getId() == reviewId) {
-        //                                     r.getUserId().setThumbnail(user.getPicture().getThumbnail());
-        //                                     break;
-        //                                 }
-        //                             }
-        //                             break;
-        //                         }
-        //                     }
-        //                 }
-
-        //                 wineRepository.save(wine);
-        //             }
-        //         );
-        // }
 
         return user;
     }
@@ -236,46 +337,21 @@ public class UserService {
             .map(
                 targetUser -> {
                     targetUser.getLogin().setUsername(newUsername.trim());
+                    if (targetUser.getReviews().size() > 0) {
+                        for (ReviewEmbedded review : targetUser.getReviews()) {
+                            review.getUserId().setUsername(newUsername);
+                        }
+
+                        // Aggiorno tutte le review dell'utente nella collection "reviews"
+                        updateReview_UserId_UsernameByUsername(targetUsername, newUsername);
+                    }
+
                     return userRepository.save(targetUser);
                 }
             )
             .orElseThrow(
                 () -> new ResourceNotFoundException("Username not updatable because \"" + targetUsername + "\" no user uses it.")
             );
-
-        // // Controllo se l'utente ha scritto almeno una recensione
-        // if (!user.getReviews().isEmpty()) {
-        //     reviewRepository
-        //         .findByUserId_Username(targetUsername)
-        //         .forEach(
-        //             review -> {
-        //                 // Aggiorno la recensione nella collection "reviews"
-        //                 review.getUserId().setUsername(user.getLogin().getUsername());
-        //                 reviewRepository.save(review);
-
-        //                 // Aggiorno la recensione nel vino (qualora sia presente)
-        //                 Long reviewId = review.getId();
-        //                 Integer year = review.getWineId().getYear();
-                        
-        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
-        //                 if (wine != null) {
-        //                     for (Vintage v : wine.getVintages()) {
-        //                         if (v.getYear() == year) {
-        //                             for (Review r : v.getReviews()) {
-        //                                 if (r.getId() == reviewId) {
-        //                                     r.getUserId().setUsername(user.getLogin().getUsername());
-        //                                     break;
-        //                                 }
-        //                             }
-        //                             break;
-        //                         }
-        //                     }
-        //                 }
-
-        //                 wineRepository.save(wine);
-        //             }
-        //         );
-        // }
         
         return user;
     }
@@ -322,43 +398,14 @@ public class UserService {
             throw new ResourceNotFoundException("User with username \"" + username + "\" not deletable because user does not exists.");
         }
 
+        // Controllo se l'utente ha scritto almeno una recensione
+        if (targetUser.getReviews().size() > 0) {
+            // Elimino tutte le review dell'utente nella collection "reviews"
+            deleteReviewByUserId_Username(username);
+        }
+
         userRepository.delete(targetUser);
-
-        // // Controllo se l'utente ha scritto almeno una recensione
-        // if (!targetUser.getReviews().isEmpty()) {
-        //     reviewRepository
-        //         .findByUserId_Username(username)
-        //         .forEach(
-        //             review -> {
-        //                 // Elimino la recensione dalla collection "reviews"
-        //                 reviewRepository.delete(review);
-
-        //                 // Elimino la recensione dal vino (qualora sia presente)
-        //                 Long reviewId = review.getId();
-        //                 Integer year = review.getWineId().getYear();
-                            
-        //                 Wine wine = wineRepository.findByVintages_Reviews_Review_id(reviewId).orElse(null);
-        //                 if (wine != null) {
-        //                     for (Vintage v : wine.getVintages()) {
-        //                         if (v.getYear() == year) {
-        //                             for (Review r : v.getReviews()) {
-        //                                 if (r.getId() == reviewId) {
-        //                                     v.getReviews().remove(r);
-        //                                     break;
-        //                                 }
-        //                             }
-        //                             break;
-        //                         }
-        //                     }
-        //                 }
-
-        //                 wineRepository.save(wine);
-        //             }
-        //         );
-        // }
     }
-
-
 
     //// END of crud operations ////
     ////////////////////////////////
