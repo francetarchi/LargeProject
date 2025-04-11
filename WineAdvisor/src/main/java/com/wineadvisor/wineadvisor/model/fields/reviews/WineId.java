@@ -13,7 +13,10 @@ import lombok.NoArgsConstructor;
 public class WineId {
     @Field("id")
     private Long id;
+    @Field("name")
     private String name;
+    @Field("year")
     private Integer year;
+    @Field("image")
     private String image;
 }

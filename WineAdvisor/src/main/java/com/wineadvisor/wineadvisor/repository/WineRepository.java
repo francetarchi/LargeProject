@@ -12,8 +12,6 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
 
     Optional<Wine> findByIdAndVintages_Year(Long id, Integer year);
 
-    Optional<Wine> findByVintages(Long id, Integer year);
-
     Optional<Wine> findByVintages_Reviews_ReviewId(Long id);
 
 }

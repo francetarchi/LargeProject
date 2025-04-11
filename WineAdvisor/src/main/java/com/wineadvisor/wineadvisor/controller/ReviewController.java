@@ -1,6 +1,8 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
+import com.wineadvisor.wineadvisor.dto.CreateReviewDTO;
+import com.wineadvisor.wineadvisor.dto.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.Review;
 
@@ -8,20 +10,21 @@ import com.wineadvisor.wineadvisor.model.Review;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.access.method.P;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+// import org.springframework.security.core.context.SecurityContextHolder;
 
 
 @RestController
@@ -30,13 +33,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class ReviewController {
     private final ReviewService reviewService;
 
-    @PostMapping
-    public ResponseEntity<?> addReview(@RequestBody Review review) {        
+    @PostMapping("/create")
+    public ResponseEntity<?> addReview(@RequestBody CreateReviewDTO review) {        
         try {
             // Prendo lo username dell'utente che ha fatto la richiesta
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
-            review.getUserId().setUsername(username);
+            // String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
 
             // Controllo sul testo
             if (review.getText() == null || review.getText().isEmpty()) {
@@ -44,8 +45,8 @@ public class ReviewController {
             }
 
             // Controllo sul vino
-            if (review.getWineId() == null || review.getWineId().getId() == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
+            if (review.getWineId() == null || review.getWineId() <= 0) {
+                throw new BadRequestException("Wine ID cannot be null or negative.");
             }
 
             // Controlli sul rating
@@ -70,8 +71,8 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody Review updatedReview) {
-        try {   
+    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody UpdateReviewDTO updatedReview) {
+        try {
             // Controllo sull'ID
             if (id == null) {
                 throw new BadRequestException("ID cannot be null.");
@@ -79,14 +80,14 @@ public class ReviewController {
             if (id <= 0) {
                 throw new BadRequestException("ID must be greater than 0.");
             }
-
+            
             // Prendo username dell'utente che ha fatto la richiesta
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-
-            updatedReview.getUserId().setUsername(username);  
+            // Al momento ho commentato queste righe di codice perché manca la parte di autenticazione
+            // String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            // updatedReview.getUserId().setUsername(username);  
 
             // Controllo sul testo
-            if (updatedReview.getText() == null || updatedReview.getText().isEmpty()) {
+            if (updatedReview.getText() == "" || updatedReview.getText() == null || updatedReview.getText().isEmpty()) {
                 throw new BadRequestException("Review text cannot be null or empty.");
             }
 
@@ -98,7 +99,7 @@ public class ReviewController {
                 throw new BadRequestException("Rating must be between 0 and 5.");
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(updatedReview)); // 200 OK
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview)); // 200 OK
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
         } catch (IllegalArgumentException e) {
@@ -110,8 +111,8 @@ public class ReviewController {
         }
     }
 
-    @PutMapping("/{id}/addlike")
-    public ResponseEntity<?> addLike(@PathVariable Long id) {
+    @PutMapping("/{id}/add-like")
+    public ResponseEntity<?> addLike(@PathVariable Long id, @PathVariable String username) {
         try {
             // Controllo sull'ID
             if (id == null) {
@@ -121,7 +122,12 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addLike(id));
+            // Controllo su username
+            if (username == null || username.isEmpty()) {
+                throw new BadRequestException("Username cannot be null or empty.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addLike(id, username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -133,8 +139,8 @@ public class ReviewController {
         }
     }
 
-    @PutMapping("/{id}/remlike")
-    public ResponseEntity<?> removeLike(@PathVariable Long id) {
+    @PutMapping("/{id}/rem-like")
+    public ResponseEntity<?> removeLike(@PathVariable Long id, @PathVariable String username) {
         try {
             // Controllo sull'ID
             if (id == null) {
@@ -144,7 +150,12 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeLike(id));
+            // Controllo su username
+            if (username == null || username.isEmpty()) {
+                throw new BadRequestException("Username cannot be null or empty.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeLike(id, username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -156,8 +167,8 @@ public class ReviewController {
         }
     }
 
-    @PutMapping("/{id}/adddislike")
-    public ResponseEntity<?> addDislike(@PathVariable Long id) {
+    @PutMapping("/{id}/add-dislike")
+    public ResponseEntity<?> addDislike(@PathVariable Long id, @PathVariable String username) {
         try {
             // Controllo sull'ID
             if (id == null) {
@@ -167,7 +178,12 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addDislike(id));
+            // Controllo su username
+            if (username == null || username.isEmpty()) {
+                throw new BadRequestException("Username cannot be null or empty.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addDislike(id, username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
@@ -179,8 +195,8 @@ public class ReviewController {
         }
     }
 
-    @PutMapping("/{id}/remdislike")
-    public ResponseEntity<?> removeDislike(@PathVariable Long id) {
+    @PutMapping("/{id}/rem-dislike")
+    public ResponseEntity<?> removeDislike(@PathVariable Long id, @PathVariable String username) {
         try {
             // Controllo sull'ID
             if (id == null) {
@@ -190,7 +206,12 @@ public class ReviewController {
                 throw new BadRequestException("ID must be greater than 0.");
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeDislike(id));
+            // Controllo su username
+            if (username == null || username.isEmpty()) {
+                throw new BadRequestException("Username cannot be null or empty.");
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeDislike(id, username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
@@ -203,7 +224,7 @@ public class ReviewController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getReviewById(@PathVariable Long id) {   
+    public ResponseEntity<?> getReviewById(@PathVariable Long id) {
         try {
             // Controllo sull'ID
             if(id == null) {
