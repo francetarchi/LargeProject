@@ -66,6 +66,8 @@ public class User {
     private Picture picture;
 
     private ArrayList<ReviewEmbedded> reviews;
+    private ArrayList<Long> likes;
+    private ArrayList<Long> dislikes;
     
 
 

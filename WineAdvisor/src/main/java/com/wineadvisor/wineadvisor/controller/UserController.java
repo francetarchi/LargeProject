@@ -107,6 +107,50 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPassword(username, passwordDTO));
     }
 
+    @PutMapping("/{username}/addLike")
+    public ResponseEntity<?> addLike(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
+        if (reviewId <= 0) {
+            throw new BadRequestException("reviewId must be greater than 0.");
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(userService.addLike(username, reviewId));
+    }
+
+    @PutMapping("/{username}/removeLike")
+    public ResponseEntity<?> removeLike(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
+        if (reviewId <= 0) {
+            throw new BadRequestException("reviewId must be greater than 0.");
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(userService.removeLike(username, reviewId));
+    }
+
+    @PutMapping("/{username}/addDislike")
+    public ResponseEntity<?> addDislike(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
+        if (reviewId <= 0) {
+            throw new BadRequestException("reviewId must be greater than 0.");
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(userService.addDislike(username, reviewId));
+    }
+
+    @PutMapping("/{username}/removeDislike")
+    public ResponseEntity<?> removeDislike(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
+        if (reviewId <= 0) {
+            throw new BadRequestException("reviewId must be greater than 0.");
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
+    }
+
     ////////////// DELETE //////////////
     @DeleteMapping("/{username}")
     public ResponseEntity<?> deleteUser(

@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.service;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
+import com.wineadvisor.wineadvisor.model.Review;
 import com.wineadvisor.wineadvisor.model.User;
 import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
@@ -104,6 +106,49 @@ public class UserService {
                     }
                     
                     return wineRepository.save(targetWine);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection wines (per ogni wine, per ogni vintage ho le reviews) e ne aggiorna correttamente il numero di likes e dislikes
+    private void updateWine_Vintages_Reviews_LikesCountAndDislikesCountByReviewId(Long targetReviewId, Integer targetYear, Long updatedLikesCount, Long updatedDislikesCount) {
+        wineRepository
+            .findByVintages_Reviews_ReviewId(targetReviewId)
+            .map(
+                targetWine -> {
+                    for (Vintage v : targetWine.getVintages()) {
+                        if (v.getYear().equals(targetYear)) {
+                            for (ReviewEmbedded r : v.getReviews()) {
+                                if (r.getReviewId().equals(targetReviewId)) {
+                                    r.setLikesCount(updatedLikesCount);
+                                    r.setDislikesCount(updatedDislikesCount);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    
+                    return wineRepository.save(targetWine);
+                }
+            );
+    }
+
+    // Ricerca una review nella collection users (per ogni user ho le reviews) e ne aggiorna correttamente il numero di likes e dislikes
+    private void updateUser_Reviews_LikesCountAndDislikesCountByReviewId(Long targetReviewId, Integer targetYear, Long updatedLikesCount, Long updatedDislikesCount) {
+        userRepository
+            .findByReviews_ReviewId(targetReviewId)
+            .map(
+                targetUser -> {
+                    for (ReviewEmbedded r : targetUser.getReviews()) {
+                        if (r.getReviewId().equals(targetReviewId)) {
+                            r.setLikesCount(updatedLikesCount);
+                            r.setDislikesCount(updatedDislikesCount);
+                            break;
+                        }
+                    }
+                    
+                    return userRepository.save(targetUser);
                 }
             );
     }
@@ -324,7 +369,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e ne modifica lo username
-    public Object updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException{
+    public User updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException{
         if (targetUsername.equals(newUsername)) {
             throw new BadRequestException("Username not updatable because it is the same as the old one.");
         }
@@ -386,6 +431,170 @@ public class UserService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("User with username \"" + username + "\" not updatable because it does not exist.")
             );
+    }
+
+    // Cerca il documento di un utente e aggiunge un reviewId alla sua lista di likes
+    public User addLike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+            .findByLogin_Username(username)
+            .map(user -> {
+                // Prendo il riferimento alla review interessata
+                Review review = reviewRepository.findById(reviewId).orElse(null);
+                if (review == null) {
+                    throw new ResourceNotFoundException("Review with id " + reviewId + " not found.");
+                }
+
+                // Controllo che l'utente non sia lo stesso che ha scritto la recensione
+                if (username.equals(review.getUserId().getUsername())) {
+                    throw new IllegalArgumentException("A user cannot like his own reviews.");
+                }
+
+                // Controllo che l'utente non abbia già messo like alla recensione
+                if (user.getLikes().contains(reviewId)) {
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has already liked this review.");
+                }
+
+                // Se l'utente aveva messo in precedenza dislike alla recensione, rimuovo il dislike e decremento il numero di dislikes della recensione
+                if (user.getDislikes().contains(reviewId)) {
+                    user.getDislikes().remove(reviewId);
+                    review.setDislikesCount(review.getDislikesCount() - 1);
+                }
+
+                // Aggiungo l'utente alla lista di chi ha messo like alla recensione e incremento il numero di likes della recensione
+                user.getLikes().add(reviewId);
+                review.setLikesCount(review.getLikesCount() + 1);
+
+                // Aggiorno la review nella collection "wines" (qualora sia presente)
+                updateWine_Vintages_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                // Aggiorno la review nella collection "users" (qualora sia presente)
+                updateUser_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                return userRepository.save(user);
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+            );
+    }
+
+    // Cerca il documento di un utente e rimuove un reviewId dalla sua lista di likes
+    public User removeLike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+            .findByLogin_Username(username)
+            .map(user -> {
+                // Prendo il riferimento alla review interessata
+                Review review = reviewRepository.findById(reviewId).orElse(null);
+                if (review == null) {
+                    throw new ResourceNotFoundException("Review with id " + reviewId + " not found.");
+                }
+
+                // Controllo che l'utente non sia lo stesso che ha scritto la recensione
+                if (username.equals(review.getUserId().getUsername())) {
+                    throw new IllegalArgumentException("A user cannot like his own reviews.");
+                }
+
+                // Controllo che l'utente abbia messo like alla recensione
+                if (!user.getLikes().contains(reviewId)) {
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has not liked this review.");
+                }
+
+                // Rimuovo l'utente dalla lista di chi ha messo like alla recensione e decremento il numero di likes della recensione
+                user.getLikes().remove(reviewId);
+                review.setLikesCount(review.getLikesCount() - 1);
+
+                // Aggiorno la review nella collection "wines" (qualora sia presente)
+                updateWine_Vintages_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                // Aggiorno la review nella collection "users" (qualora sia presente)
+                updateUser_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                return userRepository.save(user);
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+            );
+    }
+
+    // Cerca il documento di un utente e aggiunge un reviewId alla sua lista di dislikes
+    public User addDislike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+            .findByLogin_Username(username)
+            .map(user -> {
+                // Prendo il riferimento alla review interessata
+                Review review = reviewRepository.findById(reviewId).orElse(null);
+                if (review == null) {
+                    throw new ResourceNotFoundException("Review with id " + reviewId + " not found.");
+                }
+
+                // Controllo che l'utente non sia lo stesso che ha scritto la recensione
+                if (username.equals(review.getUserId().getUsername())) {
+                    throw new IllegalArgumentException("A user cannot dislike his own reviews.");
+                }
+
+                // Controllo che l'utente non abbia già messo dislike alla recensione
+                if (user.getDislikes().contains(reviewId)) {
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has already disliked this review.");
+                }
+
+                // Se l'utente aveva messo in precedenza like alla recensione, rimuovo il like e decremento il numero di likes della recensione
+                if (user.getLikes().contains(reviewId)) {
+                    user.getLikes().remove(reviewId);
+                    review.setDislikesCount(review.getLikesCount() - 1);
+                }
+
+                // Aggiungo l'utente alla lista di chi ha messo dislike alla recensione e incremento il numero di dislikes della recensione
+                user.getDislikes().add(reviewId);
+                review.setLikesCount(review.getDislikesCount() + 1);
+
+                // Aggiorno la review nella collection "wines" (qualora sia presente)
+                updateWine_Vintages_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                // Aggiorno la review nella collection "users" (qualora sia presente)
+                updateUser_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+                return userRepository.save(user);
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+            );
+    }
+
+    // Cerca il documento di un utente e rimuove un reviewId dalla sua lista di dislikes
+    public User removeDislike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+        .findByLogin_Username(username)
+        .map(user -> {
+            // Prendo il riferimento alla review interessata
+            Review review = reviewRepository.findById(reviewId).orElse(null);
+            if (review == null) {
+                throw new ResourceNotFoundException("Review with id " + reviewId + " not found.");
+            }
+
+            // Controllo che l'utente non sia lo stesso che ha scritto la recensione
+            if (username.equals(review.getUserId().getUsername())) {
+                throw new IllegalArgumentException("A user cannot dislike his own reviews.");
+            }
+
+            // Controllo che l'utente abbia messo dislike alla recensione
+            if (!user.getDislikes().contains(reviewId)) {
+                throw new ResourceAlreadyExistsException("User with username " + username + " has not disliked this review.");
+            }
+
+            // Rimuovo l'utente dalla lista di chi ha messo dislike alla recensione e decremento il numero di dislikes della recensione
+            user.getDislikes().remove(reviewId);
+            review.setLikesCount(review.getDislikesCount() - 1);
+
+            // Aggiorno la review nella collection "wines" (qualora sia presente)
+            updateWine_Vintages_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+            // Aggiorno la review nella collection "users" (qualora sia presente)
+            updateUser_Reviews_LikesCountAndDislikesCountByReviewId(reviewId, review.getWineId().getYear(), review.getLikesCount(), review.getDislikesCount());
+
+            return userRepository.save(user);
+        })
+        .orElseThrow(
+            () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+        );
     }
 
 
