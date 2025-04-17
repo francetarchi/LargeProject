@@ -34,6 +34,12 @@ La **Repository**, invece, non ha bisogno di niente perché è una _interface_ (
 
 
 
+## Formato scrittura risposte
+Usare ```ResponseEntity.status(HttpStatus.STATO).body("Messaggio")``` come sintassi per il settaggio della risposta HTTP.  
+NON le funzioni ```.ok()```, ```.created()```, ```.badRequest()```, ...
+
+
+
 ## ```@PathVariable```
 Usare ```@PathVariable``` per passare in una richiesta HTTP il valore del campo che identifica univocamente una risorsa all'interno della sua collection (ad es. l'```_id``` per un vino o una recensione o l'```username``` per un utente).  
 L'importante è separare questi campi da quelli che contengono informazioni: questi vanno al contrario inseriti nel body della richiesta HTTP (o come parametri annotati con ```@RequestParam```).
@@ -126,8 +132,10 @@ Tale annotazione, va anche inserita nella definizione di una classe per la **val
 
 
 
-## Formato scrittura risposte
-Usare ```ResponseEntity.status(HttpStatus.STATO).body("Messaggio")``` come sintassi per il settaggio della risposta HTTP.  
-NON le funzioni ```.ok()```, ```.created()```, ```.badRequest()```, ...
+## DTO
+Creare le classi DTO da utilizzare per prendere i parametri o il body delle richieste HTTP.  
+NON utilizzare le classi del _model_ (quelle servono logicamente per "parlare" con il db).  
+Inserire le annotazioni per i controlli (```@NotNull```, ```@NotBlank```, ```@Pattern```...) nelle classi del package _DTO_, **NON** nelle classi del _model_ (quelle, ripeto, servono logicamente per "parlare" con il db ed è logicamente sbagliato mettergli dei controlli sui parametri: devono essere lasciate "libere" per permettere al programmatore una gestione più libera del db).  
+Inoltre, usando le classi DTO, possiamo creare delle classi "personalizzate" per ogni endpoint, in modo che prendano solamente i campi necessari in ogni parametro.  
 
 
