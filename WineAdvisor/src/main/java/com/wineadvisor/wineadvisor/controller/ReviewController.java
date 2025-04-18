@@ -1,8 +1,8 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
-import com.wineadvisor.wineadvisor.dto.CreateReviewDTO;
-import com.wineadvisor.wineadvisor.dto.UpdateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.ReviewDTO.CreateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.ReviewDTO.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.Review;
 
@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.method.P;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -108,118 +107,6 @@ public class ReviewController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404 Not Found
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500 Internal Server Error
-        }
-    }
-
-    @PutMapping("/{id}/add-like")
-    public ResponseEntity<?> addLike(@PathVariable Long id, @PathVariable String username) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addLike(id, username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}/rem-like")
-    public ResponseEntity<?> removeLike(@PathVariable Long id, @PathVariable String username) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeLike(id, username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}/add-dislike")
-    public ResponseEntity<?> addDislike(@PathVariable Long id, @PathVariable String username) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.addDislike(id, username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}/rem-dislike")
-    public ResponseEntity<?> removeDislike(@PathVariable Long id, @PathVariable String username) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.removeDislike(id, username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -599,48 +486,6 @@ public class ReviewController {
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/liked_by/{id}")
-    public ResponseEntity<?> getLikedBy(@PathVariable Long id) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getLikedBy(id));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/disliked_by/{id}")
-    public ResponseEntity<?> getDislikedBy(@PathVariable Long id) {
-        try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getDislikedBy(id));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){

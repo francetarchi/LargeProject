@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.dto;
+package com.wineadvisor.wineadvisor.DTO.ReviewDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

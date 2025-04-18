@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -43,10 +42,4 @@ public class Review {
 
     @Field("dislikes_count")
     private Long dislikesCount;
-
-    @Field("liked_by")
-    private ArrayList<String> likedBy;
-
-    @Field("disliked_by")
-    private ArrayList<String> dislikedBy;
 }

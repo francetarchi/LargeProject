@@ -14,12 +14,11 @@ import com.wineadvisor.wineadvisor.model.fields.wines.*;
 
 import lombok.RequiredArgsConstructor;
 
-import java.lang.reflect.Array;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import com.wineadvisor.wineadvisor.dto.CreateReviewDTO;
-import com.wineadvisor.wineadvisor.dto.UpdateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.ReviewDTO.CreateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.ReviewDTO.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
@@ -83,8 +82,6 @@ public class ReviewService {
         review.getWineId().setName(wine.getName());
         review.setLikesCount((long) 0);
         review.setDislikesCount((long) 0);
-        review.setLikedBy(new ArrayList<>());
-        review.setDislikedBy(new ArrayList<>());
         review.setCreatedAt(LocalDateTime.now());
         
         // Setto l'id della recensione
@@ -165,254 +162,6 @@ public class ReviewService {
 
                     return reviewRepository.save(review);
                 }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
-    }
-
-    // Aggiunge un like a una recensione
-    public Review addLike(Long id, String username) {
-        return reviewRepository.findById(id)
-            .map(review -> {
-                // Controllo se l'utente esiste
-                Optional<User> user_x = userRepository.findByLogin_Username(username);
-                if (user_x.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + username + " not found.");
-                }
-
-                // Controllo che l'utente non abbia già messo like alla recensione
-                if (review.getLikedBy().contains(username)) {
-                    throw new IllegalArgumentException("User with username " + username + " has already liked this review.");
-                }
-
-                // Se l'utente aveva messo in precedenza dislike alla recensione, rimuovo il dislike e tolgo l'utente dalla lista di chi ha messo dislike
-                if (review.getDislikedBy().contains(username)) {
-                    review.setDislikesCount(review.getDislikesCount() - 1);
-                    review.getDislikedBy().remove(username);
-                }
-
-                // Aggiungo l'utente alla lista di chi ha messo like alla recensione
-                review.getLikedBy().add(username);
-                // Incremento il numero di like della recensione
-                review.setLikesCount(review.getLikesCount() + 1);
-
-                // Se dentro a wine è presente la recensione, devo aggiornala
-                Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear());
-                if (wine_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
-                }
-                Wine wine = wine_to_find.get();
-                ArrayList<Vintage> vintages = wine.getVintages();
-                for (int i = 0; i < vintages.size(); i++) {
-                    if (vintages.get(i).getYear().equals(review.getWineId().getYear())) {
-                        for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getReviewId().equals(id)) {
-                                wine.getVintages().get(i).getReviews().get(j).setLikesCount(review.getLikesCount());
-                                wine.getVintages().get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
-                                wineRepository.save(wine);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                // Se dentro a user è presente la recensione, devo aggiornarla
-                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
-                if (user_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
-                }
-                User user = user_to_find.get();
-                for (int i = 0; i < user.getReviews().size(); i++) {
-                    if (user.getReviews().get(i).getReviewId().equals(id)) {
-                        user.getReviews().get(i).setLikesCount(review.getLikesCount());
-                        user.getReviews().get(i).setDislikesCount(review.getDislikesCount());
-                        userRepository.save(user);
-                        break;
-                    }
-                }
-
-                return reviewRepository.save(review);
-            }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
-    }
-
-    // Rimuove un like da una recensione
-    public Review removeLike(Long id, String username) {
-        return reviewRepository.findById(id)
-            .map(review -> {
-                // Controllo se l'utente esiste
-                Optional<User> user_x = userRepository.findByLogin_Username(username);
-                if (user_x.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + username + " not found.");
-                }
-
-                // Controllo che l'utente abbia messo like alla recensione
-                if (!review.getLikedBy().contains(username)) {
-                    throw new IllegalArgumentException("User with username " + username + " has not liked this review.");
-                }
-
-                // Rimuovo l'utente dalla lista di chi ha messo like alla recensione
-                review.getLikedBy().remove(username);
-                // Decremento il numero di like della recensione
-                review.setLikesCount(review.getLikesCount() - 1);
-
-                // Se dentro a wine è presente la recensione, devo aggiornala
-                Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear());
-                if (wine_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
-                }
-                Wine wine = wine_to_find.get();
-                ArrayList<Vintage> vintages = wine.getVintages();
-                for (int i = 0; i < vintages.size(); i++) {
-                    if (vintages.get(i).getYear().equals(review.getWineId().getYear())) {
-                        for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getReviewId().equals(id)) {
-                                wine.getVintages().get(i).getReviews().get(j).setLikesCount(review.getLikesCount());
-                                wineRepository.save(wine);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                // Se dentro a user è presente la recensione, devo aggiornarla
-                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
-                if (user_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
-                }
-                User user = user_to_find.get();
-                for (int i = 0; i < user.getReviews().size(); i++) {
-                    if (user.getReviews().get(i).getReviewId().equals(id)) {
-                        user.getReviews().get(i).setLikesCount(review.getLikesCount());
-                        userRepository.save(user);
-                        break;
-                    }
-                }
-                
-                return reviewRepository.save(review);
-            }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
-    }
-
-    // Aggiunge un dislike a una recensione
-    public Review addDislike(Long id, String username) {
-        return reviewRepository.findById(id)
-            .map(review -> {
-                // Controllo se l'utente esiste
-                Optional<User> user_x = userRepository.findByLogin_Username(username);
-                if (user_x.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + username + " not found.");
-                }
-
-                // Controllo che l'utente non abbia già messo dislike alla recensione
-                if (review.getDislikedBy().contains(username)) {
-                    throw new IllegalArgumentException("User with username " + username + " has already disliked this review.");
-                }
-
-                // Se l'utente aveva messo in precedenza like alla recensione, rimuovo il like e tolgo l'utente dalla lista di chi ha messo like
-                if (review.getLikedBy().contains(username)) {
-                    review.setLikesCount(review.getLikesCount() - 1);
-                    review.getLikedBy().remove(username);
-                }
-
-                // Aggiungo l'utente alla lista di chi ha messo dislike alla recensione
-                review.getDislikedBy().add(username);
-                // Incremento il numero di dislike della recensione
-                review.setDislikesCount(review.getDislikesCount() + 1);
-
-                // Se dentro a wine è presente la recensione, devo aggiornala
-                Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear());
-                if (wine_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
-                }
-                Wine wine = wine_to_find.get();
-                ArrayList<Vintage> vintages = wine.getVintages();
-                for (int i = 0; i < vintages.size(); i++) {
-                    if (vintages.get(i).getYear().equals(review.getWineId().getYear())) {
-                        for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getReviewId().equals(id)) {
-                                wine.getVintages().get(i).getReviews().get(j).setLikesCount(review.getLikesCount());
-                                wine.getVintages().get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
-                                wineRepository.save(wine);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                // Se dentro a user è presente la recensione, devo aggiornarla
-                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
-                if (user_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
-                }
-                User user = user_to_find.get();
-                for (int i = 0; i < user.getReviews().size(); i++) {
-                    if (user.getReviews().get(i).getReviewId().equals(id)) {
-                        user.getReviews().get(i).setLikesCount(review.getLikesCount());
-                        user.getReviews().get(i).setDislikesCount(review.getDislikesCount());
-                        userRepository.save(user);
-                        break;
-                    }
-                }
-
-                return reviewRepository.save(review);
-            }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
-    }
-
-    // Rimuove un dislike da una recensione
-    public Review removeDislike(Long id, String username) {
-        return reviewRepository.findById(id)
-            .map(review -> {
-                // Controllo se l'utente esiste
-                Optional<User> user_x = userRepository.findByLogin_Username(username);
-                if (user_x.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + username + " not found.");
-                }
-
-                // Controllo che l'utente abbia messo dislike alla recensione
-                if (!review.getDislikedBy().contains(username)) {
-                    throw new IllegalArgumentException("User with username " + username + " has not disliked this review.");
-                }
-
-                // Rimuovo l'utente dalla lista di chi ha messo dislike alla recensione
-                review.getDislikedBy().remove(username);
-                // Decremento il numero di dislike della recensione
-                review.setDislikesCount(review.getDislikesCount() - 1);
-
-                // Se dentro a wine è presente la recensione, devo aggiornala
-                Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear());
-                if (wine_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found.");
-                }
-                Wine wine = wine_to_find.get();
-                ArrayList<Vintage> vintages = wine.getVintages();
-                for (int i = 0; i < vintages.size(); i++) {
-                    if (vintages.get(i).getYear().equals(review.getWineId().getYear())) {
-                        for (int j = 0; j < vintages.get(i).getReviews().size(); j++) {
-                            if (vintages.get(i).getReviews().get(j).getReviewId().equals(id)) {
-                                wine.getVintages().get(i).getReviews().get(j).setDislikesCount(review.getDislikesCount());
-                                wineRepository.save(wine);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                // Se dentro a user è presente la recensione, devo aggiornarla
-                Optional<User> user_to_find = userRepository.findByLogin_Username(review.getUserId().getUsername());
-                if (user_to_find.isEmpty()) {
-                    throw new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found.");
-                }
-                User user = user_to_find.get();
-                for (int i = 0; i < user.getReviews().size(); i++) {
-                    if (user.getReviews().get(i).getReviewId().equals(id)) {
-                        user.getReviews().get(i).setDislikesCount(review.getDislikesCount());
-                        userRepository.save(user);
-                        break;
-                    }
-                }
-
-                return reviewRepository.save(review);
-            }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
     }
 
     // READ
@@ -639,21 +388,6 @@ public class ReviewService {
         int limit = Math.min(num, popularReviews.size()); 
         return new ArrayList<>(popularReviews.subList(0, limit));
     }
-
-    // Restituisce la lista di persone che hanno messo like a una recensione
-    public ArrayList<String> getLikedBy(Long id) {
-        return reviewRepository.findById(id)
-            .map(review -> review.getLikedBy())
-            .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
-    }
-
-    // Restituisce la lista di persone che hanno messo dislike a una recensione
-    public ArrayList<String> getDislikedBy(Long id) {
-        return reviewRepository.findById(id)
-            .map(review -> review.getDislikedBy())
-            .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
-    }
-
 
     // DELETE
     // Cancella una recensione specifica
