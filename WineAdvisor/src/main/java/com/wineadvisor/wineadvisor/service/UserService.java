@@ -8,9 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.wineadvisor.wineadvisor.DTO.PasswordDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+import com.wineadvisor.wineadvisor.DTO.users.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.users.UpdateUserDTO;
+import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
@@ -218,21 +220,27 @@ public class UserService {
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
-    public User addUser(User newUser, PasswordDTO passwordDTO) throws ResourceAlreadyExistsException, BadRequestException {
-        if (userRepository.findByLogin_Username(newUser.getLogin().getUsername()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with username \"" + newUser.getLogin().getUsername() + "\" already exists.");
+    public User createUser(CreateUserDTO createUserDTO) throws ResourceAlreadyExistsException, BadRequestException {
+        // System.out.println("createUserDTO: " + createUserDTO.toString());
+        // if (true) {
+        //     throw new DebugException();
+        // }
+
+        if (userRepository.findByLogin_Username(createUserDTO.getUsername()).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with username \"" + createUserDTO.getUsername() + "\" already exists.");
         }
-        if (userRepository.findByEmail(newUser.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with email \"" + newUser.getEmail() + "\" already exists.");
+        if (userRepository.findByEmail(createUserDTO.getEmail()).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with email \"" + createUserDTO.getEmail() + "\" already exists.");
         }
-        if (!passwordDTO.passwordPatternVerifier()) {
+        if (!createUserDTO.getPasswordDTO().passwordPatternVerifier()) {
             throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
         }
-        if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
+        if (!createUserDTO.getPasswordDTO().getNewPass().equals(createUserDTO.getPasswordDTO().getConfirmPass())) {
             throw new BadRequestException("Passwords do not match.");
         }
-
-        newUser.adjustFieldsForCreation(passwordEncoder.encode(passwordDTO.getNewPass()));
+        
+        User newUser = createUserDTO.toUser();
+        newUser.adjustFieldsForCreation(passwordEncoder.encode(createUserDTO.getPasswordDTO().getNewPass()));
 
         return userRepository.save(newUser);
     }
@@ -330,25 +338,21 @@ public class UserService {
 
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
-    public User updateUser(User updatedUser) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+    public User updateUser(String targetUsername, UpdateUserDTO updateUserDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         final User user = userRepository
-            .findByLogin_Username(updatedUser.getLogin().getUsername())
+            .findByLogin_Username(targetUsername)
             .map(
                 targetUser -> {
-                    User userWithSameEmail = userRepository.findByEmail(updatedUser.getEmail()).orElse(null);
+                    Boolean isThumbnailChanged = targetUser.getPicture().getThumbnail().equals(updateUserDTO.getPictureDTO().getThumbnail()) ? false : true;
+                    User userWithSameEmail = userRepository.findByEmail(updateUserDTO.getEmail()).orElse(null);
                     if ( userWithSameEmail != null && !userWithSameEmail.getLogin().getUsername().equals(targetUser.getLogin().getUsername()) ) {
-                        throw new ResourceAlreadyExistsException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because email \"" + updatedUser.getEmail() + "\" is already used by another user.");
+                        throw new ResourceAlreadyExistsException("User with username \"" + targetUser.getLogin().getUsername() + "\" not updatable because email \"" + updateUserDTO.getEmail() + "\" is already used by another user.");
                     }
-                    
-                    targetUser.setName(updatedUser.getName());
-                    targetUser.setLocation(updatedUser.getLocation());
-                    targetUser.setEmail(updatedUser.getEmail());
-                    targetUser.setTelephone(updatedUser.getTelephone());
-                    targetUser.setDob(updatedUser.getDob());
-                    targetUser.setPicture(updatedUser.getPicture());
-                    if (targetUser.getReviews().size() > 0) {
+
+                    targetUser = updateUserDTO.toUser(targetUser);
+                    if (isThumbnailChanged && targetUser.getReviews().size() > 0) {
                         for (ReviewEmbedded review : targetUser.getReviews()) {
-                            review.getUserId().setThumbnail(updatedUser.getPicture().getThumbnail());
+                            review.getUserId().setThumbnail(updateUserDTO.getPictureDTO().getThumbnail());
                         }
 
                         // Aggiorno tutte le review dell'utente nella collection "reviews"
@@ -362,7 +366,7 @@ public class UserService {
                 }
             )
             .orElseThrow(
-                () -> new ResourceNotFoundException("User with username \"" + updatedUser.getLogin().getUsername() + "\" not updatable because it does not exist.")
+                () -> new ResourceNotFoundException("User with username \"" + targetUsername + "\" not updatable because it does not exist.")
             );
 
         return user;

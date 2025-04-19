@@ -20,12 +20,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 
 @Data
 @Document(collection = "users")
@@ -36,31 +30,16 @@ public class User {
     @Id
     private ObjectId _id;
 
-    @NotNull(message = "Name info cannot be blank.")
-    @Valid
     private Name name;
 
-    @NotNull(message = "Location info cannot be blank.")
-    @Valid
     private Location location;
 
-    @NotBlank(message = "Email cannot be blank.")
-    @Email(message = "Email must be a valid email address.")
-    @Schema(description = "email", example = "mariorossi@example.com")
     private String email;
-
-    @Pattern(regexp = "^\\+?[0-9\\s\\-()]+$", message = "Telephone must be a valid telephone number.")
-    @Schema(description = "telephone", example = "+39 3331234567")
     private String telephone;
-    
-    @NotNull(message = "Login info cannot be blank.")
-    @Valid
+
     private Login login;
 
-    @Valid
     private Registered registered;
-    
-    @Valid
     private Dob dob;
 
     private Picture picture;
@@ -94,7 +73,6 @@ public class User {
         this.location.setCountry(this.location.getCountry().trim());
         this.location.setPostcode(this.location.getPostcode().trim());
 
-
         this.email = this.email.trim();
         
         this.telephone = this.telephone.trim();
@@ -110,18 +88,28 @@ public class User {
 
 
     ///////////// METODI PUBBLICI /////////////
-    // Corregge i valori da ritoccare durante la creazione di un nuovo utente per non rendere inconsistente il database
+    // Effettua alcune operazioni per rendere consistente un utente appena creato
     public void adjustFieldsForCreation(final String encodedPassword) {
-        this._id = null;
-        this.reviews = new ArrayList<>();
+        // setto a null i campi che non servono per un utente appena creato
+        this.set_id(null);
+        this.getRegistered().setDateTime(null);
+        this.setReviews(new ArrayList<>());
+        this.setLikes(new ArrayList<>());
+        this.setDislikes(new ArrayList<>());
+
+        // setto la password codificata
         this.login.setPassword(encodedPassword);
+
+        // setto correttamente la data di registrazione e la data di nascita
         this.adjustDates('C');
+
+        // tolgo gli spazi bianchi da tutti i campi per evitare inconsistenze nel database
         this.trimAllFields();
     }
 
-    // Corregge i valori da ritoccare durante la modifica di un utente per non rendere inconsistente il database
+    // Effettua alcune operazioni per rendere consistente un utente appena aggiornato
     public void adjustFieldsForUpdate() {
-        this.adjustDates('U');;
+        this.adjustDates('U');
         this.trimAllFields();
     }
 }

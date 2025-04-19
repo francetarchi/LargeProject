@@ -84,6 +84,12 @@
 			<version>2.3.0</version>
 		</dependency>
 
+		<!-- Jackson for managing DTO fields -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+		</dependency>
+
 
 		<!--     DATABASE AND DATA     -->
 		<!--   MongoDB Java Driver for MongoDB connection   -->

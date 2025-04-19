@@ -1,7 +1,8 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import com.wineadvisor.wineadvisor.DTO.NewUserDTO;
-import com.wineadvisor.wineadvisor.DTO.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.users.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.users.UpdateUserDTO;
+import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.User;
@@ -35,10 +36,10 @@ public class UserController {
 
     ////////////// POST //////////////
     @PostMapping
-    public ResponseEntity<?> addUser(@NotNull(message = "New user info cannot be null.") @Valid @RequestBody NewUserDTO newUserDTO) {
+    public ResponseEntity<?> createUser(@NotNull(message = "New user info cannot be null.") @Valid @RequestBody CreateUserDTO createUserDTO) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/user/" + newUserDTO.getNewUser().getLogin().getUsername())
-                .body(userService.addUser(newUserDTO.getNewUser(), newUserDTO.getPasswordDTO()));
+                .header("Location", "/api/user/" + createUserDTO.getUsername())
+                .body(userService.createUser(createUserDTO));
     }
 
     ////////////// GET //////////////
@@ -84,9 +85,8 @@ public class UserController {
     @PutMapping("/{username}")
     public ResponseEntity<?> updateUser(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "User update info cannot be null.") @Valid @RequestBody User user) {
-        user.getLogin().setUsername(username);
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(user));
+            @NotNull(message = "User update info cannot be null.") @Valid @RequestBody UpdateUserDTO updateUserDTO) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(username, updateUserDTO));
     }
 
     @PutMapping("{username}/username/update")

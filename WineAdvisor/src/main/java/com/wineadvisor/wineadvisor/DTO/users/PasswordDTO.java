@@ -1,23 +1,30 @@
-package com.wineadvisor.wineadvisor.DTO;
+package com.wineadvisor.wineadvisor.DTO.users;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
+@JsonPropertyOrder({ "old password", "new password", "confirm password" })
 public class PasswordDTO {
-    @Schema(description = "Old password", example = "oldPass123!")
+    @Schema(name = "old password", description = "Old password of the user", example = "oldPass123!")
+    @JsonProperty("old password")
     private String oldPass;
 
     @NotBlank(message = "New password is required")
-    @Schema(description = "New password", example = "newPass123!")
+    @Schema(name = "new password", description = "New password of the user", example = "newPass123!")
+    @JsonProperty("new password")
     private String newPass;
 
     @NotBlank(message = "Confirm password is required")
-    @Schema(description = "Confirm new password", example = "newPass123!")
+    @Schema(name = "confirm password", description = "Confirmation of the new password of the user", example = "newPass123!")
+    @JsonProperty("confirm password")
     private String confirmPass;
 
 

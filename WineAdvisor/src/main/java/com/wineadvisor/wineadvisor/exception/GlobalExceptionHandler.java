@@ -127,6 +127,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleException(Exception e) {
         System.out.println("--- WRN: Generic exception thrown and intercepted.\n--- WRN: Exception type: " + e.getClass().getName());
         System.err.println("--- ERR: " + e.getMessage() + "\n");
+        e.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("--- ERR: " + e.getMessage());
     }
 }

@@ -6,9 +6,10 @@ public class Dob extends DateTimePattern {
     ///////////// METODI PUBBLICI /////////////
     // Setta la data di nascita prendendo quella passata nella richiesta HTTP per aggiornare il campo 'age' in automatico
     public void adjustDobDate() {
-        if (this == null || this.getDateTime() == null) {
+        if (this.equals(null) || this.getDateTime() == null) {
             this.setDateTime(null);
+        } else {
+            this.setDateTime(this.getDateTime().withNano((this.getDateTime().getNano() / 1_000_000) * 1_000_000));
         }
-        this.setDateTime(this.getDateTime().withNano((this.getDateTime().getNano() / 1_000_000) * 1_000_000));
     }
 }
