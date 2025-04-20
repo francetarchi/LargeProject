@@ -2,9 +2,9 @@ package com.wineadvisor.wineadvisor.service;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,11 +34,62 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
+    private static final int PAGE_SIZE = 20;
+
 
 
     ////////////////////////////////
     //////// PRIVATE METHODS ///////
     ////////////////////////////////
+    
+    ////////////////////////////////
+    ///// Checking operations //////
+    
+    // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
+    public void checkReturnedPage(Page<User> users, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
+        if (users.getTotalElements() == 0) {
+            throw new ResourceNotFoundException(notFoundMessage);
+        }
+        if (users.getPageable().getPageNumber() >= users.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
+    }
+    
+    /// END of checking operations //
+    /////////////////////////////////
+    
+    
+    /////////////////////////////////
+    //// Asynchronous operations ////
+    
+    // Per ogni utente, scorre l'array dei likes e l'array dei dislikes: per ogni reviewId, controlla che la review esista ancora (se NON esiste più, elimina il reviewId dall'array)
+    @Scheduled(cron = "0 0 0 * * ?")
+    private void cleanLikesAndDislikes() {
+        userRepository.findAll().forEach(
+            user -> {
+                Boolean isUserUpdated = false;
+                for (Long reviewId : user.getLikes()) {
+                    if (!reviewRepository.existsById(reviewId)) {
+                        user.getLikes().remove(reviewId);
+                        isUserUpdated = true;
+                    }
+                }
+                for (Long reviewId : user.getDislikes()) {
+                    if (!reviewRepository.existsById(reviewId)) {
+                        user.getDislikes().remove(reviewId);
+                        isUserUpdated = true;
+                    }
+                }
+                if (isUserUpdated) {
+                    userRepository.save(user);
+                }
+            }
+        );
+    }
+
+    //// END of async. operations ///
+    /////////////////////////////////
+    
     
     ////////////////////////////////
     ////// Updates on wines ////////
@@ -221,11 +272,6 @@ public class UserService {
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
     public User createUser(CreateUserDTO createUserDTO) throws ResourceAlreadyExistsException, BadRequestException {
-        // System.out.println("createUserDTO: " + createUserDTO.toString());
-        // if (true) {
-        //     throw new DebugException();
-        // }
-
         if (userRepository.findByLogin_Username(createUserDTO.getUsername()).isPresent()) {
             throw new ResourceAlreadyExistsException("User with username \"" + createUserDTO.getUsername() + "\" already exists.");
         }
@@ -248,80 +294,30 @@ public class UserService {
     
     /// READ operations ///
     // Restituisce tutti gli utenti presenti nella collection "users" del database
-    public Page<User> getAllUsers(Pageable pageable) throws ResourceNotFoundException {
-        Page<User> users = userRepository.findAll(pageable);
-
-        if (users.getTotalElements() == 0) {
-            throw new ResourceNotFoundException("No users found.");
-        }
-        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
-            throw new BadRequestException("Page requested too high.");
-        }
-
+    public Page<User> getAllUsers(Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<User> users = userRepository.findAll(PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(users, "No users found.");
         return users;
     }    
 
     // Restituisce tutti gli utenti con un determinato nome e cognome
-    public Page<User> getUsersByFullName(String firstName, String lastName, Pageable pageable) throws ResourceNotFoundException {
-        // ArrayList<User> result = userRepository.findByName_Last(lastName);
-        // result.removeIf(user -> !user.getName().getFirst().equals(firstName));
-
-        // if (result.isEmpty()) {
-        //     throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
-        // }
-
-        // return result;
-        Page<User> users = userRepository.findByName_FirstAndName_Last(firstName, lastName, pageable);
-
-        if (users.getTotalElements() == 0) {
-            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
-        }
-        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
-            throw new BadRequestException("Page requested too high.");
-        }
-
+    public Page<User> getUsersByFullName(String firstName, String lastName, Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<User> users = userRepository.findByName_FirstAndName_Last(firstName, lastName, PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(users, "Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
         return users;
     }
 
     // Restituisce tutti gli utenti con un determinato nome
-    public Page<User> getUsersByFirstName(String firstName, Pageable pageable) throws ResourceNotFoundException {
-        // ArrayList<User> result = userRepository.findByName_First(firstName);
-        
-        // if (result.isEmpty()) {
-        //     throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" not found.");
-        // }
-
-        // return result;
-        Page<User> users = userRepository.findByName_First(firstName, pageable);
-
-        if (users.getTotalElements() == 0) {
-            throw new ResourceNotFoundException("Users with first name \"" + firstName + "\" not found.");
-        }
-        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
-            throw new BadRequestException("Page requested too high.");
-        }
-
+    public Page<User> getUsersByFirstName(String firstName, Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<User> users = userRepository.findByName_First(firstName, PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(users, "Users with first name \"" + firstName + "\" not found.");
         return users;
     }
 
     // Restituisce tutti gli utenti con un determinato cognome
-    public Page<User> getUsersByLastName(String lastName, Pageable pageable) throws ResourceNotFoundException {
-        // ArrayList<User> result = userRepository.findByName_Last(lastName);
-        
-        // if (result.isEmpty()) {
-        //     throw new ResourceNotFoundException("Users with last name \"" + lastName + "\" not found.");
-        // }
-
-        // return result;
-        Page<User> users = userRepository.findByName_Last(lastName, pageable);
-
-        if (users.getTotalElements() == 0) {
-            throw new ResourceNotFoundException("Users with last name \"" + lastName + "\" not found.");
-        }
-        if (users.getPageable().getPageNumber() > users.getTotalPages()) {
-            throw new BadRequestException("Page requested too high.");
-        }
-
+    public Page<User> getUsersByLastName(String lastName, Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<User> users = userRepository.findByName_Last(lastName, PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(users, "Users with last name \"" + lastName + "\" not found.");
         return users;
     }
 

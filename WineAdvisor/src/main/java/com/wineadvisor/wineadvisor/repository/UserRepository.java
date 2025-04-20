@@ -16,8 +16,8 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
     Optional<User> findByEmail(String email);
 
     Page<User> findByName_FirstAndName_Last(String firstName, String lastName, Pageable pageable);
-    Page<User> findByName_First(String name, Pageable pageable);
-    Page<User> findByName_Last(String last_name, Pageable pageable);
+    Page<User> findByName_First(String firstName, Pageable pageable);
+    Page<User> findByName_Last(String lastName, Pageable pageable);
     
     Optional<User> findByReviews_ReviewId(Long id);
     Optional<User> findByReviews_WineId_Id(Long wineId);

@@ -8,7 +8,6 @@ import com.wineadvisor.wineadvisor.service.UserService;
 import com.wineadvisor.wineadvisor.model.User;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,15 +43,15 @@ public class UserController {
 
     ////////////// GET //////////////
     @GetMapping
-    public ResponseEntity<?> getAllUsers(Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers(pageable));
+    public ResponseEntity<?> getAllUsers(@RequestParam(required = false, name = "page number", defaultValue = "0") Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers(page));
     }
 
     @GetMapping("/search")
     public ResponseEntity<?> getUsersByName(
             @RequestParam(required = false, name = "firstName") String firstName,
             @RequestParam(required = false, name = "lastName") String lastName,
-            Pageable pageable) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") Integer page) {
         if (firstName == null && lastName == null) {
             throw new BadRequestException("firstName and lastName cannot be both null at the same time.");
         }
@@ -63,12 +62,12 @@ public class UserController {
         Page<User> result = null;
         if (firstName != null) {
             if (lastName != null) {
-                result = userService.getUsersByFullName(firstName, lastName, pageable);
+                result = userService.getUsersByFullName(firstName, lastName, page);
             } else {
-                result = userService.getUsersByFirstName(firstName, pageable);
+                result = userService.getUsersByFirstName(firstName, page);
             }
         } else {
-            result = userService.getUsersByLastName(lastName, pageable);
+            result = userService.getUsersByLastName(lastName, page);
         }
 
         // return ResponseEntity.status(HttpStatus.OK).header("documentCount", String.valueOf(result.size())).body(result);
