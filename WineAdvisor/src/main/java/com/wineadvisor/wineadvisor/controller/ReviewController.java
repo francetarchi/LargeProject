@@ -507,7 +507,7 @@ public class ReviewController {
             }
 
             reviewService.deleteReviewById(id);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e) {
@@ -529,7 +529,7 @@ public class ReviewController {
             }
 
             reviewService.deleteReviewsByWine(wineId);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e) {
@@ -548,7 +548,7 @@ public class ReviewController {
             }
 
             reviewService.deleteReviewsByUser(username);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e) {
@@ -575,7 +575,7 @@ public class ReviewController {
             }
 
             reviewService.deleteReviewsByVintage(wineId, vintageYear);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e) {
@@ -589,7 +589,7 @@ public class ReviewController {
     public ResponseEntity<?> deleteAllReviews() {
         try {
             reviewService.deleteAllReviews();
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }

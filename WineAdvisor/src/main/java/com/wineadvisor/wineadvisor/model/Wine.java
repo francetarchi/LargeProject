@@ -30,11 +30,13 @@ public class Wine {
 
     private Region region;
 
-    private Winery winery;
+    private WineryEmbedded winery;
 
     private Taste taste;
 
     private Style style;
     
     private ArrayList<Vintage> vintages;
+
+    private Statistics statistics;
 }

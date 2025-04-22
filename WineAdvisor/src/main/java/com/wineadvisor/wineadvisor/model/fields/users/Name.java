@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class Name {
     @Pattern(regexp = "Mr\\.|Miss\\.|", message = "Title must be one between \"Mr.\" and \"Miss.\" (or blank).")
-    @Schema(description = "Title", example = "Mr")
+    @Schema(description = "Title", example = "Mr.")
     private String title;
 
     @NotBlank(message = "First name cannot be blank.")

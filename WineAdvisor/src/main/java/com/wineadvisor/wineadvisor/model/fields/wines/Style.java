@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Style {
+    @Field("id")
     private Long id;
     private String name;
     private String description;

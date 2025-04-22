@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Grape {
+    @Field("id")
     private Long id;
     private String name;
 
