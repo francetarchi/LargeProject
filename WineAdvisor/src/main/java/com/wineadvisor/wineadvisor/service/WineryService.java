@@ -1,0 +1,42 @@
+package com.wineadvisor.wineadvisor.service;
+
+import org.springframework.stereotype.Service;
+
+import com.wineadvisor.wineadvisor.repository.WineryRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class WineryService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
+    private final WineryRepository wineryRepository;
+
+
+    
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    ////////////////////////////////
+    ///// Checking operations //////
+    
+
+    /// END of checking operations //
+    /////////////////////////////////
+
+
+    
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+    
+    /////////////////////////////////
+    /////// CRUD operations /////////
+    
+
+    //// END of crud operations ////
+    ////////////////////////////////
+}

@@ -4,10 +4,13 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import io.swagger.v3.oas.annotations.Hidden;
@@ -19,41 +22,53 @@ import jakarta.validation.ConstraintViolationException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    //////// AUTHENTICATION EXCEPTION ////////
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public ResponseEntity<?> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException e) {
+        System.out.println("--- WRN: InternalAuthenticationServiceException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("--- ERR: " + e.getMessage());
+    }
+    
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException e) {
+        System.out.println("--- WRN: BadCredentialsException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("--- ERR: " + e.getMessage());
+    }
+
+
+    //////// AUTHORIZATION EXCEPTION ////////
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        System.out.println("--- WRN: AuthorizationDeniedException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: " + e.getMessage());
+    }
+
+
+    //////// HTTP MESSAGE NOT READABLE EXCEPTION ////////
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        System.out.println("--- WRN: HttpMessageNotReadableException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + e.getMessage());
+    }
+    
+    
     //////// PARAMETRES PATTERN VIOLATION EXCEPTIONS ////////
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException e) {
         System.out.println("--- WRN: ConstraintViolationException thrown and intercepted.");
 
         String errorMessage = e.getConstraintViolations().stream()
-                .map(violation -> violation.getMessage())
-                .findFirst()
+        .map(violation -> violation.getMessage())
+        .findFirst()
                 .orElse("Validation error: some fields are invalid.");
 
-        System.err.println("--- ERR: " + errorMessage + "\n");
+        System.err.println("--- ERR: " + errorMessage + "\n");        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + errorMessage);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        System.out.println("--- WRN: MethodArgumentNotValidException thrown and intercepted.");
-
-        List<? extends MessageSourceResolvable> errors = e.getAllErrors();
-        Integer errorCount = errors.size();
-        
-        String errorMessage = "";
-        if (errorCount == 1) {
-            errorMessage = errors.get(0).getDefaultMessage();
-        } else {
-            Integer i = 1;
-            for (MessageSourceResolvable error : errors) {
-                errorMessage += "\n--- Error n° " + i + ": " + error.getDefaultMessage();
-                i++;
-            }
-        }
-        
-        System.err.println("--- ERR: " + errorMessage + "\n");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + errorMessage);
-    }
+    }    
 
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<?> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
@@ -70,12 +85,12 @@ public class GlobalExceptionHandler {
             for (MessageSourceResolvable error : errors) {
                 errorMessage += "\n--- Error n° " + i + ": " + error.getDefaultMessage();
                 i++;
-            }
-        }
+            }    
+        }    
         
         System.err.println("--- ERR: " + errorMessage + "\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + errorMessage);
-    }
+    }    
 
 
     //////// ILLEGAL ARGUMENT EXCEPTION ////////
@@ -84,7 +99,7 @@ public class GlobalExceptionHandler {
         System.out.println("--- WRN: IllegalArgumentException thrown and intercepted.");
         System.err.println("--- ERR: " + e.getMessage() + "\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + e.getMessage());
-    }
+    }    
 
 
     //////// BAD REQUEST EXCEPTION (MY EXCEPTION) ////////

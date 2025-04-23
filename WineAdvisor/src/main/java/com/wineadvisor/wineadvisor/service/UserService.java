@@ -39,14 +39,14 @@ public class UserService {
 
 
     ////////////////////////////////
-    //////// PRIVATE METHODS ///////
+    /////// PRIVATE METHODS ////////
     ////////////////////////////////
     
     ////////////////////////////////
     ///// Checking operations //////
     
     // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
-    public void checkReturnedPage(Page<User> users, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
+    private void checkReturnedPage(Page<User> users, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
         if (users.getTotalElements() == 0) {
             throw new ResourceNotFoundException(notFoundMessage);
         }
@@ -618,9 +618,4 @@ public class UserService {
 
     //// END of crud operations ////
     ////////////////////////////////
-    
-
-
-    ////////////////////////////////
-    /////// OTHER operations ///////
 }
