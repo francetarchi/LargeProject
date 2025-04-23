@@ -23,4 +23,5 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
 
     ArrayList<User> findByReviews_WineId_Id(Long wineId);
     ArrayList<User> findByReviews_WineId_IdAndReviews_WineId_Year(Long wineId, Integer vintageYear);
+    ArrayList<User> findByLikesDislikes(Long id);
 }

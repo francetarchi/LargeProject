@@ -391,14 +391,22 @@ public class ReviewService {
         }
 
         // Rimuovo la recensione dall'utente (se presente)
-        User user = userRepository.findByReviews_ReviewId(id)
+        User user_to_find = userRepository.findByReviews_ReviewId(id)
             .orElseThrow(() -> new ResourceNotFoundException("User with review id " + id + " not found."));
-        for (ReviewEmbedded review : user.getReviews()) {
+        for (ReviewEmbedded review : user_to_find.getReviews()) {
             if (review.getReviewId().equals(id)) {
-                user.getReviews().remove(review);
-                userRepository.save(user);
+                user_to_find.getReviews().remove(review);
+                userRepository.save(user_to_find);
                 break;
             }
+        }
+
+        // Rimuovo l'id della recensione dagli array likes/dislikes di users
+        ArrayList<User> users = userRepository.findByLikesDislikes(id);
+        for (User user : users) {
+            user.getLikes().removeIf(l -> l.equals(id));
+            user.getDislikes().removeIf(d -> d.equals(id));
+            userRepository.save(user);
         }
 
         reviewRepository.deleteById(id);
@@ -422,12 +430,18 @@ public class ReviewService {
         }
         wineRepository.save(wine);
 
-        // Devo rimuoverle anche dall collection users
-        ArrayList<User> users = userRepository.findByReviews_WineId_Id(wineId);
+        // Devo rimuoverle anche dalla collection users (anche dagli array likes/dislikes)
+        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (User user : users) {
             user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId));
+            for (Review review : reviews) {
+                user.getLikes().removeIf(l -> l.equals(review.getId()));
+                user.getDislikes().removeIf(d -> d.equals(review.getId()));
+            }
             userRepository.save(user);
         }
+
+        // 
 
         reviewRepository.deleteAllByWineId_Id(wineId);
     }
@@ -441,6 +455,17 @@ public class ReviewService {
         // Controllo se esistono recensioni fatte da quell'utente
         if (reviewRepository.findByUserId_Username(username).isEmpty()){
             throw new ResourceNotFoundException("Reviews with username " + username + " not found.");
+        }
+
+        // Rimuovo gli id delle recensioni dagli array likes/dislikes di users
+        ArrayList<ReviewEmbedded> reviews = user.getReviews();
+        for (ReviewEmbedded review : reviews) {
+            ArrayList<User> users = userRepository.findByLikesDislikes(review.getReviewId());
+            for (User user1 : users) {
+                user1.getLikes().removeIf(l -> l.equals(review.getReviewId()));
+                user1.getDislikes().removeIf(d -> d.equals(review.getReviewId()));
+                userRepository.save(user1);
+            }
         }
 
         // Rimuovo tutte le recensioni dell'utente dalla lista embedded nel suo oggetto
@@ -482,12 +507,13 @@ public class ReviewService {
         wineRepository.save(wine);
 
         // Devo rimuoverle anche dall collection users
-        ArrayList<User> users = userRepository.findByReviews_WineId_IdAndReviews_WineId_Year(wineId, vintageYear);
+        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (User user : users) {
-            user.getReviews().removeIf(r ->
-                r.getWineId().getId().equals(wineId) &&
-                r.getWineId().getYear().equals(vintageYear)
-            );
+            user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId) && r.getWineId().getYear().equals(vintageYear));
+            for (Review review : reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear)) {
+                user.getLikes().removeIf(l -> l.equals(review.getId()));
+                user.getDislikes().removeIf(d -> d.equals(review.getId()));
+            }
             userRepository.save(user);
         }
         
@@ -509,6 +535,8 @@ public class ReviewService {
         List<User> users = userRepository.findAll();
         for (User user : users) {
             user.getReviews().clear();
+            user.getLikes().clear();
+            user.getDislikes().clear();
             userRepository.save(user);
         }
 
