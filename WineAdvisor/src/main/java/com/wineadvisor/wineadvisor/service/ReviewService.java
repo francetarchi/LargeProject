@@ -165,8 +165,8 @@ public class ReviewService {
     }    
 
     // Restituisce tutte le recensioni di un vino specifico di un'annata specifica dalla collection "reviews" del database
-    public ArrayList<Review> getReviewsByVintage(Long wineId, Integer vintageYear) {
-        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
+    public Page<Review> getReviewsByVintage(Pageable pageable, Long wineId, Integer vintageYear) {
+        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(pageable, wineId, vintageYear);
         if (reviews.isEmpty()) {
             throw new ResourceNotFoundException("Reviews for wine with id " + wineId + " and year " + vintageYear + " not found.");
         }
@@ -174,8 +174,8 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un vino specifico dalla collection "reviews" del database
-    public ArrayList<Review> getReviewsByWine(Long wineId) {
-        ArrayList<Review> reviews = reviewRepository.findByWineId_Id(wineId);
+    public Page<Review> getReviewsByWine(Pageable pageable, Long wineId) {
+        Page<Review> reviews = reviewRepository.findByWineId_Id(pageable, wineId);
         if (reviews.isEmpty()) {
             throw new ResourceNotFoundException("Reviews for wine with id " + wineId + " not found.");
         }
@@ -183,8 +183,8 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un utente specifico dalla collection "reviews" del database
-    public ArrayList<Review> getReviewsByUser(String username) {
-        ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
+    public Page<Review> getReviewsByUser(Pageable pageable, String username) {
+        Page<Review> reviews = reviewRepository.findByUserId_Username(pageable, username);
         if (reviews.isEmpty()) {
             throw new ResourceNotFoundException("Reviews for user with username " + username + " not found.");
         }
@@ -192,15 +192,15 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni di un utente specifico per un vino specifico dalla collection "reviews" del database
-    public ArrayList<Review> getReviewsByUserAndWine(String username, Long wineId) {
-        ArrayList<Review> reviews = reviewRepository.findByUserId_UsernameAndWineId_Id(username, wineId);
+    public Page<Review> getReviewsByUserAndWine(Pageable pageable, String username, Long wineId) {
+        Page<Review> reviews = reviewRepository.findByUserId_UsernameAndWineId_Id(pageable, username, wineId);
         if (reviews.isEmpty()) {
             throw new ResourceNotFoundException("Reviews for user with username " + username + " and wine with id " + wineId + " not found.");
         }
         return reviews;
     }
 
-    // Restituisce il numero di recensioni totali presenti nella collection.
+    // Restituisce il numero di recensioni totali presenti nella collection
     public Long getReviewsCount() {
         return reviewRepository.count();
     }
@@ -254,75 +254,13 @@ public class ReviewService {
         return sum / reviews.size();
     }
 
-    // Restituisce le num recensioni più recenti
-    public ArrayList<Review> getRecentReviews(int num) {
-        ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
-        // Controllo se reviews è vuoto
-        if (reviews.isEmpty()) {
-            throw new ResourceNotFoundException("No reviews found.");
-        }
-
-        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
-        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
-
-        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, sortedReviews.size());
-        return new ArrayList<>(sortedReviews.subList(0, limit));
-    }
-
-    // Restituisce le num recensioni più recenti di un utente specifico
-    public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
-        // Controllo se l'utente esiste
-        if (userRepository.findByLogin_Username(username).isEmpty()) {
-            throw new ResourceNotFoundException("User with username " + username + " not found.");
-        }
-        
-        ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
-        // Controllo se reviews è vuoto
-        if (reviews.isEmpty()) {
-            throw new ResourceNotFoundException("No reviews found for user with username " + username + ".");
-        }
-
-        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
-        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
-        
-        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, sortedReviews.size());
-        return new ArrayList<>(sortedReviews.subList(0, limit));
-    }
-
-    // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
-    public ArrayList<Review> getRecentReviewsByVintage(Long wineId, Integer vintageYear, int num) {
-        // Controllo se il vino e la vintage esistono
-        if (wineRepository.findById(wineId).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
-        }
-        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear) == null) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
-        }
-
-
-        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
-        // Controllo se reviews è vuoto
-        if (reviews.isEmpty()) {
-            throw new ResourceNotFoundException("No reviews found for wine with id " + wineId + " and year " + vintageYear + ".");
-        }
-
-        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
-        ArrayList<Review> recentReviews = sortReviewsByField(reviews, "createdAt", false);
-        
-        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, recentReviews.size()); 
-        return new ArrayList<>(recentReviews.subList(0, limit));
-    }
-
     // Restituisce le recensioni di un vino specifico in un range di rating specifico
-    public ArrayList<Review> getReviewsByWineAndRatingRange(Long wineId, Double minRating, Double maxRating) {
+    public Page<Review> getReviewsByWineAndRatingRange(Pageable pageable, Long wineId, Double minRating, Double maxRating) {
         // Controllo se il vino esiste
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
-        ArrayList<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(wineId, minRating, maxRating);
+        Page<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(pageable, wineId, minRating, maxRating);
 
         // Controllo se reviews è vuoto
         if (reviews.isEmpty()) {
@@ -332,7 +270,7 @@ public class ReviewService {
     }
 
     // Restituisce le recensioni di un'annata specifica per un determinato vino in un range di rating specifico
-    public ArrayList<Review> getReviewsByVintageAndRatingRange(Long wineId, Integer year, Double minRating, Double maxRating) {
+    public Page<Review> getReviewsByVintageAndRatingRange(Pageable pageable, Long wineId, Integer year, Double minRating, Double maxRating) {
         // Controllo se il vino e la vintage esistono
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
@@ -341,7 +279,7 @@ public class ReviewService {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
         }
 
-        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(wineId, year, minRating, maxRating);
+        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(pageable, wineId, year, minRating, maxRating);
         // Controllo se reviews è vuoto
         if (reviews.isEmpty()) {
             throw new ResourceNotFoundException("No reviews found for wine with id " + wineId + " and year " + year + " in the rating range [" + minRating + ", " + maxRating + "].");
@@ -546,6 +484,68 @@ public class ReviewService {
 
 
     // Funzioni di utilità
+    // Restituisce le num recensioni più recenti
+    public ArrayList<Review> getRecentReviews(int num) {
+        ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
+        // Controllo se reviews è vuoto
+        if (reviews.isEmpty()) {
+            throw new ResourceNotFoundException("No reviews found.");
+        }
+
+        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
+        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
+
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, sortedReviews.size());
+        return new ArrayList<>(sortedReviews.subList(0, limit));
+    }
+
+    // Restituisce le num recensioni più recenti di un utente specifico
+    public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
+        // Controllo se l'utente esiste
+        if (userRepository.findByLogin_Username(username).isEmpty()) {
+            throw new ResourceNotFoundException("User with username " + username + " not found.");
+        }
+        
+        ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
+        // Controllo se reviews è vuoto
+        if (reviews.isEmpty()) {
+            throw new ResourceNotFoundException("No reviews found for user with username " + username + ".");
+        }
+
+        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
+        ArrayList<Review> sortedReviews = sortReviewsByField(reviews, "createdAt", false);
+        
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, sortedReviews.size());
+        return new ArrayList<>(sortedReviews.subList(0, limit));
+    }
+
+    // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
+    public ArrayList<Review> getRecentReviewsByVintage(Long wineId, Integer vintageYear, int num) {
+        // Controllo se il vino e la vintage esistono
+        if (wineRepository.findById(wineId).isEmpty()) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
+        }
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear) == null) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
+        }
+
+
+        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
+        // Controllo se reviews è vuoto
+        if (reviews.isEmpty()) {
+            throw new ResourceNotFoundException("No reviews found for wine with id " + wineId + " and year " + vintageYear + ".");
+        }
+
+        // Ordino le recensioni in base alla data di creazione (createdAt) in ordine decrescente
+        ArrayList<Review> recentReviews = sortReviewsByField(reviews, "createdAt", false);
+        
+        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
+        int limit = Math.min(num, recentReviews.size()); 
+        return new ArrayList<>(recentReviews.subList(0, limit));
+    }
+
     // Ordina e restituisce le recensioni ordinate sulla base del campo specificato, in ordine crescente o decrescente (terzo parametro)
     public ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
         reviews.sort((r1, r2) -> {

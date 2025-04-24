@@ -1,12 +1,20 @@
 package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
 import com.wineadvisor.wineadvisor.DTO.ReviewDTO.CreateReviewDTO;
 import com.wineadvisor.wineadvisor.DTO.ReviewDTO.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.Review;
 
-// Per gestire la paginazione
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
@@ -32,34 +40,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class ReviewController {
     private final ReviewService reviewService;
 
-    @PostMapping("/create")
-    public ResponseEntity<?> addReview(@RequestBody CreateReviewDTO review) {        
+    ////////////// POST //////////////
+    @PostMapping("/add-review")
+    public ResponseEntity<?> addReview(@RequestBody @Valid CreateReviewDTO review) {        
         try {
             // Prendo lo username dell'utente che ha fatto la richiesta
             // String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
 
-            // Controllo sul testo
-            if (review.getText() == null || review.getText().isEmpty()) {
-                throw new BadRequestException("Review text cannot be null or empty.");
-            }
-
-            // Controllo sul vino
-            if (review.getWineId() == null || review.getWineId() <= 0) {
-                throw new BadRequestException("Wine ID cannot be null or negative.");
-            }
-
-            // Controlli sul rating
-            if (review.getRating() == null) {
-                throw new BadRequestException("Rating cannot be null.");
-            }
-            if (review.getRating() < 0 || review.getRating() > 5) {
-                throw new BadRequestException("Rating must be between 0 and 5.");
-            }
-
             Review savedReview = reviewService.addReview(review);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedReview); // 201 Created
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
         } catch (ResourceNotFoundException e) {
@@ -69,61 +58,38 @@ public class ReviewController {
         }
     }
 
+    ////////////// PUT //////////////
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody UpdateReviewDTO updatedReview) {
+    public ResponseEntity<?> updateReview(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long id,
+            @RequestBody @Valid UpdateReviewDTO updatedReview) {
         try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-            
             // Prendo username dell'utente che ha fatto la richiesta
             // Al momento ho commentato queste righe di codice perché manca la parte di autenticazione
             // String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             // updatedReview.getUserId().setUsername(username);  
 
-            // Controllo sul testo
-            if (updatedReview.getText() == "" || updatedReview.getText() == null || updatedReview.getText().isEmpty()) {
-                throw new BadRequestException("Review text cannot be null or empty.");
-            }
-
-            // Controlli sul rating
-            if (updatedReview.getRating() == null) {
-                throw new BadRequestException("Rating cannot be null.");
-            }
-            if (updatedReview.getRating() < 0 || updatedReview.getRating() > 5) {
-                throw new BadRequestException("Rating must be between 0 and 5.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview)); // 200 OK
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404 Not Found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
+    ////////////// GET //////////////
     @GetMapping("/{id}")
-    public ResponseEntity<?> getReviewById(@PathVariable Long id) {
+    public ResponseEntity<?> getReviewById(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.") Long id) {
         try {
-            // Controllo sull'ID
-            if(id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if(id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
@@ -137,99 +103,75 @@ public class ReviewController {
     }
 
     @GetMapping("/wine/{wineId}/vintage/{vintageYear}")
-    public ResponseEntity<?> getReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
+    public ResponseEntity<?> getReviewsByVintage(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer vintageYear,
+            Pageable pageable) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (vintageYear < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(wineId, vintageYear));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(pageable, wineId, vintageYear));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/wine/{wineId}")
-    public ResponseEntity<?> getReviewsByWine(@PathVariable Long wineId) {
+    public ResponseEntity<?> getReviewsByWine(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+                Pageable pageable) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(wineId));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(pageable, wineId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/user/{username}")
-    public ResponseEntity<?> getReviewsByUser(@PathVariable String username) {
+    public ResponseEntity<?> getReviewsByUser(
+            @PathVariable @NotBlank(message = "Username cannot be blank.") String username, Pageable pageable) {
         try {
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(username));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(pageable, username));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/user/{username}/wine/{wineId}")
-    public ResponseEntity<?> getReviewsByUserAndWine(@PathVariable String username, @PathVariable Long wineId) {
+    public ResponseEntity<?> getReviewsByUserAndWine(
+            @PathVariable 
+                @NotBlank(message = "Username cannot be blank.")
+                String username,
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            Pageable pageable) {
         try {
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(username, wineId));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(pageable, username, wineId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } 
@@ -245,185 +187,91 @@ public class ReviewController {
     }
 
     @GetMapping("/count/wine/{wineId}")
-    public ResponseEntity<?> getReviewsCountByWine(@PathVariable Long wineId) {
+    public ResponseEntity<?> getReviewsCountByWine(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByWine(wineId));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/count/user/{username}")
-    public ResponseEntity<?> getReviewsCountByUser(@PathVariable String username) {
+    public ResponseEntity<?> getReviewsCountByUser(
+            @PathVariable @NotBlank(message = "Username cannot be blank.") String username) {
         try {
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByUser(username));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}")
-    public ResponseEntity<?> getReviewsCountByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
+    public ResponseEntity<?> getReviewsCountByVintage(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer vintageYear) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (vintageYear < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByVintage(wineId, vintageYear));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/average/wine/{wineId}/year/{year}")
-    public ResponseEntity<?> getAverageRatingByVintage(@PathVariable Long wineId, @PathVariable Integer year) {
+    public ResponseEntity<?> getAverageRatingByVintage(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer year) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (year < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/recent/{num}")
-    public ResponseEntity<?> getRecentReviews(@PathVariable int num) {
-        try {
-            // Controllo sul numero di recensioni
-            if (num <= 0) {
-                throw new BadRequestException("Number of reviews must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviews(num));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/recent/user/{username}/{num}")
-    public ResponseEntity<?> getRecentReviewsByUser(@PathVariable String username, @PathVariable int num) {
-        try {
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
-            // Controllo sul numero di recensioni
-            if (num <= 0) {
-                throw new BadRequestException("Number of reviews must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviewsByUser(username, num));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/recent/wine/{wineId}/year/{year}/{num}")
-    public ResponseEntity<?> getRecentReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear, @PathVariable int num) {
-        try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (vintageYear < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
-            // Controllo sul numero di recensioni
-            if (num <= 0) {
-                throw new BadRequestException("Number of reviews must be greater than 0.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getRecentReviewsByVintage(wineId, vintageYear, num));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @GetMapping("/wine/{wineId}/rating/{minRating}/{maxRating}")
-    public ResponseEntity<?> getReviewsByWineAndRating(@PathVariable Long wineId, @PathVariable Double minRating, @PathVariable Double maxRating) {
+    public ResponseEntity<?> getReviewsByWineAndRating(
+            @PathVariable 
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable 
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                Double minRating,
+            @PathVariable
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                Double maxRating,
+            Pageable pageable) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
+            if (minRating > maxRating) {
+                throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
             }
 
-            // Controllo sul rating minimo e massimo
-            if (minRating < 0 || minRating > 5 || maxRating < 0 || maxRating > 5) {
-                throw new BadRequestException("Rating must be between 0 and 5.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(wineId, minRating, maxRating));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(pageable, wineId, minRating, maxRating));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -434,27 +282,30 @@ public class ReviewController {
     }
 
     @GetMapping("/wine/{wineId}/vintage/{vintageYear}/rating/{minRating}/{maxRating}")
-    public ResponseEntity<?> getReviewsByVintageAndRating(@PathVariable Long wineId, @PathVariable Integer vintageYear, @PathVariable Double minRating, @PathVariable Double maxRating) {
+    public ResponseEntity<?> getReviewsByVintageAndRating(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer vintageYear,
+            @PathVariable 
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                Double minRating,
+            @PathVariable
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                Double maxRating,
+            Pageable pageable) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
+            if (minRating > maxRating) {
+                throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
             }
 
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (vintageYear < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
-            // Controllo sul rating minimo e massimo
-            if (minRating < 0 || minRating > 5 || maxRating < 0 || maxRating > 5) {
-                throw new BadRequestException("Rating must be between 0 and 5.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(wineId, vintageYear, minRating, maxRating));
+            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(pageable, wineId, vintageYear, minRating, maxRating));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (BadRequestException e){
@@ -465,121 +316,88 @@ public class ReviewController {
     }
 
     @GetMapping("/popular/wine/{wineId}/year/{year}/{num}")
-    public ResponseEntity<?> getPopularReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer year, @PathVariable int num) {
+    public ResponseEntity<?> getPopularReviewsByVintage(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer year,
+            @PathVariable
+                @NotNull(message = "Number of reviews cannot be null.")
+                @Positive(message = "Number of reviews must be positive.")
+                int num) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (year < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
-            // Controllo sul numero di recensioni
-            if (num <= 0) {
-                throw new BadRequestException("Number of reviews must be greater than 0.");
-            }
-
             return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
+    ////////////// DELETE //////////////
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReview(@PathVariable Long id) {
+    public ResponseEntity<?> deleteReview(
+        @PathVariable
+            @NotNull(message = "ID cannot be null.")
+            @Positive(message = "ID must be positive.")
+            Long id) {
         try {
-            // Controllo sull'ID
-            if (id == null) {
-                throw new BadRequestException("ID cannot be null.");
-            }
-            if (id <= 0) {
-                throw new BadRequestException("ID must be greater than 0.");
-            }
-
             reviewService.deleteReviewById(id);
             return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @DeleteMapping("/wine/{wineId}")
-    public ResponseEntity<?> deleteReviewsByWine(@PathVariable Long wineId) {
+    public ResponseEntity<?> deleteReviewsByWine(
+            @PathVariable
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
             reviewService.deleteReviewsByWine(wineId);
             return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @DeleteMapping("/user/{username}")
-    public ResponseEntity<?> deleteReviewsByUser(@PathVariable String username) {
+    public ResponseEntity<?> deleteReviewsByUser(@PathVariable @NotBlank(message = "Username cannot be blank.") String username) {
         try {
-            // Controllo su username
-            if (username == null || username.isEmpty()) {
-                throw new BadRequestException("Username cannot be null or empty.");
-            }
-
             reviewService.deleteReviewsByUser(username);
             return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @DeleteMapping("/wine/{wineId}/vintage/{vintageYear}")
-    public ResponseEntity<?> deleteReviewsByVintage(@PathVariable Long wineId, @PathVariable Integer vintageYear) {
+    public ResponseEntity<?> deleteReviewsByVintage(
+            @PathVariable 
+                @NotNull(message = "ID cannot be null.")
+                @Positive(message = "ID must be positive.")
+                Long wineId,
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
+                @PositiveOrZero(message = "Vintage year must be positive.")
+                Integer vintageYear) {
         try {
-            // Controllo sull'ID del vino
-            if (wineId == null) {
-                throw new BadRequestException("Wine ID cannot be null.");
-            }
-            if (wineId <= 0) {
-                throw new BadRequestException("Wine ID must be greater than 0.");
-            }
-
-            // Controllo sull'anno, che può essere null ma non un numero minore di 0
-            if (vintageYear < 0) {
-                throw new BadRequestException("Year must be greater than or equal to 0.");
-            }
-
             reviewService.deleteReviewsByVintage(wineId, vintageYear);
             return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }

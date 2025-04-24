@@ -1,7 +1,5 @@
 package com.wineadvisor.wineadvisor.model.fields.wines;
 
-import org.springframework.data.mongodb.core.mapping.Field;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,14 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Structure {
     private Double acidity;
-    private Double fiziness;
+    private Double fizziness;
     private Double intensity;
     private Double sweetness;
     private Double tannin;
-
-    @Field("user_structure_count")
-    private Long userStructureCount;
-
-    @Field("calculated_structure_count")
-    private Long calculatedStructureCount;
 }

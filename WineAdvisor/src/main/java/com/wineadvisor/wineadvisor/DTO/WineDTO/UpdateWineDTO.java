@@ -4,12 +4,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.model.fields.wines.Style;
-import com.wineadvisor.wineadvisor.model.fields.wines.Taste;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +30,10 @@ public class UpdateWineDTO {
     private String name;
 
     @NotBlank(message = "Type info cannot be blank.")
+    @Pattern(
+        regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato",
+        message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato."
+    )
     @Schema(name = "type", description = "Type info of the new wine", example = "white")
     @JsonProperty("type")
     private String type;
@@ -41,10 +45,12 @@ public class UpdateWineDTO {
     private Boolean isNatural;
 
     @Schema(name = "taste", description = "Taste info of the new wine")
+    @Valid
     @JsonProperty("taste")
-    private Taste taste;
+    private NewTasteDTO taste;
 
     @Schema(name = "style", description = "Style info of the new wine")
+    @Valid
     @JsonProperty("style")
-    private Style style;
+    private NewStyleDTO style;
 }

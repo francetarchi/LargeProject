@@ -5,6 +5,8 @@ import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
 import com.wineadvisor.wineadvisor.service.WineService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -220,7 +222,12 @@ public class WineController {
     @GetMapping("/rating")
     public ResponseEntity<?> getWinesByRating(
             Pageable pageable,
-            @RequestParam @NotNull(message = "Rating cannot be null.") @PositiveOrZero(message = "Rating cannot be negative.") Double minRating) {
+            @RequestParam
+                @NotNull(message = "Rating cannot be null.")
+                @PositiveOrZero(message = "Rating cannot be negative.")
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                Double minRating) {
         try {
             Page<Wine> wines = wineService.getWinesByMinAverageRating(pageable, minRating);
             return ResponseEntity.status(HttpStatus.OK).body(wines);
