@@ -2,7 +2,7 @@ package com.wineadvisor.wineadvisor.DTO.users.fields;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.model.fields.users.Location;
+import com.wineadvisor.wineadvisor.model.users.fields.Location;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;

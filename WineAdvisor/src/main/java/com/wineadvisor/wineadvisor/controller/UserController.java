@@ -1,11 +1,11 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import com.wineadvisor.wineadvisor.DTO.users.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.users.UpdateUserDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
+import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.service.UserService;
-import com.wineadvisor.wineadvisor.model.User;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -54,9 +54,8 @@ public class UserController {
     @GetMapping
     // TODO: Uncomment the following if you want to add admin authentication
     // @Secured({ "ROLE_ADMIN" })
-    @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> getAllUsers(
-            @RequestParam(required = false, name = "page number", defaultValue = "0") Integer page) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers(page));
     }
 
@@ -64,7 +63,7 @@ public class UserController {
     public ResponseEntity<?> getUsersByName(
             @RequestParam(required = false, name = "firstName") String firstName,
             @RequestParam(required = false, name = "lastName") String lastName,
-            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or null).") Integer page) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or omitted).") Integer page) {
         if (firstName == null && lastName == null) {
             throw new BadRequestException("firstName and lastName cannot be both null at the same time.");
         }
@@ -123,7 +122,7 @@ public class UserController {
     // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUserPassword(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) {
+            @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
         if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
             throw new BadRequestException("Old password cannot blank.");
         }
@@ -191,6 +190,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
     }
 
+    
     ////////////// DELETE //////////////
     @DeleteMapping("/{username}")
     @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
@@ -198,9 +198,8 @@ public class UserController {
     /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
     // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username/*,
-            @AuthenticationPrincipal UserDetails userDetails*/) {
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         userService.deleteUser(username);
-        return ResponseEntity.status(HttpStatus.OK).body("Utente eliminato correttamente.");
+        return ResponseEntity.status(HttpStatus.OK).body("Utente \"" + username + "\" eliminato correttamente.");
     }
 }

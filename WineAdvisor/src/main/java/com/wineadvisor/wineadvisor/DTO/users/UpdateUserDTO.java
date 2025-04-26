@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wineadvisor.wineadvisor.DTO.users.fields.LocationDTO;
 import com.wineadvisor.wineadvisor.DTO.users.fields.NameDTO;
-import com.wineadvisor.wineadvisor.DTO.users.fields.PictureDTO;
-import com.wineadvisor.wineadvisor.model.User;
+import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
+import com.wineadvisor.wineadvisor.model.users.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -55,7 +55,7 @@ public class UpdateUserDTO {
 
 
     ///////////// METODI PUBBLICI /////////////
-    // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale). Ritorna l'utente aggiornato.
+    // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)). Ritorna l'utente aggiornato.
     public User toUser(User targetUser) {
         targetUser.setName(this.getNameDTO().toName());
         targetUser.setLocation(this.getLocationDTO().toLocation());

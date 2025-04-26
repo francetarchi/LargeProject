@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
-import com.wineadvisor.wineadvisor.DTO.users.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.service.AuthenticationService;
 
 import lombok.RequiredArgsConstructor;

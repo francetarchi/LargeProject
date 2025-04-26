@@ -10,8 +10,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.Winery;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.wineries.Winery;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.wineadvisor.wineadvisor.DTO.authentication.LoginRequestDTO;
+import com.wineadvisor.wineadvisor.DTO.authentication.AuthenticateUserDTO;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +29,8 @@ public class AuthenticationController {
     //// AUTHENTICATION ENDPOINT (POST) ///
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(
-            @NotNull(message = "Login info cannot be null.") @RequestBody LoginRequestDTO loginRequestDTO) {
-        Authentication authentication = authenticationManager.authenticate( new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword()) );
+            @NotNull(message = "Login info cannot be null.") @RequestBody AuthenticateUserDTO authenticateUserDTO) {
+        Authentication authentication = authenticationManager.authenticate( new UsernamePasswordAuthenticationToken(authenticateUserDTO.getUsername(), authenticateUserDTO.getPassword()) );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         return ResponseEntity.ok("User authenticated successfully!");

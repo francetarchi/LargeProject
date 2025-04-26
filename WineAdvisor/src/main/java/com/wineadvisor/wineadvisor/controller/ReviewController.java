@@ -2,7 +2,7 @@ package com.wineadvisor.wineadvisor.controller;
 
 import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-import com.wineadvisor.wineadvisor.model.Review;
+import com.wineadvisor.wineadvisor.model.reviews.Review;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;

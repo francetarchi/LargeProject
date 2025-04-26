@@ -1,7 +1,21 @@
 package com.wineadvisor.wineadvisor.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.wineries.CreateWineryDTO;
+import com.wineadvisor.wineadvisor.DTO.wineries.UpdateWineryDTO;
+import com.wineadvisor.wineadvisor.exception.BadRequestException;
+import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
+import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.wineries.Winery;
+import com.wineadvisor.wineadvisor.repository.ReviewRepository;
+import com.wineadvisor.wineadvisor.repository.UserRepository;
+import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -13,6 +27,13 @@ public class WineryService {
     /////////// VARIABLES //////////
     ////////////////////////////////
     private final WineryRepository wineryRepository;
+    private final WineRepository wineRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
+
+    private static final int PAGE_SIZE = 20;
 
 
     
@@ -23,12 +44,115 @@ public class WineryService {
     ////////////////////////////////
     ///// Checking operations //////
     
+    // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client
+    private void checkReturnedPage(Page<Winery> wineries, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
+        if (wineries.getTotalElements() == 0) {
+            throw new ResourceNotFoundException(notFoundMessage);
+        }
+        if (wineries.getPageable().getPageNumber() >= wineries.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
+    }
 
     /// END of checking operations //
     /////////////////////////////////
+    
 
+    /////////////////////////////////
+    ////// Operations on users //////
+
+    // Ricerca una review nella collection users (per ogni user, ho le reviews) e la elimina
+    private void deleteUser_ReviewByReviewId(Long targetReviewId) {
+        userRepository
+            .findByReviews_ReviewId(targetReviewId)
+            .map(
+                user -> {
+                    for (ReviewEmbedded r : user.getReviews()) {
+                        if (r.getReviewId().equals(targetReviewId)) {
+                            user.getReviews().remove(r);
+                            break;
+                        }
+                    }
+
+                    return userRepository.save(user);
+                }
+            );
+    }
+    
+    //// END of operat. on users ////
+    /////////////////////////////////
+    
+
+    /////////////////////////////////
+    ///// Operations on reviews /////
+    
+    // Ricerca le review di un certo vino nella collection reviews e le elimina
+    private void deleteReviewByWineId(Long targetWineId) {
+        reviewRepository
+            .findByWineId_Id(targetWineId)
+            .forEach(
+                review -> {
+                    reviewRepository.delete(review);
+
+                    // Elimino la review dalla collection "users" (qualora sia presente)
+                    deleteUser_ReviewByReviewId(review.getId());
+                }
+            );
+    }
+
+    //// END of oper. on reviews ////
+    /////////////////////////////////
+    
+
+    /////////////////////////////////
+    ////// Operations on wines //////
+    
+    // Ricerca i vini di una certa winery nella collection wines e ne aggiorna correttamente il nome della winery
+    private void updateWine_Winery_NameAndWine_Winery_ThumbnailByWineryUsername(String targetUsername, String updatedName, String updatedThumbnail) {
+        wineRepository
+            .findByWinery_Username(targetUsername)
+            .forEach(
+                wine -> {
+                    wine.getWinery().setName(updatedName);
+                    wine.getWinery().setThumbnail(updatedThumbnail);
+
+                    wineRepository.save(wine);
+                }
+            );
+    }
+
+    // Ricerca i vini di una certa winery nella collection wines e ne aggiorna correttamente lo username della winery
+    private void updateWine_Winery_UsernameByWineryUsername(String targetUsername, String updatedUsername) {
+        wineRepository
+            .findByWinery_Username(targetUsername)
+            .forEach(
+                wine -> {
+                    wine.getWinery().setUsername(updatedUsername);
+                    
+                    wineRepository.save(wine);
+                }
+            );
+    }
+
+    // Ricerca i vini appartenenti ad una certa winery nella collection wines e li elimina
+    private void deleteWineByWineryUsername(String targetUsername) {
+        wineRepository
+            .findByWinery_Username(targetUsername)
+            .forEach(
+                wine -> {
+                    wineRepository.delete(wine);
+
+                    // Elimino tutte le review fatte su questo vino dalla collection reviews
+                    deleteReviewByWineId(wine.getId());
+                }
+            );
+    }
+
+    //// END of operat. on wines ////
+    /////////////////////////////////
 
     
+
     /////////////////////////////////
     //////// PUBLIC METHODS /////////
     /////////////////////////////////
@@ -36,6 +160,193 @@ public class WineryService {
     /////////////////////////////////
     /////// CRUD operations /////////
     
+    /// CREATE operations ///
+    // Aggiunge una winery alla collection "wineries" del database
+    public Object createWinery(CreateWineryDTO createWineryDTO) throws ResourceAlreadyExistsException, BadRequestException {
+		if (wineryRepository.findByLogin_Username(createWineryDTO.getUsername()).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with username \"" + createWineryDTO.getUsername() + "\" already exists.");
+        }
+        if (wineryRepository.findByEmail(createWineryDTO.getEmail()).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with email \"" + createWineryDTO.getEmail() + "\" already exists.");
+        }
+        if (!createWineryDTO.getPasswordDTO().passwordPatternVerifier()) {
+            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
+        }
+        if (!createWineryDTO.getPasswordDTO().getNewPass().equals(createWineryDTO.getPasswordDTO().getConfirmPass())) {
+            throw new BadRequestException("Passwords do not match.");
+        }
+        
+        Winery newWinery = createWineryDTO.toWinery();
+        newWinery.adjustFieldsForCreation(passwordEncoder.encode(createWineryDTO.getPasswordDTO().getNewPass()));
+
+        return wineryRepository.save(newWinery);
+	}
+
+
+    /// READ operations ///
+    // Restituisce tutte le wineries presenti nella collection "wineries" del database
+    public Page<Winery> getAllWineries(Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<Winery> wineries = wineryRepository.findAll(PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(wineries, "No wineries found.");
+        return wineries;
+    }
+
+    // Restituisce tutte le wineries che contengono una certa stringa nel nome
+    public Page<Winery> getWineriesByName(String name, Integer page) throws ResourceNotFoundException, BadRequestException {
+        Page<Winery> wineries = wineryRepository.findByNameContainingIgnoreCase(name, PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(wineries, "Wineries with name containing \"" + name + "\" not found.");
+        return wineries;
+    }
+
+    // Restituisce una winery con un determinato username
+    public Winery getWineryByUsername(String username) throws ResourceNotFoundException {
+        Winery winery = wineryRepository.findByLogin_Username(username).orElse(null);
+        
+        if (winery == null) {
+            throw new ResourceNotFoundException("Winery with username \"" + username + "\" not found.");
+        }
+
+        return winery;
+    }
+    
+
+    /// UPDATE operations ///
+    // Cerca il documento di una winery con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
+    public Winery updateWinery(String targetUsername, UpdateWineryDTO updateWineryDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        return wineryRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetWinery -> {
+                    Winery wineryWithSameEmail = wineryRepository.findByEmail(updateWineryDTO.getEmail()).orElse(null);
+                    if (wineryWithSameEmail != null && !wineryWithSameEmail.getLogin().getUsername().equals(targetWinery.getLogin().getUsername())) {
+                        throw new ResourceAlreadyExistsException("Winery with username \"" + targetWinery.getLogin().getUsername() + "\" not updatable because email \"" + updateWineryDTO.getEmail() + "\" is already used by another winery.");
+                    }
+
+                    targetWinery = updateWineryDTO.toWinery(targetWinery);
+
+                    // Aggiorno tutti i vini della winery nella collection "wines"
+                    updateWine_Winery_NameAndWine_Winery_ThumbnailByWineryUsername(targetWinery.getLogin().getUsername(), targetWinery.getName(), targetWinery.getPicture().getThumbnail());
+                    
+                    // Finalizzo gli aggiornamenti in modo da evitare incosistenze nel database
+                    targetWinery.adjustFieldsForUpdate();
+
+                    return wineryRepository.save(targetWinery);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
+
+    // Cerca il documento di una winery e ne modifica lo username
+    public Winery updateWineryUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException {
+        if (targetUsername.equals(newUsername)) {
+            throw new BadRequestException("Username not updatable because it is the same as the old one.");
+        }
+        if (wineryRepository.findByLogin_Username(newUsername).isPresent()) {
+            throw new ResourceAlreadyExistsException("Username not updatable because \"" + newUsername + "\" is already used by another winery.");
+        }
+
+        return wineryRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetWinery -> {
+                    targetWinery.getLogin().setUsername(newUsername.trim());
+
+                    // Aggiorno tutti i vini della winery nella collection "wines"
+                    updateWine_Winery_UsernameByWineryUsername(targetWinery.getLogin().getUsername(), newUsername.trim());
+
+                    return wineryRepository.save(targetWinery);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
+
+    // Cerca il documento di una winery e ne modifica la password
+    public Winery updateWineryPassword(String targetUsername, PasswordDTO passwordDTO) throws IllegalArgumentException, ResourceNotFoundException {
+        return wineryRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetWinery -> {
+                    if (!passwordEncoder.matches(passwordDTO.getOldPass(), targetWinery.getLogin().getPassword())) {
+                        throw new IllegalArgumentException("Password of winery with username \"" + targetUsername + "\" not updatable because old password is wrong.");
+                    }
+                    if (passwordDTO.getNewPass().equals(passwordDTO.getOldPass())) {
+                        throw new IllegalArgumentException("Password of winery with username \"" + targetUsername + "\" not updatable because new password is the same as the old one.");
+                    }
+                    if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
+                        throw new IllegalArgumentException("Password of winery with username \"" + targetUsername + "\" not updatable because new passwords do not match.");
+                    }
+                    if (!passwordDTO.passwordPatternVerifier()) {
+                        throw new IllegalArgumentException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
+                    }
+
+                    targetWinery.getLogin().setPassword(passwordEncoder.encode(passwordDTO.getNewPass()));
+                    
+                    return wineryRepository.save(targetWinery);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
+
+    // Cerca il documento di una winery e aggiunge una foto alla gallery della winery
+    public Winery addImage(String targetUsername, String image) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        return wineryRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetWinery -> {
+                    if (targetWinery.getImages().contains(image)) {
+                        throw new ResourceAlreadyExistsException("Image \"" + image + "\" already exists in the gallery of winery with username \"" + targetUsername + "\".");
+                    }
+
+                    targetWinery.getImages().add(image);
+
+                    return wineryRepository.save(targetWinery);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
+
+    // Cerca il documento di una winery e rimuove una foto dalla gallery della winery
+    public Winery removeImage(String targetUsername, String image) throws ResourceNotFoundException {
+        return wineryRepository
+            .findByLogin_Username(targetUsername)
+            .map(
+                targetWinery -> {
+                    if (!targetWinery.getImages().contains(image)) {
+                        throw new ResourceNotFoundException("Image \"" + image + "\" not found in the gallery of winery with username \"" + targetUsername + "\".");
+                    }
+
+                    targetWinery.getImages().remove(image);
+
+                    return wineryRepository.save(targetWinery);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
+
+    /// DELETE operations ///
+    // Elimina una winery con un determinato username
+    public void deleteWinery(String targetUsername) throws ResourceNotFoundException {
+        final Winery targetWinery = wineryRepository
+            .findByLogin_Username(targetUsername)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not deletable because it does not exist.")
+            );
+
+        // Elimino tutti i vini della winery nella collection "wines"
+        deleteWineByWineryUsername(targetUsername);
+        
+        wineryRepository.delete(targetWinery);
+    }
 
     //// END of crud operations ////
     ////////////////////////////////

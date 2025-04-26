@@ -3,11 +3,11 @@ package com.wineadvisor.wineadvisor.service;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
-import com.wineadvisor.wineadvisor.model.Review;
-import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
-import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
+import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.wines.Wine;
+import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 
 import lombok.RequiredArgsConstructor;
 

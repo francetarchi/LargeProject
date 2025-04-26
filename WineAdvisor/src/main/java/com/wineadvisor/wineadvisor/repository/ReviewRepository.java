@@ -1,24 +1,25 @@
 package com.wineadvisor.wineadvisor.repository;
 
-import com.wineadvisor.wineadvisor.model.Review;
-
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
+
+import com.wineadvisor.wineadvisor.model.reviews.Review;
+
 import java.util.*;
 
 @Repository
 public interface ReviewRepository extends MongoRepository<Review, Long> {
     
-    // metodo findByWineId_IdAndWineId_Year: restituisce una lista di recensioni relative ad un'annata di un vino specifica
+    // metodo che restituisce una lista di recensioni relative ad un'annata di un vino specifica
     ArrayList<Review> findByWineId_IdAndWineId_Year(Long wineId, Integer year);
     
-    // metodo findByWineId_Id: restituisce una lista di recensioni relative ad un vino
+    // metodo che restituisce una lista di recensioni relative ad un vino
     ArrayList<Review> findByWineId_Id(Long wineId);
 
-    // metodo findByUserId_Username: restituisce una lista di recensioni relative ad un utente
+    // metodo che restituisce una lista di recensioni relative ad un utente
     ArrayList<Review> findByUserId_Username(String username);
 
-    // metodo findByUserId_UsernameAndWineId_Id: restituisce una lista di recensioni relative ad un utente e ad un vino
+    // metodo che restituisce una lista di recensioni relative ad un utente e ad un vino
     ArrayList<Review> findByUserId_UsernameAndWineId_Id(String username, Long wineId);
 
     // metodo che restituisce il conto delle recensioni relative ad un vino
@@ -45,5 +46,6 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
     // metodo che elimina tutte le recensioni di un'annata specifica di un determinato vino
     void deleteByWineId_IdAndWineId_Year(Long wineId, Integer year);
 
+    // metodo che restituisce una recensione specifica di un vino
     Optional<Review> findByIdAndUserId_Username(Long id, String username);
 }

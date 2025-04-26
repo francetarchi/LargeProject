@@ -7,11 +7,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wineadvisor.wineadvisor.DTO.users.fields.LocationDTO;
 import com.wineadvisor.wineadvisor.DTO.users.fields.NameDTO;
-import com.wineadvisor.wineadvisor.DTO.users.fields.PictureDTO;
-import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.fields.users.Dob;
-import com.wineadvisor.wineadvisor.model.fields.users.Login;
-import com.wineadvisor.wineadvisor.model.fields.users.Registered;
+import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.users.fields.Dob;
+import com.wineadvisor.wineadvisor.model.utils.Login;
+import com.wineadvisor.wineadvisor.model.utils.Registered;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -26,13 +27,13 @@ import lombok.Data;
 @Data
 @JsonPropertyOrder({ "name", "location", "email", "telephone", "username", "dob", "picture", "password" })
 public class CreateUserDTO {
-    @NotNull(message = "Name info cannot be blank.")
+    @NotNull(message = "Name info cannot be null.")
     @Valid
     @Schema(name = "name", description = "Name info of the new user")
     @JsonProperty("name")
     private NameDTO nameDTO;
 
-    @NotNull(message = "Location info cannot be blank.")
+    @NotNull(message = "Location info cannot be null.")
     @Valid
     @Schema(name = "location", description = "Home address of the new user")
     @JsonProperty("location")
@@ -47,24 +48,24 @@ public class CreateUserDTO {
     @Schema(description = "Telephone of the new user", example = "+39 3331234567")
     private String telephone;
 
-    @NotBlank(message = "Username cannot be blank.")
-    @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "Username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.")
-    @Schema(description = "Username of the new user", example = "user123")
-    private String username;
-
     @PastOrPresent(message = "Date must be in the past.")
     // @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", message = "Date must follow the format 'yyyy-MM-ddTHH:mm:ssZ'")
     @Schema(name = "date of birth", description = "Date of birth of the new user", example = "1970-01-01T00:00:00.000Z")
     @JsonProperty("date of birth")
     private LocalDateTime dob;
 
-    @Schema(name = "picture", description = "Picture info of the new user")
-    @JsonProperty("picture")
+    @Schema(name = "profile picture", description = "Link of profile picture of the new user in 3 differents ratios")
+    @JsonProperty("profile picture")
     private PictureDTO pictureDTO;
 
-    @NotNull(message = "Password info cannot be blank.")
+    @NotBlank(message = "Username cannot be blank.")
+    @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "Username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.")
+    @Schema(description = "Username of the new user", example = "user123")
+    private String username;
+
+    @NotNull(message = "Password info cannot be null.")
     @Valid
-    @Schema(name = "password", description = "Password info of the new user", example = "{ \"oldPassword\": \"oldPass123!\", \"newPassword\": \"newPass123!\", \"confirmPassword\": \"newPass123!\" }")
+    @Schema(name = "password", description = "Password info of the new user")
     @JsonProperty("password")
     private PasswordDTO passwordDTO;
 
