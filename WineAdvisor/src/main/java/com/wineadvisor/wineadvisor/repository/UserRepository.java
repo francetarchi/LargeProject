@@ -6,10 +6,11 @@ import java.util.Optional;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+
+import com.wineadvisor.wineadvisor.model.users.User;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.repository.MongoRepository;
-
-import com.wineadvisor.wineadvisor.model.User;
 
 @Repository
 public interface UserRepository extends MongoRepository<User, ObjectId> {

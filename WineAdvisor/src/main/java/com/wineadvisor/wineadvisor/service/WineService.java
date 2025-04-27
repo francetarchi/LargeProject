@@ -1,36 +1,39 @@
 package com.wineadvisor.wineadvisor.service;
 
 import java.util.ArrayList;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.wineadvisor.wineadvisor.DTO.WineDTO.CreateWineDTO;
-import com.wineadvisor.wineadvisor.DTO.WineDTO.NewFoodDTO;
-import com.wineadvisor.wineadvisor.DTO.WineDTO.NewGrapeDTO;
-import com.wineadvisor.wineadvisor.DTO.WineDTO.NewVintageDTO;
-import com.wineadvisor.wineadvisor.DTO.WineDTO.UpdateVintageDTO;
-import com.wineadvisor.wineadvisor.DTO.WineDTO.UpdateWineDTO;
-
-import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.Review;
-import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.Winery;
-import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
-import com.wineadvisor.wineadvisor.model.fields.wines.*;
-
+import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.wineries.Winery;
+import com.wineadvisor.wineadvisor.model.wines.*;
+import com.wineadvisor.wineadvisor.model.wines.fields.BaselineStructure;
+import com.wineadvisor.wineadvisor.model.wines.fields.Country;
+import com.wineadvisor.wineadvisor.model.wines.fields.Food;
+import com.wineadvisor.wineadvisor.model.wines.fields.Grape;
+import com.wineadvisor.wineadvisor.model.wines.fields.Region;
+import com.wineadvisor.wineadvisor.model.wines.fields.Statistics;
+import com.wineadvisor.wineadvisor.model.wines.fields.Structure;
+import com.wineadvisor.wineadvisor.model.wines.fields.Style;
+import com.wineadvisor.wineadvisor.model.wines.fields.Taste;
+import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
+import com.wineadvisor.wineadvisor.model.wines.fields.WineryEmbedded;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.repository.CountryRepository;
-
-import com.wineadvisor.wineadvisor.service.utils.IdCounterService;
-
+import com.wineadvisor.wineadvisor.DTO.wines.CreateWineDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.NewFoodDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.NewGrapeDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.NewVintageDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.UpdateWineDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
@@ -43,9 +46,7 @@ public class WineService {
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final CountryRepository countryRepository;
-
-    @Autowired
-    private IdCounterService idCounterService;
+    private final IdCounterService idCounterService;
 
     // CRUD
     // CREATE
@@ -108,9 +109,9 @@ public class WineService {
         wine.getStatistics().setRatingsCount((long) 0);
 
         wine.setWinery(new WineryEmbedded());
-        wine.getWinery().setId(wineryId);
         wine.getWinery().setName(winery.getName());
-
+        wine.getWinery().setUsername(winery.getLogin().getUsername());
+        wine.getWinery().setThumbnail(winery.getPicture().getThumbnail());
         
         wine.setRegion(new Region());
         wine.getRegion().setName(winery.getRegion());

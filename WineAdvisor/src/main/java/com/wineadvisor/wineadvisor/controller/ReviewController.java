@@ -10,10 +10,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import com.wineadvisor.wineadvisor.DTO.ReviewDTO.CreateReviewDTO;
-import com.wineadvisor.wineadvisor.DTO.ReviewDTO.UpdateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-import com.wineadvisor.wineadvisor.model.Review;
+import com.wineadvisor.wineadvisor.model.reviews.Review;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;

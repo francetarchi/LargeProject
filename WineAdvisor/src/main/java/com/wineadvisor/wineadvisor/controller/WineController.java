@@ -1,7 +1,7 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.fields.wines.Vintage;
+import com.wineadvisor.wineadvisor.model.wines.Wine;
+import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.service.WineService;
 
 import jakarta.validation.Valid;
@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import com.wineadvisor.wineadvisor.DTO.WineDTO.*;
+import com.wineadvisor.wineadvisor.DTO.wines.*;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
 import org.springframework.data.domain.Pageable;

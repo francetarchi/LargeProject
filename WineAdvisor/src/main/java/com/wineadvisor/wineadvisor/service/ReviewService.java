@@ -3,22 +3,21 @@ package com.wineadvisor.wineadvisor.service;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
-import com.wineadvisor.wineadvisor.service.utils.IdCounterService;
-import com.wineadvisor.wineadvisor.model.Review;
-import com.wineadvisor.wineadvisor.model.User;
-import com.wineadvisor.wineadvisor.model.Wine;
-import com.wineadvisor.wineadvisor.model.fields.ReviewEmbedded;
-import com.wineadvisor.wineadvisor.model.fields.reviews.UserId;
-import com.wineadvisor.wineadvisor.model.fields.reviews.WineId;
-import com.wineadvisor.wineadvisor.model.fields.wines.*;
+import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
+import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
+import com.wineadvisor.wineadvisor.model.wines.*;
+import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
-import com.wineadvisor.wineadvisor.DTO.ReviewDTO.CreateReviewDTO;
-import com.wineadvisor.wineadvisor.DTO.ReviewDTO.UpdateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
+import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
