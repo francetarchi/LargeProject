@@ -139,3 +139,4 @@ Inserire le annotazioni per i controlli (```@NotNull```, ```@NotBlank```, ```@Pa
 Inoltre, usando le classi DTO, possiamo creare delle classi "personalizzate" per ogni endpoint, in modo che prendano solamente i campi necessari in ogni parametro.  
 
 
+## SBURA
