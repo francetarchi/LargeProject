@@ -2,7 +2,7 @@ package com.wineadvisor.wineadvisor.DTO.users.fields;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.model.users.fields.Location;
+import com.wineadvisor.wineadvisor.model.users.fields.Address;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @JsonPropertyOrder({ "street", "city", "region", "country", "postcode" })
-public class LocationDTO {
+public class AddressDTO {
     @Valid
     @Schema(name = "street", description = "Street info of the address")
     @JsonProperty("street")
@@ -39,7 +39,7 @@ public class LocationDTO {
 
     
     ///////////// METODI PUBBLICI /////////////
-    public Location toLocation() {
-        return new Location(this.streetDTO.toStreet(), this.city, this.region, this.country, this.postcode);
+    public Address toAddress() {
+        return new Address(this.streetDTO.toStreet(), this.city, this.region, this.country, this.postcode);
     }
 }

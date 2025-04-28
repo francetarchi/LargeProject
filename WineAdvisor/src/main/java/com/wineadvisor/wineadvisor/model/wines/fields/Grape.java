@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Grape {
-    private Long id;
     private String name;
 
     @Field("wines_count")
-    private Long winesCount;
+    private Integer winesCount;
 }

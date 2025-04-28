@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BaselineStructure {
     private Double acidity;
-    private Double fiziness;
+    private Double fizziness;
     private Double intensity;
     private Double sweetness;
     private Double tannin;

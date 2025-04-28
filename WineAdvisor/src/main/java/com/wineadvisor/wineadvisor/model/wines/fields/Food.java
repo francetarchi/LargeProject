@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Food {
-    private Long id;
     private String name;
-    private Double weight;
+    private String image;
 }

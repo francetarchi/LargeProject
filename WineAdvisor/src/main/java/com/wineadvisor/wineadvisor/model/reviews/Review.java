@@ -5,17 +5,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
 import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
 
 @Data
 @Document(collection = "reviews")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
 @NoArgsConstructor
 public class Review {
@@ -41,10 +42,4 @@ public class Review {
 
     @Field("dislikes_count")
     private Long dislikesCount;
-
-    @Field("liked_by")
-    private ArrayList<String> likedBy;
-
-    @Field("disliked_by")
-    private ArrayList<String> dislikedBy;
 }

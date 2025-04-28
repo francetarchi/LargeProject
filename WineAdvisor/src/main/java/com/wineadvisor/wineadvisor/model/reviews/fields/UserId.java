@@ -1,13 +1,18 @@
 package com.wineadvisor.wineadvisor.model.reviews.fields;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserId {
-    @Schema(description = "Username", example = "user123")
+    @Field("username")
     private String username;
-
-    @Schema(description = "Thumbnail picture", example = "https://randomlink.extension/path/subpath/img_thumb.jpg")
+    
+    @Field("thumbnail")
     private String thumbnail;
 }
