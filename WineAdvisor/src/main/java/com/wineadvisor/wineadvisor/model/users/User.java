@@ -19,6 +19,7 @@ import org.bson.types.ObjectId;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 
 @Data
@@ -32,6 +33,7 @@ public class User {
 
     private Name name;
 
+    @Field("address")
     private Location location;
 
     private String email;

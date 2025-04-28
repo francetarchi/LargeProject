@@ -235,6 +235,20 @@ public class ReviewService {
         return reviewRepository.countByWineId_IdAndWineId_Year(wineId, vintageYear);
     }
 
+    // Calcola e restituisce la media dei rating di un vino
+    public Double getAverageRatingByWine(Long wineId) {
+        // Controllo se il vino esiste
+        if (wineRepository.findById(wineId).isEmpty()) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
+        }
+        ArrayList<Review> reviews = reviewRepository.findByWineId_Id(wineId);
+        Double sum = (double) 0;
+        for (Review review : reviews) {
+            sum += review.getRating();
+        }
+        return sum / reviews.size();
+    }
+
     // Calcola e restituisce la media dei rating di un'annata di un vino
     public Double getAverageRatingByVintage(Long wineId, Integer year){
         // Controllo se il vino e la vintage esistono
@@ -339,7 +353,7 @@ public class ReviewService {
         }
 
         // Rimuovo l'id della recensione dagli array likes/dislikes di users
-        ArrayList<User> users = userRepository.findByLikesDislikes(id);
+        ArrayList<User> users = userRepository.findByLikesOrDislikes(id);
         for (User user : users) {
             user.getLikes().removeIf(l -> l.equals(id));
             user.getDislikes().removeIf(d -> d.equals(id));
@@ -397,7 +411,7 @@ public class ReviewService {
         // Rimuovo gli id delle recensioni dagli array likes/dislikes di users
         ArrayList<ReviewEmbedded> reviews = user.getReviews();
         for (ReviewEmbedded review : reviews) {
-            ArrayList<User> users = userRepository.findByLikesDislikes(review.getReviewId());
+            ArrayList<User> users = userRepository.findByLikesOrDislikes(review.getReviewId());
             for (User user1 : users) {
                 user1.getLikes().removeIf(l -> l.equals(review.getReviewId()));
                 user1.getDislikes().removeIf(d -> d.equals(review.getReviewId()));
@@ -642,28 +656,6 @@ public class ReviewService {
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (int i = 0; i < users.size(); i++){
             updateUsersReviews(users.get(i).getLogin().getUsername());
-        }
-    }
-
-    // Operazione che una volta al giorno aggiorna i campi: "statistics": {"ratings_count": 199, "ratings_average": 4.3} presenti all'interno di ogni vintage di ogni wine nella collection wines
-    @Scheduled(cron = "0 0 0 * * ?") // Ogni giorno a mezzanotte
-    public void updateStatistics(){
-        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
-        for (int i = 0; i < wines.size(); i++){
-            ArrayList<Vintage> vintages = wines.get(i).getVintages();
-            for (int j = 0; j < vintages.size(); j++){
-                ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wines.get(i).getId(), vintages.get(j).getYear());
-                if (reviews.isEmpty()){
-                    vintages.get(j).getStatistics().setRatingsCount((long) 0);
-                    vintages.get(j).getStatistics().setRatingsAverage(0.0);
-                } else {
-                    Long ratings_count = (long) reviews.size();
-                    Double ratings_average = getAverageRatingByVintage(wines.get(i).getId(), vintages.get(j).getYear());
-                    vintages.get(j).getStatistics().setRatingsCount(ratings_count);
-                    vintages.get(j).getStatistics().setRatingsAverage(ratings_average);
-                }
-            }
-            wineRepository.save(wines.get(i));
         }
     }
 }

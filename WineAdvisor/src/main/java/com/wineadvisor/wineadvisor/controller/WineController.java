@@ -20,6 +20,8 @@ import org.springframework.data.domain.Page;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
+
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -119,9 +121,9 @@ public class WineController {
     @GetMapping("/winery/{wineryId}")
     public ResponseEntity<?> getWinesByWinery(
             Pageable pageable,
-            @PathVariable @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
+            @PathVariable @NotBlank(message = "Winery username cannot be null.") String wineryUsername) {
         try {
-            Page<Wine> wines = wineService.getWinesByWinery(pageable, wineryId);
+            Page<Wine> wines = wineService.getWinesByWinery(pageable, wineryUsername);
             return ResponseEntity.status(HttpStatus.OK).body(wines);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -231,6 +233,51 @@ public class WineController {
         try {
             Page<Wine> wines = wineService.getWinesByMinAverageRating(pageable, minRating);
             return ResponseEntity.status(HttpStatus.OK).body(wines);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    // ANALYTICS
+    @GetMapping("/analytics/top-10-wines")
+    public ResponseEntity<?> getTop10Wines() {
+        try {
+            ArrayList<Wine> wines = wineService.getTop10Wines();
+            return ResponseEntity.status(HttpStatus.OK).body(wines);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/analytics/most-popular-in-your-region/{username}")
+    public ResponseEntity<?> getMostPopularWinesInUserRegion(
+            @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
+        try {
+            ArrayList<Wine> wines = wineService.getMostPopularWinesInUserRegion(username);
+            return ResponseEntity.status(HttpStatus.OK).body(wines);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/analytics/vintages-recommendations/{username}")
+    public ResponseEntity<?> getRecommendedVintages(
+            @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
+        try {
+            ArrayList<Vintage> vintages = wineService.getRecommendedVintages(username);
+            return ResponseEntity.status(HttpStatus.OK).body(vintages);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (ResourceNotFoundException e) {

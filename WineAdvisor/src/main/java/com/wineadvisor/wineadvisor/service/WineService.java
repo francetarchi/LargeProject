@@ -1,11 +1,13 @@
 package com.wineadvisor.wineadvisor.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.model.users.User;
@@ -47,6 +49,7 @@ public class WineService {
     private final WineryRepository wineryRepository;
     private final CountryRepository countryRepository;
     private final IdCounterService idCounterService;
+    private final ReviewService reviewService;
 
     // CRUD
     // CREATE
@@ -156,14 +159,14 @@ public class WineService {
 
     
     // Restituisce tutti i vini di una determinata winery (con paginazione)
-    public Page<Wine> getWinesByWinery(Pageable pageable, Long wineryId) {
+    public Page<Wine> getWinesByWinery(Pageable pageable, String wineryUsername) {
         // Controllo che la winery indicata esista
-        wineryRepository.findById(wineryId)
-        .orElseThrow(() -> new ResourceNotFoundException("Winery with id " + wineryId + " not found."));
+        wineryRepository.findByLogin_Username(wineryUsername)
+            .orElseThrow(() -> new ResourceNotFoundException("Winery with username " + wineryUsername + " not found."));
         
-        Page<Wine> wines = wineRepository.findByWinery_Id(pageable, wineryId);
+        Page<Wine> wines = wineRepository.findByWinery_Username(pageable, wineryUsername);
         if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found for winery with id " + wineryId + ".");
+            throw new ResourceNotFoundException("No wines found for winery with username " + wineryUsername + ".");
         }
         return wines;
     }
@@ -448,4 +451,191 @@ public class WineService {
         // Elimina tutti i vini
         wineRepository.deleteAll();
     }
+
+    //// END of crud operations ////
+    ////////////////////////////////
+    
+    
+    // Funzioni di utilità
+    // Inserisce un elemento all'interno di un ArrayList<Wine> per rapporto qualità/prezzo decrescente
+    public ArrayList<Wine> insertWineRatio (ArrayList<Wine> wines, Wine wine, Double ratio){
+        if (wines.isEmpty()){
+            wines.add(wine);
+            return wines;
+        }
+        for (int i = 0; i < wines.size(); i++){
+            Double ratings_average = wines.get(i).getStatistics().getRatingsAverage();
+            Double tot_price = 0.0;
+            for (Vintage vintage : wines.get(i).getVintages()){
+                tot_price += vintage.getPrice();
+            }
+            Double average_price = tot_price / wines.get(i).getVintages().size();
+            Double ratio_i = ratings_average / average_price;
+            
+            if (ratio > ratio_i){
+                wines.add(i, wine);
+                return wines;
+            }
+        }
+        wines.add(wine);
+        
+        return wines;
+    }
+
+    // Operazioni asincrone
+    // Operazione che una volta al giorno aggiorna i campi: "statistics": {"ratings_count": 199, "ratings_average": 4.3} presenti all'interno di ogni vintage di ogni wine nella collection wines
+    @Scheduled(cron = "0 0 0 * * ?") // Ogni giorno a mezzanotte
+    public void updateStatisticsVintages(){
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
+        for (int i = 0; i < wines.size(); i++){
+            ArrayList<Vintage> vintages = wines.get(i).getVintages();
+            for (int j = 0; j < vintages.size(); j++){
+                ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wines.get(i).getId(), vintages.get(j).getYear());
+                if (reviews.isEmpty()){
+                    vintages.get(j).getStatistics().setRatingsCount((long) 0);
+                    vintages.get(j).getStatistics().setRatingsAverage(0.0);
+                } else {
+                    Long ratings_count = (long) reviews.size();
+                    Double ratings_average = reviewService.getAverageRatingByVintage(wines.get(i).getId(), vintages.get(j).getYear());
+                    vintages.get(j).getStatistics().setRatingsCount(ratings_count);
+                    vintages.get(j).getStatistics().setRatingsAverage(ratings_average);
+                }
+            }
+            wineRepository.save(wines.get(i));
+        }
+    }
+
+    // Operazione che una volta al giorno aggiorna i campi: "statistics": {"ratings_count": 199, "ratings_average": 4.3} presenti all'interno di ogni wine
+    @Scheduled(cron = "0 0 0 * * ?") // Ogni giorno a mezzanotte
+    public void updateStatisticsWines(){
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
+        for (Wine wine : wines){
+            ArrayList<Review> reviews = reviewRepository.findByWineId_Id(wine.getId());
+            if(reviews.isEmpty()){
+                wine.getStatistics().setRatingsCount((long) 0);
+                wine.getStatistics().setRatingsAverage(0.0);
+            } else {
+                Long ratings_count = (long) reviews.size();
+                Double ratings_average = reviewService.getAverageRatingByWine(wine.getId());
+                wine.getStatistics().setRatingsCount(ratings_count);
+                wine.getStatistics().setRatingsAverage(ratings_average);
+            }
+            wineRepository.save(wine);
+        }
+    }
+    
+    // ANALYTICS
+    // Top 10 wines: restituisce i 10 vini migliori per rapporto qualità/prezzo
+    public ArrayList<Wine> getTop10Wines() {
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
+        if(wines.isEmpty()){
+            throw new ResourceNotFoundException("No wines found.");
+        }
+        ArrayList<Wine> top10Wines = new ArrayList<Wine>();
+        for(Wine wine : wines){
+            Double ratings_average = wine.getStatistics().getRatingsAverage();
+            Double tot_price = 0.0;
+            for (Vintage vintage : wine.getVintages()){
+                tot_price += vintage.getPrice();
+            }
+            Double average_price = tot_price / wine.getVintages().size();
+
+            Double ratio = ratings_average / average_price;
+            top10Wines = insertWineRatio(top10Wines, wine, ratio);
+        }
+        if (top10Wines.size() > 10){
+            top10Wines = new ArrayList<Wine>(top10Wines.subList(0, 10));
+        }
+        return top10Wines;
+    }
+
+    // Vini più popolari nella zona dell'utente: restituisce i 3 vini più recensiti nella zona dell'utente
+    public ArrayList<Wine> getMostPopularWinesInUserRegion(String username) {
+        User user = userRepository.findByLogin_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User with username " + username + " not found."));
+        
+        String region = user.getLocation().getRegion();
+        ArrayList<Wine> wines = wineRepository.findByRegion_Name(region);
+        if(wines.isEmpty()){
+            throw new ResourceNotFoundException("No wines found in region " + region + ".");
+        }
+        ArrayList<Wine> top3Wines = new ArrayList<Wine>();
+        for(Wine wine : wines){
+            Long ratings_count = wine.getStatistics().getRatingsCount();
+            top3Wines = insertWineRatio(top3Wines, wine, (double) ratings_count);
+        }
+        if (top3Wines.size() > 3){
+            top3Wines = new ArrayList<Wine>(top3Wines.subList(0, 3));
+        }
+        return top3Wines;
+    }
+
+
+    // Consiglia vintages prodotte negli ultimi 6 mesi sulla base:
+    // - dei preferiti dell'utente (vini preferiti)
+    // - se non ci sono preferiti, dei vini recensiti dall'utente
+    public ArrayList<Vintage> getRecommendedVintages(String username) {
+        userRepository.findByLogin_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User with username " + username + " not found."));
+        
+        ArrayList<Vintage> recommended_vintages = new ArrayList<Vintage>();
+        ArrayList<Wine> reviewed_wines = new ArrayList<Wine>();     
+        
+        Integer current_year = LocalDate.now().getYear();
+        
+        // Cerco i vini recensiti dall'utente
+        ArrayList<Review> user_reviews = reviewRepository.findByUserId_Username(username);
+        ArrayList<Review> sorted_user_reviews = reviewService.sortReviewsByField(user_reviews, "rating", false);
+
+        // Prendo le prime 5 recensioni dell'utente in ordine di rating decrescente
+        if (sorted_user_reviews.size() > 5) {
+            sorted_user_reviews = new ArrayList<Review>(sorted_user_reviews.subList(0, 5));
+        }
+
+        for (Review review : sorted_user_reviews) {
+            Long wine_id = review.getWineId().getId();
+            Wine wine = wineRepository.findById(wine_id).get();
+            if(!reviewed_wines.contains(wine)){
+                reviewed_wines.add(wine);
+            }
+        }
+
+        for (Wine wine : reviewed_wines) {
+            for (Vintage vintage : wine.getVintages()) {
+                if (vintage.getYear().equals(current_year)){
+                    recommended_vintages.add(vintage);
+                }
+            }
+        }
+
+
+        return recommended_vintages;
+    }
+
+    // Classifica delle top 10 aziende vinicole più apprezzate (criterio: rating medio * numero di recensioni)
+    // public getMostLikedWineries () {
+    //     ArrayList<Winery> wineries = wineryRepository.findAll();
+    //     ArrayList<Winery> best_wineries = new ArrayList<Winery>();
+
+    //     for (Winery winery : wineries) {
+    //         ArrayList<Wine> wines = wineRepository.findByWinery_Username(winery.getLogin().getUsername());
+    //         Double ratings_average = 0.0;
+    //         Long ratings_count = 0;
+    //         for (Wine wine : wines) {
+    //             ratings_average += wine.getStatistics().getRatingsAverage();
+    //             ratings_count += wine.getStatistics().getRatingsCount();
+    //         }
+    //         ratings_average = ratings_average / wines.size();
+    //         Double criterius = ratings_average * ratings_count;
+    //         best_wineries = insertWinery(best_wineries, winery, criterius);
+    //     }
+
+    //     if (best_wineries.size() > 10){
+    //         best_wineries = new ArrayList<Winery>(best_wineries.subList(0, 10));
+    //     }
+
+    //     return best_wineries;
+    // }
+
+
 }

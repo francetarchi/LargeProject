@@ -21,11 +21,12 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
     // Metodo per trovare un vino in base ad un range di prezzi
     Page<Wine> findByVintages_PriceBetween(Pageable pageable, Double min_price, Double max_price);
 
-    // Metodo per trovare un vino in base all'id della cantina
-    Page<Wine> findByWinery_Id(Pageable pageable, Long wineryId);
+    // Metodo per trovare un vino in base allo username della cantina
+    Page<Wine> findByWinery_Username(Pageable pageable, String username);
 
     // Metodo per trovare un vino in base al nome della region
     Page<Wine> findByRegion_Name(Pageable pageable, String region);
+    ArrayList<Wine> findByRegion_Name(String region);
 
     // Metodo per trovare un vino in base al rating medio delle recensioni
     Page<Wine> findByStatistics_RatingsAverageGreaterThanEqual(Pageable pageable, Double minRating);
