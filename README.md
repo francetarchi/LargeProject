@@ -137,5 +137,3 @@ Creare le classi DTO da utilizzare per prendere i parametri o il body delle rich
 NON utilizzare le classi del _model_ (quelle servono logicamente per "parlare" con il db).  
 Inserire le annotazioni per i controlli (```@NotNull```, ```@NotBlank```, ```@Pattern```...) nelle classi del package _DTO_, **NON** nelle classi del _model_ (quelle, ripeto, servono logicamente per "parlare" con il db ed è logicamente sbagliato mettergli dei controlli sui parametri: devono essere lasciate "libere" per permettere al programmatore una gestione più libera del db).  
 Inoltre, usando le classi DTO, possiamo creare delle classi "personalizzate" per ogni endpoint, in modo che prendano solamente i campi necessari in ogni parametro.  
-
-
