@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wineadvisor.wineadvisor.model.users.fields.Dob;
 import com.wineadvisor.wineadvisor.model.users.fields.Address;
 import com.wineadvisor.wineadvisor.model.users.fields.Name;
+import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.Login;
 import com.wineadvisor.wineadvisor.model.utils.Picture;
 import com.wineadvisor.wineadvisor.model.utils.Registered;
@@ -30,6 +31,8 @@ public class User {
     @Id
     private ObjectId _id;
 
+    private String gender;
+
     private Name name;
 
     private Address address;
@@ -47,6 +50,8 @@ public class User {
     private ArrayList<ReviewEmbedded> reviews;
     private ArrayList<Long> likes;
     private ArrayList<Long> dislikes;
+
+    private ArrayList<WineFavorite> wineFavorites;
     
 
 

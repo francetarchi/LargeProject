@@ -21,6 +21,10 @@ import lombok.Data;
 @Data
 @JsonPropertyOrder({ "name", "location", "email", "telephone", "dob", "picture" })
 public class UpdateUserDTO {
+    @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
+    @Schema(description = "Gender of the updated user", example = "male")
+    private String gender;
+
     @NotNull(message = "Name info cannot be blank.")
     @Valid
     @Schema(name = "name", description = "Name info of the updated user")

@@ -10,13 +10,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 @JsonPropertyOrder({ "name", "type", "isNatural", "taste", "style" })
 public class CreateWineDTO {
-    @Positive(message = "Id info cannot be negative.")
     @NotBlank(message = "Name info cannot be blank.")
     @Schema(name = "name", description = "Name info of the new wine", example = "Chardonnay")
     @JsonProperty("name")

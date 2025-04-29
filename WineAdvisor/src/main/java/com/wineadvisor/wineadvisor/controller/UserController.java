@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.controller;
 import com.wineadvisor.wineadvisor.DTO.users.UpdateUserDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
+import com.wineadvisor.wineadvisor.DTO.users.addFavoriteDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.service.UserService;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.Valid;
 
@@ -188,6 +190,28 @@ public class UserController {
         }
 
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
+    }
+
+    @PutMapping("/{username}/addFavorite")
+    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username")
+    /* TODO:  Uncomment the following and delete the previous line if you want to add admin authentication */
+    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> addFavorite(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "Wine info cannot be null.") @RequestBody @Valid addFavoriteDTO addFavoriteDTO) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.addFavorite(username, addFavoriteDTO));
+    }
+
+    @PutMapping("/{username}/removeFavorite")
+    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username")
+    /* TODO:  Uncomment the following and delete the previous line if you want to add admin authentication */
+    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> removeFavorite(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotNull(message = "wineId cannot be null.") @RequestParam(name = "wineId", required = true) @Valid @Positive Long wineId) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
     

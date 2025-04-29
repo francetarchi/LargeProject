@@ -27,6 +27,10 @@ import lombok.Data;
 @Data
 @JsonPropertyOrder({ "name", "location", "email", "telephone", "username", "dob", "picture", "password" })
 public class CreateUserDTO {
+    @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
+    @Schema(description = "Gender of the new user", example = "male")
+    private String gender;
+
     @NotNull(message = "Name info cannot be null.")
     @Valid
     @Schema(name = "name", description = "Name info of the new user")
@@ -76,6 +80,7 @@ public class CreateUserDTO {
     public User toUser() {
         User user = new User(
                 null, // _id
+                this.gender, // gender
                 this.getNameDTO().toName(), // name
                 this.getAddressDTO().toAddress(), // address
                 this.email, // email
@@ -86,7 +91,8 @@ public class CreateUserDTO {
                 this.getPictureDTO().toPicture(), // picture
                 new ArrayList<>(), // reviews
                 new ArrayList<>(), // likes
-                new ArrayList<>() // dislikes
+                new ArrayList<>(), // dislikes
+                new ArrayList<>() // wineFavorites
         );
         user.getDob().setDateTime(this.dob);
         
