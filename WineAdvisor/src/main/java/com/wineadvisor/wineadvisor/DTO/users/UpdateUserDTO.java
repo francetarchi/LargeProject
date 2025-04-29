@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.DTO.users.fields.LocationDTO;
+import com.wineadvisor.wineadvisor.DTO.users.fields.AddressDTO;
 import com.wineadvisor.wineadvisor.DTO.users.fields.NameDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
 import com.wineadvisor.wineadvisor.model.users.User;
@@ -21,17 +21,21 @@ import lombok.Data;
 @Data
 @JsonPropertyOrder({ "name", "location", "email", "telephone", "dob", "picture" })
 public class UpdateUserDTO {
+    @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
+    @Schema(description = "Gender of the updated user", example = "male")
+    private String gender;
+
     @NotNull(message = "Name info cannot be blank.")
     @Valid
     @Schema(name = "name", description = "Name info of the updated user")
     @JsonProperty("name")
     private NameDTO nameDTO;
 
-    @NotNull(message = "Location info cannot be blank.")
+    @NotNull(message = "Address info cannot be blank.")
     @Valid
-    @Schema(name = "location", description = "Home address of the updated user")
-    @JsonProperty("location")
-    private LocationDTO locationDTO;
+    @Schema(name = "address", description = "Home address of the updated user")
+    @JsonProperty("address")
+    private AddressDTO addressDTO;
 
     @NotBlank(message = "Email cannot be blank.")
     @Email(message = "Email must be a valid email address.")
@@ -58,7 +62,7 @@ public class UpdateUserDTO {
     // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)). Ritorna l'utente aggiornato.
     public User toUser(User targetUser) {
         targetUser.setName(this.getNameDTO().toName());
-        targetUser.setLocation(this.getLocationDTO().toLocation());
+        targetUser.setAddress(this.getAddressDTO().toAddress());
         targetUser.setEmail(this.getEmail());
         targetUser.setTelephone(this.getTelephone());
         targetUser.getDob().setDateTime(this.getDob());

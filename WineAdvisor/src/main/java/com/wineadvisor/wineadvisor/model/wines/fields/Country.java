@@ -16,6 +16,7 @@ public class Country {
     @Id
     @Field("_id")
     private String id;
+    
     private String name;
     private Currency currency;
 }

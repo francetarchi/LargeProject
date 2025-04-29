@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.3</version>
+		<version>3.4.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -48,7 +48,8 @@
 		<!--   Spring Data MongoDB for document database interaction   -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-    		<artifactId>spring-boot-starter-data-mongodb</artifactId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+			<version>3.4.4</version>
 		</dependency>
 
 		<!--   Spring Boot Web for building REST APIs   -->
@@ -64,19 +65,29 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!--   Spring Boot for security   -->
+		<!--   Spring Boot Security for security   -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		
+		<!-- Spring Boot Validation for data validation -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
 
-
-		<!--     SWAGGER     -->
 		<!--   SpringDoc OpenAPI for Swagger integration   -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.3.0</version>
+		</dependency>
+
+		<!-- Jackson for managing DTO fields -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
 		</dependency>
 
 
@@ -85,7 +96,7 @@
 		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongodb-driver-sync</artifactId>
-			<version>5.2.0</version>
+			<version>5.2.1</version>
 		</dependency>
 
 		<!--   Neo4j Java Driver for MongoDB connection   -->

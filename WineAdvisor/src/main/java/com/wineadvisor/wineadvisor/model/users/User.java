@@ -8,8 +8,9 @@ import lombok.AllArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wineadvisor.wineadvisor.model.users.fields.Dob;
-import com.wineadvisor.wineadvisor.model.users.fields.Location;
+import com.wineadvisor.wineadvisor.model.users.fields.Address;
 import com.wineadvisor.wineadvisor.model.users.fields.Name;
+import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.Login;
 import com.wineadvisor.wineadvisor.model.utils.Picture;
 import com.wineadvisor.wineadvisor.model.utils.Registered;
@@ -19,7 +20,6 @@ import org.bson.types.ObjectId;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 
 @Data
@@ -31,10 +31,11 @@ public class User {
     @Id
     private ObjectId _id;
 
+    private String gender;
+
     private Name name;
 
-    @Field("address")
-    private Location location;
+    private Address address;
 
     private String email;
     private String telephone;
@@ -49,6 +50,8 @@ public class User {
     private ArrayList<ReviewEmbedded> reviews;
     private ArrayList<Long> likes;
     private ArrayList<Long> dislikes;
+
+    private ArrayList<WineFavorite> wineFavorites;
     
 
 
@@ -68,12 +71,12 @@ public class User {
         this.name.setFirst(this.name.getFirst().trim());
         this.name.setLast(this.name.getLast().trim());
 
-        this.location.getStreet().setNumber(this.location.getStreet().getNumber().trim());
-        this.location.getStreet().setName(this.location.getStreet().getName().trim());
-        this.location.setCity(this.location.getCity().trim());
-        this.location.setRegion(this.location.getRegion().trim());
-        this.location.setCountry(this.location.getCountry().trim());
-        this.location.setPostcode(this.location.getPostcode().trim());
+        this.address.getStreet().setNumber(this.address.getStreet().getNumber().trim());
+        this.address.getStreet().setName(this.address.getStreet().getName().trim());
+        this.address.setCity(this.address.getCity().trim());
+        this.address.setRegion(this.address.getRegion().trim());
+        this.address.setCountry(this.address.getCountry().trim());
+        this.address.setPostcode(this.address.getPostcode().trim());
 
         this.email = this.email.trim();
         

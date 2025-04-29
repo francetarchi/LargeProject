@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.DTO.users.UpdateUserDTO;
+import com.wineadvisor.wineadvisor.DTO.users.addFavoriteDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
@@ -19,6 +20,7 @@ import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 
@@ -608,6 +610,49 @@ public class UserService {
                         review.getLikesCount(), review.getDislikesCount());
 
                 return userRepository.save(user);
+            })
+            .orElseThrow(
+                    () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+            );
+    }
+
+    // Cerca il documento di un utente e aggiunge un vino alla sua lista di preferiti
+    public User addFavorite(String username, addFavoriteDTO addFavoriteDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+            .findByLogin_Username(username)
+            .map(user -> {
+                // Controllo che l'utente non abbia già messo il vino tra i preferiti
+                for (WineFavorite w : user.getWineFavorites()) {
+                    if (w.getId().equals(addFavoriteDTO.getWineId())) {
+                        throw new ResourceAlreadyExistsException("User with username " + username + " has already added this wine to favorites.");
+                    }
+                }
+
+                // Aggiungo il vino alla lista dei preferiti dell'utente
+                user.getWineFavorites().add(addFavoriteDTO.toWineFavorite());
+
+                return userRepository.save(user);
+            })
+            .orElseThrow(
+                    () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+            );
+    }
+
+    // Cerca il documento di un utente e rimuove un vino dalla sua lista di preferiti
+    public User removeFavorite(String username, Long wineId) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        return userRepository
+            .findByLogin_Username(username)
+            .map(user -> {
+                // Controllo che l'utente abbia messo il vino tra i preferiti
+                for (WineFavorite w : user.getWineFavorites()) {
+                    if (w.getId().equals(wineId)) {
+                        // Rimuovo il vino dalla lista dei preferiti dell'utente
+                        user.getWineFavorites().remove(w);
+                        return userRepository.save(user);
+                    }
+                }
+
+                throw new ResourceAlreadyExistsException("User with username " + username + " has not added this wine to favorites.");
             })
             .orElseThrow(
                     () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")

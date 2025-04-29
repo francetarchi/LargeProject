@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.DTO.users.fields.LocationDTO;
+import com.wineadvisor.wineadvisor.DTO.users.fields.AddressDTO;
 import com.wineadvisor.wineadvisor.DTO.users.fields.NameDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
@@ -27,17 +27,21 @@ import lombok.Data;
 @Data
 @JsonPropertyOrder({ "name", "location", "email", "telephone", "username", "dob", "picture", "password" })
 public class CreateUserDTO {
+    @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
+    @Schema(description = "Gender of the new user", example = "male")
+    private String gender;
+
     @NotNull(message = "Name info cannot be null.")
     @Valid
     @Schema(name = "name", description = "Name info of the new user")
     @JsonProperty("name")
     private NameDTO nameDTO;
 
-    @NotNull(message = "Location info cannot be null.")
+    @NotNull(message = "Address info cannot be null.")
     @Valid
-    @Schema(name = "location", description = "Home address of the new user")
-    @JsonProperty("location")
-    private LocationDTO locationDTO;
+    @Schema(name = "address", description = "Home address of the new user")
+    @JsonProperty("address")
+    private AddressDTO addressDTO;
 
     @NotBlank(message = "Email cannot be blank.")
     @Email(message = "Email must be a valid email address.")
@@ -76,8 +80,9 @@ public class CreateUserDTO {
     public User toUser() {
         User user = new User(
                 null, // _id
+                this.gender, // gender
                 this.getNameDTO().toName(), // name
-                this.getLocationDTO().toLocation(), // location
+                this.getAddressDTO().toAddress(), // address
                 this.email, // email
                 this.telephone, // telephone
                 new Login(this.username, null), // login
@@ -86,7 +91,8 @@ public class CreateUserDTO {
                 this.getPictureDTO().toPicture(), // picture
                 new ArrayList<>(), // reviews
                 new ArrayList<>(), // likes
-                new ArrayList<>() // dislikes
+                new ArrayList<>(), // dislikes
+                new ArrayList<>() // wineFavorites
         );
         user.getDob().setDateTime(this.dob);
         

@@ -47,5 +47,4 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
     Optional<Wine> findByVintages(Long id, Integer year);
 
     ArrayList<Wine> findByWinery_Username(String username);
-
 }

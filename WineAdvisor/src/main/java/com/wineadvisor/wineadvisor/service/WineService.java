@@ -559,7 +559,7 @@ public class WineService {
         User user = userRepository.findByLogin_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("User with username " + username + " not found."));
         
-        String region = user.getLocation().getRegion();
+        String region = user.getAddress().getRegion();
         ArrayList<Wine> wines = wineRepository.findByRegion_Name(region);
         if(wines.isEmpty()){
             throw new ResourceNotFoundException("No wines found in region " + region + ".");

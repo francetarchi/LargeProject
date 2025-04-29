@@ -60,10 +60,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/authentication/login").anonymous()   // Permetto l'accesso a /api/authentication/** solamente ad utenti non autenticati (endpoint di login e logout)
                 .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
                 .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()  // Permetto l'accesso a /api/wineries solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un'azienda vinicola)
-                // .requestMatchers("/api/wines/**").hasAnyRole(USER /* , "ADMIN" */)    // USER e ADMIN possono accedere a /api/users/**
-                // .requestMatchers("/api/reviews/**").hasAnyRole(USER /* , "ADMIN" */)    // USER e ADMIN possono accedere a /api/users/**
-                // .requestMatchers("/api/users/**").hasAnyRole(USER /* , "ADMIN" */)    // USER e ADMIN possono accedere a /api/users/**
-                // .requestMatchers("/api/wineries/**").hasAnyRole(USER, WINERY /*  , "ADMIN" */)  // WINERY e ADMIN possono accedere a /api/wineries/**
                 .anyRequest().authenticated()   // Tutte le altre richieste richiedono autenticazione (senza specificare il ruolo)
             )
             .authenticationProvider(authenticationProvider())
