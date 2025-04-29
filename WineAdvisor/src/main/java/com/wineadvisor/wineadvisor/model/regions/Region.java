@@ -1,6 +1,5 @@
-package com.wineadvisor.wineadvisor.model.wines.fields;
+package com.wineadvisor.wineadvisor.model.regions;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -9,13 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Document(collection = "countries")
+@Document(collection = "regions")
 @AllArgsConstructor
 @NoArgsConstructor
-public class Country {    
-    @Id
+public class Region {
     @Field("_id")
-    private String id;
+    private Long id;
     private String name;
-    private Currency currency;
+    private String country;
 }

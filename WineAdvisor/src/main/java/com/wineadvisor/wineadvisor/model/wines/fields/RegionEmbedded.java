@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Region {
+public class RegionEmbedded {
     private String name;
     private Country country;
 }

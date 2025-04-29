@@ -2,9 +2,6 @@ package com.wineadvisor.wineadvisor.DTO.wines;
 
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -17,16 +14,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonPropertyOrder({ "wineId", "name", "type", "isNatural", "taste", "style" })
 public class UpdateWineDTO {
     @NotNull(message = "Wine ID cannot be blank.")
-    @Schema(name = "wineId", description = "Wine ID info of the new vintage", example = "1")
-    @JsonProperty("wineId")
+    @Schema(description = "Wine ID info of the new vintage", example = "1")
     private Long wineId;
 
     @NotBlank(message = "Name info cannot be blank.")
-    @Schema(name = "name", description = "Name info of the new wine", example = "Chardonnay")
-    @JsonProperty("name")
+    @Schema(description = "Name info of the new wine", example = "Chardonnay")
     private String name;
 
     @NotBlank(message = "Type info cannot be blank.")
@@ -34,23 +28,19 @@ public class UpdateWineDTO {
         regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato",
         message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato."
     )
-    @Schema(name = "type", description = "Type info of the new wine", example = "white")
-    @JsonProperty("type")
+    @Schema(description = "Type info of the new wine", example = "bianco")
     private String type;
 
     @NotNull(message = "IsNatural info cannot be blank.")
-    @Schema(name = "isNatural", description = "IsNatural info of the new wine", example = "true")
-    @JsonProperty("isNatural")
+    @Schema(description = "IsNatural info of the new wine", example = "true")
     @Field("is_natural")
     private Boolean isNatural;
 
-    @Schema(name = "taste", description = "Taste info of the new wine")
+    @Schema(description = "Taste info of the new wine")
     @Valid
-    @JsonProperty("taste")
     private NewTasteDTO taste;
 
-    @Schema(name = "style", description = "Style info of the new wine")
+    @Schema(description = "Style info of the new wine")
     @Valid
-    @JsonProperty("style")
     private NewStyleDTO style;
 }

@@ -1,6 +1,5 @@
 package com.wineadvisor.wineadvisor.DTO.wines;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.Valid;
 
@@ -13,6 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NewTasteDTO {
     @Valid
-    @JsonProperty("structure")
     private NewStructureDTO structure;
 }

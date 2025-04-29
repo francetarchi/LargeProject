@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wineadvisor.wineadvisor.model.wines.fields.Region;
+import com.wineadvisor.wineadvisor.model.wines.fields.RegionEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Statistics;
 import com.wineadvisor.wineadvisor.model.wines.fields.Style;
 import com.wineadvisor.wineadvisor.model.wines.fields.Taste;
@@ -35,7 +35,7 @@ public class Wine {
     @Field("is_natural")
     private Boolean isNatural;
 
-    private Region region;
+    private RegionEmbedded region;
 
     private WineryEmbedded winery;
 

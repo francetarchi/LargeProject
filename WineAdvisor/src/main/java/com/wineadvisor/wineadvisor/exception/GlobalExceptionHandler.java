@@ -18,7 +18,6 @@ import jakarta.validation.ConstraintViolationException;
 @Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     //////// PARAMETRES PATTERN VIOLATION EXCEPTIONS ////////
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException e) {
