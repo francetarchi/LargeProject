@@ -3,20 +3,13 @@ package com.wineadvisor.wineadvisor.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
 
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
-import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
@@ -40,7 +33,6 @@ import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.repository.CountryRepository;
-import com.mongodb.client.AggregateIterable;
 import com.wineadvisor.wineadvisor.DTO.wines.CreateWineDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.NewFoodDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.NewGrapeDTO;
@@ -61,7 +53,6 @@ public class WineService {
     private final CountryRepository countryRepository;
     private final IdCounterService idCounterService;
     private final ReviewService reviewService;
-    private final MongoTemplate mongoTemplate;
 
     // CRUD
     // CREATE
@@ -535,68 +526,6 @@ public class WineService {
                 wine.getStatistics().setRatingsAverage(ratings_average);
             }
             wineRepository.save(wine);
-        }
-    }
-
-    // Operazione che una volta al mese aggiorna l'aggregation che calcola la top 10 vintages (per popolarità = numero recensioni)
-    // per ogni regione
-    @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
-    public void updateTop10VintagesPerRegion() {
-        List<Document> pipeline = Arrays.asList(
-            new Document("$lookup", new Document("from", "users")
-                .append("localField", "user_id.username")
-                .append("foreignField", "login.username")
-                .append("as", "result")),
-            
-            new Document("$unwind", new Document("path", "$result")),
-
-            new Document("$project", new Document("_id", 0)
-                .append("wine_id", "$wine_id.id")
-                .append("wine_name", "$wine_id.name")
-                .append("wine_image", "$wine_id.image")
-                .append("year", "$wine_id.year")
-                .append("region", "$result.address.region")),
-
-            new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
-                                                        .append("year", "$year")
-                                                        .append("region", "$region"))
-                .append("wine_name", new Document("$first", "$wine_name"))
-                .append("wine_image", new Document("$first", "$wine_image"))
-                .append("count", new Document("$sum", 1))),
-
-            new Document("$sort", new Document("count", -1)),
-
-            new Document("$group", new Document("_id", "$_id.region")
-                .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
-                                                            .append("wine_name", "$wine_name")
-                                                            .append("year", "$_id.year")
-                                                            .append("bottle", "$wine_image")
-                                                            .append("count", "$count")))),
-
-            new Document("$project", new Document("region", "$_id")
-                .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
-
-            new Document("$merge", new Document("into", "regions")
-                .append("on", "region")
-                .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))
-        );
-
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("reviews")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
-
-        for (Document doc : results) {
-            String regionName = doc.getString("region");
-
-            @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("vintages");
-
-            // Aggiorna la regione corrispondente con il campo "top_10_vintages_of_the_month"
-            Query query = new Query(Criteria.where("name").is(regionName));
-            Update update = new Update().set("top_10_vintages_of_the_month", vintages);
-            mongoTemplate.updateFirst(query, update, "regions");
         }
     }
     
