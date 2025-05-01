@@ -57,10 +57,10 @@ public class WineService {
     // CRUD
     // CREATE
     // Aggiunge un nuovo vino alla collection wines
-    public Wine addWine(CreateWineDTO createWineDTO, Long wineryId) {
+    public Wine addWine(CreateWineDTO createWineDTO, String wineryUsername) {
         // Controllo che esista la winery
-        Winery winery = wineryRepository.findById(wineryId)
-            .orElseThrow(() -> new ResourceNotFoundException("Winery not found with id: " + wineryId));
+        Winery winery = wineryRepository.findByLogin_Username(wineryUsername)
+            .orElseThrow(() -> new ResourceNotFoundException("Winery not found with username: " + wineryUsername));
         
         // Controllo che esista il country nella collection wineries
         Country country = countryRepository.findByName(winery.getCountry())

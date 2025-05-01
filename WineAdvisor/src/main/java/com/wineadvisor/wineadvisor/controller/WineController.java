@@ -47,9 +47,9 @@ public class WineController {
     @PostMapping
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
-            @RequestParam @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
+            @NotBlank(message = "Winery ID cannot be blank.") @RequestParam(required = true, name = "winery") String wineryUsername) {
         try {
-            Wine savedWine = wineService.addWine(wine, wineryId);
+            Wine savedWine = wineService.addWine(wine, wineryUsername);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
