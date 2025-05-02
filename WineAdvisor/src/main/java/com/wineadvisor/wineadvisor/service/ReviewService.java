@@ -99,7 +99,8 @@ public class ReviewService {
             }
         }
 
-        // Aggiungo la recensione alla lista delle recensioni dell'utente (collection users), per cui vale lo stesso discorso fatto per le reviews nei wines
+        // Aggiungo la recensione alla lista delle recensioni dell'utente (collection users), per cui vale
+        // lo stesso discorso fatto per le reviews nei wines
         if(user.getReviews().size() >= 3) {
             user.getReviews().remove(2);
         }
@@ -207,42 +208,6 @@ public class ReviewService {
         return reviews;
     }
 
-    // Restituisce il numero di recensioni totali presenti nella collection
-    public Long getReviewsCount() {
-        return reviewRepository.count();
-    }
-
-    // Restituisce il numero di recensioni fatte per un determinato vino
-    public Long getReviewsCountByWine(Long wineId) {
-        // Controllo se il vino esiste
-        if (wineRepository.findById(wineId).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
-        }
-        return reviewRepository.countByWineId_Id(wineId);
-    }
-
-    // Restituisce il numero di recensioni di un determinato utente
-    public Long getReviewsCountByUser(String username) {
-        // Controllo se l'utente esiste
-        if (userRepository.findByLogin_Username(username).isEmpty()) {
-            throw new ResourceNotFoundException("User with username " + username + " not found.");
-        }
-        return reviewRepository.countByUserId_Username(username);
-    }
-
-    // Restituisce il numero di recensioni di una determinata annata di un vino
-    public Long getReviewsCountByVintage(Long wineId, Integer vintageYear) {
-        // Controllo se il vino esiste e se l'annata esiste
-        if (wineRepository.findById(wineId).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
-        }
-        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
-        }
-
-        return reviewRepository.countByWineId_IdAndWineId_Year(wineId, vintageYear);
-    }
-
     // Calcola e restituisce la media dei rating di un vino
     public Double getAverageRatingByWine(Long wineId) {
         // Controllo se il vino esiste
@@ -335,9 +300,12 @@ public class ReviewService {
 
     // DELETE
     // Cancella una recensione specifica
-    public void deleteReviewById(Long id) {
+    public void deleteReviewById(Long id, String username) {
         // Controllo se la recensione esiste
         reviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
+
+        // Controllo che sia stato username a scrivere la recensione
+        reviewRepository.findByIdAndUserId_Username(id, username).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " and username " + username + " not found."));
 
         // Rimuovo la recensione dal vino (se presente)
         Wine wine = wineRepository.findByVintages_Reviews_ReviewId(id)
@@ -505,6 +473,42 @@ public class ReviewService {
 
 
     // Funzioni di utilità
+    // Restituisce il numero di recensioni totali presenti nella collection
+    public Long getReviewsCount() {
+        return reviewRepository.count();
+    }
+
+    // Restituisce il numero di recensioni fatte per un determinato vino
+    public Long getReviewsCountByWine(Long wineId) {
+        // Controllo se il vino esiste
+        if (wineRepository.findById(wineId).isEmpty()) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
+        }
+        return reviewRepository.countByWineId_Id(wineId);
+    }
+
+    // Restituisce il numero di recensioni di un determinato utente
+    public Long getReviewsCountByUser(String username) {
+        // Controllo se l'utente esiste
+        if (userRepository.findByLogin_Username(username).isEmpty()) {
+            throw new ResourceNotFoundException("User with username " + username + " not found.");
+        }
+        return reviewRepository.countByUserId_Username(username);
+    }
+
+    // Restituisce il numero di recensioni di una determinata annata di un vino
+    public Long getReviewsCountByVintage(Long wineId, Integer vintageYear) {
+        // Controllo se il vino esiste e se l'annata esiste
+        if (wineRepository.findById(wineId).isEmpty()) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
+        }
+        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear).isEmpty()) {
+            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
+        }
+
+        return reviewRepository.countByWineId_IdAndWineId_Year(wineId, vintageYear);
+    }
+
     // Restituisce le num recensioni più recenti
     public ArrayList<Review> getRecentReviews(int num) {
         ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
@@ -668,10 +672,9 @@ public class ReviewService {
     }
 
     // AGGREGATIONS
-    // Operazione che una volta al mese aggiorna l'aggregation che calcola la top 10 vintages (per popolarità = numero recensioni)
-    // per ogni regione
+    // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
     @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
-    public void updateTop10VintagesPerRegion() {
+    private void updateTop10VintagesPerRegion() {
         List<Document> pipeline = Arrays.asList(
             new Document("$lookup", new Document("from", "users")
                 .append("localField", "user_id.username")
@@ -703,13 +706,17 @@ public class ReviewService {
                                                             .append("bottle", "$wine_image")
                                                             .append("count", "$count")))),
 
-            new Document("$project", new Document("region", "$_id")
+            new Document("$project", new Document("name", "$_id")
                 .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
 
+            new Document("$project", new Document("_id", 0)
+            .append("name", 1)
+            .append("vintages", 1)),
+            
             new Document("$merge", new Document("into", "regions")
-                .append("on", "region")
+                .append("on", "name")
                 .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))
+                .append("whenNotMatched", "discard"))            
         );
 
         AggregateIterable<Document> results = mongoTemplate
@@ -723,10 +730,150 @@ public class ReviewService {
             @SuppressWarnings("unchecked")
             List<Document> vintages = (List<Document>) doc.get("vintages");
 
-            // Aggiorna la regione corrispondente con il campo "top_10_vintages_of_the_month"
+            // Aggiorno la regione corrispondente con il campo "top_10_vintages_of_the_month"
             Query query = new Query(Criteria.where("name").is(regionName));
             Update update = new Update().set("top_10_vintages_of_the_month", vintages);
             mongoTemplate.updateFirst(query, update, "regions");
+        }
+    }
+
+    // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
+    @Scheduled(cron = "0 0 0 23 * ?") // Ogni 23 del mese a mezzanotte
+    private void updateTop100VintagesPerCountry() {
+        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
+            new Document("from", "users")
+                    .append("localField", "user_id.username")
+                    .append("foreignField", "login.username")
+                    .append("as", "result")), 
+            new Document("$unwind", 
+            new Document("path", "$result")), 
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("wine_id", "$wine_id.id")
+                    .append("wine_name", "$wine_id.name")
+                    .append("wine_image", "$wine_id.image")
+                    .append("year", "$wine_id.year")
+                    .append("country", "$result.address.country")), 
+            new Document("$group", 
+            new Document("_id", 
+            new Document("wine_id", "$wine_id")
+                        .append("year", "$year")
+                        .append("country", "$country"))
+                    .append("wine_name", 
+            new Document("$first", "$wine_name"))
+                    .append("wine_image", 
+            new Document("$first", "$wine_image"))
+                    .append("count", 
+            new Document("$sum", 1L))), 
+            new Document("$sort", 
+            new Document("count", -1L)), 
+            new Document("$group", 
+            new Document("_id", "$_id.country")
+                    .append("vintages", 
+            new Document("$push", 
+            new Document("wine_id", "$_id.wine_id")
+                            .append("wine_name", "$wine_name")
+                            .append("year", "$_id.year")
+                            .append("bottle", "$wine_image")
+                            .append("count", "$count")))), 
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("name", "$_id")
+                    .append("vintages", 
+            new Document("$slice", Arrays.asList("$vintages", 100L)))),
+
+            new Document("$project", new Document("_id", 0)
+            .append("name", 1)
+            .append("vintages", 1)),
+
+            new Document("$merge", new Document("into", "countries")
+                .append("on", "name")
+                .append("whenMatched", "merge")
+                .append("whenNotMatched", "discard"))
+        );
+
+        AggregateIterable<Document> results = mongoTemplate
+            .getCollection("reviews")
+            .aggregate(pipeline)
+            .allowDiskUse(true);
+
+        for (Document doc : results) {
+            String countryName = doc.getString("country");
+
+            @SuppressWarnings("unchecked")
+            List<Document> vintages = (List<Document>) doc.get("vintages");
+
+            // Aggiorno il country corrispondente con il campo "top_100_vintages_of_the_month"
+            Query query = new Query(Criteria.where("name").is(countryName));
+            Update update = new Update().set("top_100_vintages_of_the_month", vintages);
+            mongoTemplate.updateFirst(query, update, "countries");
+        }
+    }
+
+    // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
+    @Scheduled(cron = "0 */2 * * * ?") // ogni 2 minuti al secondo 0
+    public void updateStatisticsPerVintage() {
+        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
+            new Document("from", "wines")
+                    .append("localField", "wine_id.id")
+                    .append("foreignField", "_id")
+                    .append("as", "result")), 
+            new Document("$unwind", 
+            new Document("path", "$result")), 
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("rating", "$rating")
+                    .append("wine", "$result")), 
+            new Document("$group", 
+            new Document("_id", 
+            new Document("wine", "$wine._id")
+                        .append("vintage", "$wine.vintages.year"))
+                    .append("ratings_count", 
+            new Document("$sum", 1L))
+                    .append("ratings_average", 
+            new Document("$avg", "$rating"))), 
+            new Document("$unwind", 
+            new Document("path", "$_id.vintage")), 
+            new Document("$group", 
+            new Document("_id", "$_id")
+                    .append("statistics", 
+            new Document("$push", 
+            new Document("ratings_count", "$ratings_count")
+                            .append("ratings_average", "$ratings_average")))), 
+            new Document("$unwind", 
+            new Document("path", "$statistics")),
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("_id", "$_id.wine")
+                    .append("year", "$_id.vintage")
+                    .append("statistics", "$statistics")));
+
+        AggregateIterable<Document> results = mongoTemplate
+            .getCollection("reviews")
+            .aggregate(pipeline)
+            .allowDiskUse(true);
+
+        for (Document doc : results) {
+            Object idObj = doc.get("_id");
+            Object yearObj = doc.get("year");
+            Document stats = (Document) doc.get("statistics");
+
+            // Verifica che tutti i campi siano presenti
+            if (idObj == null || yearObj == null || stats == null) {
+                continue;
+            }
+
+            Long wineId = ((Number) idObj).longValue();
+            int year = ((Number) yearObj).intValue();
+
+            // Query per selezionare il vino e la vintage giusta
+            Query query = new Query(Criteria.where("_id").is(wineId)
+                .and("vintages.year").is(year));
+
+            // Update per sovrascrivere il campo statistics nella vintage corretta
+            Update update = new Update().set("vintages.$.statistics", stats);
+
+            mongoTemplate.updateFirst(query, update, "wines");
         }
     }
 }

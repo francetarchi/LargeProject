@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,6 +47,7 @@ public class WineController {
 
     ////////////// POST //////////////
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
             @RequestParam @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
@@ -62,6 +65,7 @@ public class WineController {
 
     ////////////// GET //////////////
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> getWineById(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long id) {
         try {
@@ -76,7 +80,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/wine/{wineId}/vintage/{vintageYear}")
+    @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getVintageById(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
             @PathVariable @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
@@ -93,6 +98,7 @@ public class WineController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getAllWines(Pageable pageable) {
         try {
             Page<Wine> wines = wineService.getAllWines(pageable);
@@ -103,6 +109,7 @@ public class WineController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> searchWinesByName(
             Pageable pageable,
             @RequestParam @NotBlank(message = "Keyword cannot be blank.") String keyword) {
@@ -118,7 +125,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/winery/{wineryId}")
+    @GetMapping("/wineries/{wineryId}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByWinery(
             Pageable pageable,
             @PathVariable @NotBlank(message = "Winery username cannot be null.") String wineryUsername) {
@@ -134,7 +142,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/region/{region}")
+    @GetMapping("/regions/{region}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByRegion(
             Pageable pageable,
             @PathVariable @NotBlank(message = "Region cannot be blank.") String region) {
@@ -150,7 +159,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/country/{country}")
+    @GetMapping("/countries/{country}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByCountry(
             Pageable pageable,
             @PathVariable @NotBlank(message = "Country cannot be blank.") String country) {
@@ -166,7 +176,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/type/{type}")
+    @GetMapping("/types/{type}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByType(
             Pageable pageable,
             @PathVariable @NotBlank(message = "Type cannot be blank.") String type) {
@@ -182,7 +193,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/grape/{grape}")
+    @GetMapping("/grapes/{grape}")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByGrape(
             Pageable pageable,
             @PathVariable @NotBlank(message = "Grape name cannot be blank.") String grape) {
@@ -198,7 +210,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/price")
+    @GetMapping("/prices")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByPrice(
             Pageable pageable,
             @RequestParam @NotNull(message = "Price cannot be null.") @Positive(message = "Price cannot be negative.") Double minPrice,
@@ -221,7 +234,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/rating")
+    @GetMapping("/ratings")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getWinesByRating(
             Pageable pageable,
             @RequestParam
@@ -243,7 +257,8 @@ public class WineController {
     }
 
     // ANALYTICS
-    @GetMapping("/analytics/top-10-wines")
+    @GetMapping("/vintages/top-10")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getTop10Wines() {
         try {
             ArrayList<Wine> wines = wineService.getTop10Wines();
@@ -257,7 +272,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/analytics/most-popular-in-your-region/{username}")
+    @GetMapping("/users/{username}/popular-in-region")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getMostPopularWinesInUserRegion(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
         try {
@@ -272,7 +288,8 @@ public class WineController {
         }
     }
 
-    @GetMapping("/analytics/vintages-recommendations/{username}")
+    @GetMapping("/{username}vintages/recommendations")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getRecommendedVintages(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
         try {
@@ -288,10 +305,14 @@ public class WineController {
     }
 
     ////////////// PUT //////////////
-    @PutMapping("/add-vintage")
+    @PutMapping("/vintages/create")
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> addVintage(@RequestBody @Valid NewVintageDTO newVintage){
         try {
-            Wine savedWine = wineService.addVintage(newVintage);
+            // Prendo username della winery che vuole aggiungere la vintage al vino
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            
+            Wine savedWine = wineService.addVintage(newVintage, username);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -302,10 +323,14 @@ public class WineController {
         }
     }
 
-    @PutMapping("/edit-wine")
+    @PutMapping
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> updateWine(@RequestBody @Valid UpdateWineDTO wine){
         try {
-            Wine updatedWine = wineService.updateWine(wine);
+            // Prendo username della winery che vuole aggiungere la vintage al vino
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            
+            Wine updatedWine = wineService.updateWine(wine, username);
             return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -316,10 +341,14 @@ public class WineController {
         }
     }
 
-    @PutMapping("/edit-vintage")
+    @PutMapping("/vintages/edit")
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> updateVintage(@RequestBody @Valid UpdateVintageDTO vintage){
         try {
-            Wine updatedWine = wineService.updateVintage(vintage);
+            // Prendo username della winery che vuole aggiungere la vintage al vino
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            
+            Wine updatedWine = wineService.updateVintage(vintage, username);
             return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -332,10 +361,14 @@ public class WineController {
 
     ////////////// DELETE //////////////
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> deleteWine(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long id) {
         try {
-            wineService.deleteWineById(id);
+            // Prendo username della winery che vuole aggiungere la vintage al vino
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            
+            wineService.deleteWineById(id, username);
             return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -346,12 +379,16 @@ public class WineController {
         }
     }
 
-    @DeleteMapping("/{wineId}/vintage/{vintageYear}")
+    @DeleteMapping("/{wineId}/vintages/{vintageYear}")
+    @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> deleteVintage(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long wineId,
             @PathVariable @NotNull(message = "Vintage year cannot be null.") @Positive(message = "Vintage year cannot be negative.") Integer vintageYear) {
         try {
-            wineService.deleteVintage(wineId, vintageYear);
+            // Prendo username della winery che vuole aggiungere la vintage al vino
+            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+            
+            wineService.deleteVintage(wineId, vintageYear, username);
             return ResponseEntity.status(HttpStatus.OK).body("Vintage deleted successfully.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -362,7 +399,8 @@ public class WineController {
         }
     }
 
-    @DeleteMapping("/delete-all")
+    @DeleteMapping
+    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteAllWines() {
         try {
             wineService.deleteAllWines();

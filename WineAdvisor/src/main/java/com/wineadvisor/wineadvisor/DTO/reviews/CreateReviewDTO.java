@@ -21,7 +21,7 @@ public class CreateReviewDTO {
 
     @Positive(message = "Wine ID must be a positive number.")
     @NotNull(message = "Wine ID cannot be blank.")
-    @Schema(description = "Wine ID info of the new vintage", example = "1")
+    @Schema(description = "Wine ID info of the new vintage", example = "542")
     private Long wineId;
 
     @PositiveOrZero(message = "Year must be a positive number.")

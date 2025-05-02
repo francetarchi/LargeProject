@@ -2,6 +2,7 @@ package com.wineadvisor.wineadvisor.model.wineries;
 
 import java.util.ArrayList;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -21,7 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Winery {
     @Id
-    private Long _id;
+    private ObjectId _id;
 
     private String name;
 

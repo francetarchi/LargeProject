@@ -20,7 +20,7 @@ public class CreateWineDTO {
         regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato",
         message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato."
     )
-    @Schema(description = "Type info of the new wine", example = "white")
+    @Schema(description = "Type info of the new wine", example = "bianco")
     private String type;
 
     @NotNull(message = "IsNatural info cannot be blank.")

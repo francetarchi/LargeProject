@@ -1,7 +1,9 @@
 package com.wineadvisor.wineadvisor.service;
 
 import com.wineadvisor.wineadvisor.model.utils.IdCounter;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.core.query.Query;
@@ -11,10 +13,10 @@ import org.springframework.stereotype.Service;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
+@RequiredArgsConstructor
 public class IdCounterService {
 
-    @Autowired
-    private MongoOperations mongoOperations;
+    private final MongoOperations mongoOperations;
 
     public Long generateSequence(String seqName) {
         IdCounter counter = mongoOperations.findAndModify(
