@@ -28,7 +28,6 @@ import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,10 +39,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
     private final UserRepository userRepository;
+    private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
-
-    @Autowired
-    private IdCounterService idCounterService;
 
     // CRUD operations
 
@@ -673,7 +670,7 @@ public class ReviewService {
 
     // AGGREGATIONS
     // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
-    @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
+    @Scheduled(cron = "0 0 1 25 * ?") // Ogni 25 del mese alle 1:00
     private void updateTop10VintagesPerRegion() {
         List<Document> pipeline = Arrays.asList(
             new Document("$lookup", new Document("from", "users")
@@ -711,7 +708,7 @@ public class ReviewService {
 
             new Document("$project", new Document("_id", 0)
             .append("name", 1)
-            .append("vintages", 1)),
+            .append("top_10_vintages_of_the_month", "$vintages")),
             
             new Document("$merge", new Document("into", "regions")
                 .append("on", "name")
@@ -728,7 +725,7 @@ public class ReviewService {
             String regionName = doc.getString("region");
 
             @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("vintages");
+            List<Document> vintages = (List<Document>) doc.get("top_10_vintages_of_the_month");
 
             // Aggiorno la regione corrispondente con il campo "top_10_vintages_of_the_month"
             Query query = new Query(Criteria.where("name").is(regionName));
@@ -738,7 +735,7 @@ public class ReviewService {
     }
 
     // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
-    @Scheduled(cron = "0 0 0 23 * ?") // Ogni 23 del mese a mezzanotte
+    @Scheduled(cron = "0 0 2 25 * ?") // Ogni 25 del mese alle 2:00
     private void updateTop100VintagesPerCountry() {
         List<Document> pipeline = Arrays.asList(new Document("$lookup", 
             new Document("from", "users")
@@ -784,7 +781,7 @@ public class ReviewService {
 
             new Document("$project", new Document("_id", 0)
             .append("name", 1)
-            .append("vintages", 1)),
+            .append("top_100_vintages_of_the_month", "$vintages")),
 
             new Document("$merge", new Document("into", "countries")
                 .append("on", "name")
@@ -801,7 +798,7 @@ public class ReviewService {
             String countryName = doc.getString("country");
 
             @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("vintages");
+            List<Document> vintages = (List<Document>) doc.get("top_100_vintages_of_the_month");
 
             // Aggiorno il country corrispondente con il campo "top_100_vintages_of_the_month"
             Query query = new Query(Criteria.where("name").is(countryName));
@@ -810,70 +807,4 @@ public class ReviewService {
         }
     }
 
-    // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
-    @Scheduled(cron = "0 */2 * * * ?") // ogni 2 minuti al secondo 0
-    public void updateStatisticsPerVintage() {
-        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
-            new Document("from", "wines")
-                    .append("localField", "wine_id.id")
-                    .append("foreignField", "_id")
-                    .append("as", "result")), 
-            new Document("$unwind", 
-            new Document("path", "$result")), 
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("rating", "$rating")
-                    .append("wine", "$result")), 
-            new Document("$group", 
-            new Document("_id", 
-            new Document("wine", "$wine._id")
-                        .append("vintage", "$wine.vintages.year"))
-                    .append("ratings_count", 
-            new Document("$sum", 1L))
-                    .append("ratings_average", 
-            new Document("$avg", "$rating"))), 
-            new Document("$unwind", 
-            new Document("path", "$_id.vintage")), 
-            new Document("$group", 
-            new Document("_id", "$_id")
-                    .append("statistics", 
-            new Document("$push", 
-            new Document("ratings_count", "$ratings_count")
-                            .append("ratings_average", "$ratings_average")))), 
-            new Document("$unwind", 
-            new Document("path", "$statistics")),
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("_id", "$_id.wine")
-                    .append("year", "$_id.vintage")
-                    .append("statistics", "$statistics")));
-
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("reviews")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
-
-        for (Document doc : results) {
-            Object idObj = doc.get("_id");
-            Object yearObj = doc.get("year");
-            Document stats = (Document) doc.get("statistics");
-
-            // Verifica che tutti i campi siano presenti
-            if (idObj == null || yearObj == null || stats == null) {
-                continue;
-            }
-
-            Long wineId = ((Number) idObj).longValue();
-            int year = ((Number) yearObj).intValue();
-
-            // Query per selezionare il vino e la vintage giusta
-            Query query = new Query(Criteria.where("_id").is(wineId)
-                .and("vintages.year").is(year));
-
-            // Update per sovrascrivere il campo statistics nella vintage corretta
-            Update update = new Update().set("vintages.$.statistics", stats);
-
-            mongoTemplate.updateFirst(query, update, "wines");
-        }
-    }
 }
