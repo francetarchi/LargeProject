@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NewGrapeDTO {
     @NotBlank(message = "Name is mandatory.")
-    @Schema(description = "Name of the grape", example = "Sangiovese")
+    @Schema(description = "Grape name", example = "Sangiovese")
     private String name;
 }

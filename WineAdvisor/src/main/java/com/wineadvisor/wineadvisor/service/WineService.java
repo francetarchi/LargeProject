@@ -162,81 +162,23 @@ public class WineService {
         return wineRepository.findAll(pageable);
     }
 
-    // Restituisce tutti i vini che nel nome contengono una certa keyword (con paginazione)
-    public Page<Wine> getWinesByName(Pageable pageable, String keyword) {
-        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCase(pageable, keyword);
+    // Restituisce vini sulla base dei filtri di ricerca indicati 
+    public Page<Wine> searchWines(
+        Pageable pageable,
+        String name,
+        String winery,
+        String region,
+        String country,
+        String type,
+        String grape,
+        Double min,
+        Double max,
+        Double minAverageRating) {
 
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found with name containing " + keyword + ".");
-        }
-        return wines;
-    }
+        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(pageable, name, winery, region, country, type, grape, minAverageRating, min, max);
 
-    
-    // Restituisce tutti i vini di una determinata winery (con paginazione)
-    public Page<Wine> getWinesByWinery(Pageable pageable, String wineryUsername) {
-        // Controllo che la winery indicata esista
-        wineryRepository.findByLogin_Username(wineryUsername)
-            .orElseThrow(() -> new ResourceNotFoundException("Winery with username " + wineryUsername + " not found."));
-        
-        Page<Wine> wines = wineRepository.findByWinery_Username(pageable, wineryUsername);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found for winery with username " + wineryUsername + ".");
-        }
-        return wines;
-    }
-    
-    // Restituisce tutti i vini di una determinata regione (con paginazione)
-    public Page<Wine> getWinesByRegion(Pageable pageable, String region) {
-        Page<Wine> wines = wineRepository.findByRegion_Name(pageable, region);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found in region " + region + ".");
-        }
-        return wines;
-    }
-
-    // Restituisce tutti i vini di una determinata nazione (con paginazione)
-    public Page<Wine> getWinesByCountry(Pageable pageable, String country) {
-        Page<Wine> wines = wineRepository.findByRegion_Country_Name(pageable, country);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found in country " + country + ".");
-        }
-        return wines;
-    }
-
-    // Restituisce tutti i vini di una determinata tipologia (con paginazione)
-    public Page<Wine> getWinesByType(Pageable pageable, String type) {
-        Page<Wine> wines = wineRepository.findByType(pageable, type);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found of type " + type + ".");
-        }
-        return wines;
-    }
-
-    // Restituisce tutti i vini di un determinato vitigno (con paginazione)
-    public Page<Wine> getWinesByGrapeName(Pageable pageable, String grapeName) {
-        Page<Wine> wines = wineRepository.findByStyle_Grapes_Name(pageable, grapeName);
-
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found with grape name " + grapeName + ".");
-        }
-        return wines;
-    }
-
-    // Restituisce tutti i vini in cui sono presenti annate con prezzi compresi tra min_price e max_price (con paginazione)
-    public Page<Wine> getWinesByPriceRange(Pageable pageable, Double min_price, Double max_price) {
-        Page<Wine> wines = wineRepository.findByVintages_PriceBetween(pageable, min_price, max_price);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found with price between " + min_price + " and " + max_price + ".");
-        }
-        return wines;
-    }
-
-    // Restituisce tutti i vini con media recensioni superiore o uguale a minRating (con paginazione)
-    public Page<Wine> getWinesByMinAverageRating(Pageable pageable, Double minRating) {
-        Page<Wine> wines = wineRepository.findByStatistics_RatingsAverageGreaterThanEqual(pageable, minRating);
-        if (wines.isEmpty()){
-            throw new ResourceNotFoundException("No wines found with average rating greater than or equal to " + minRating + ".");
+        if(wines.isEmpty()){
+            throw new ResourceNotFoundException("No wines found with the specified filters.");
         }
         return wines;
     }

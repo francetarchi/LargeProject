@@ -224,6 +224,6 @@ public class UserController {
     public ResponseEntity<?> deleteUser(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         userService.deleteUser(username);
-        return ResponseEntity.status(HttpStatus.OK).body("Utente \"" + username + "\" eliminato correttamente.");
+        return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
 }

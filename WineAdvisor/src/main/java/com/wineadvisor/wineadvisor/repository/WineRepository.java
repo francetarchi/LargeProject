@@ -50,4 +50,8 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
 
     // Metodo per trovare un vino in base a id del vino e username della cantina
     Optional<Wine> findByIdAndWinery_Username(Long wineId, String username);
+
+    Page<Wine> findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(
+            Pageable pageable, String name, String winery, String region, String country, String type, String grape,
+            Double minAverageRating, Double min, Double max);
 }

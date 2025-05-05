@@ -3,17 +3,19 @@ package com.wineadvisor.wineadvisor.controller;
 import com.wineadvisor.wineadvisor.model.wines.Wine;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.service.WineService;
+import com.wineadvisor.wineadvisor.exception.BadRequestException;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import com.wineadvisor.wineadvisor.DTO.wines.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-
-import com.wineadvisor.wineadvisor.DTO.wines.*;
-import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -22,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,13 +37,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.security.core.context.SecurityContextHolder;
 
 
 @RestController
-@RequestMapping("/wines")
+@RequestMapping("/api/wines")
 @RequiredArgsConstructor
 public class WineController {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final WineService wineService;
 
     ////////////// POST //////////////
@@ -51,16 +54,8 @@ public class WineController {
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
             @RequestParam @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
-        try {
-            Wine savedWine = wineService.addWine(wine, wineryId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404 Not Found
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500 Internal Server Error
-        }
+        Wine savedWine = wineService.addWine(wine, wineryId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
     }
 
     ////////////// GET //////////////
@@ -68,16 +63,8 @@ public class WineController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> getWineById(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long id) {
-        try {
-            Wine wine = wineService.getWineById(id);
-            return ResponseEntity.status(HttpStatus.OK).body(wine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Wine wine = wineService.getWineById(id);
+        return ResponseEntity.status(HttpStatus.OK).body(wine);
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
@@ -85,278 +72,122 @@ public class WineController {
     public ResponseEntity<?> getVintageById(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
             @PathVariable @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
-        try {
-            Vintage vintage = wineService.getVintage(wineId, vintageYear);
-            return ResponseEntity.status(HttpStatus.OK).body(vintage);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Vintage vintage = wineService.getVintage(wineId, vintageYear);
+        return ResponseEntity.status(HttpStatus.OK).body(vintage);
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getAllWines(Pageable pageable) {
-        try {
-            Page<Wine> wines = wineService.getAllWines(pageable);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Page<Wine> wines = wineService.getAllWines(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(wines);
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> searchWinesByName(
+    public ResponseEntity<?> searchWines(
             Pageable pageable,
-            @RequestParam @NotBlank(message = "Keyword cannot be blank.") String keyword) {
-        try {
-            Page<Wine> wines = wineService.getWinesByName(pageable, keyword);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/wineries/{wineryId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByWinery(
-            Pageable pageable,
-            @PathVariable @NotBlank(message = "Winery username cannot be null.") String wineryUsername) {
-        try {
-            Page<Wine> wines = wineService.getWinesByWinery(pageable, wineryUsername);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/regions/{region}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByRegion(
-            Pageable pageable,
-            @PathVariable @NotBlank(message = "Region cannot be blank.") String region) {
-        try {
-            Page<Wine> wines = wineService.getWinesByRegion(pageable, region);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/countries/{country}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByCountry(
-            Pageable pageable,
-            @PathVariable @NotBlank(message = "Country cannot be blank.") String country) {
-        try {
-            Page<Wine> wines = wineService.getWinesByCountry(pageable, country);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/types/{type}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByType(
-            Pageable pageable,
-            @PathVariable @NotBlank(message = "Type cannot be blank.") String type) {
-        try {
-            Page<Wine> wines = wineService.getWinesByType(pageable, type);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/grapes/{grape}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByGrape(
-            Pageable pageable,
-            @PathVariable @NotBlank(message = "Grape name cannot be blank.") String grape) {
-        try {
-            Page<Wine> wines = wineService.getWinesByGrapeName(pageable, grape);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/prices")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByPrice(
-            Pageable pageable,
-            @RequestParam @NotNull(message = "Price cannot be null.") @Positive(message = "Price cannot be negative.") Double minPrice,
-            @RequestParam @NotNull(message = "Price cannot be null.") @Positive(message = "Price cannot be negative.") Double maxPrice) {
-        try {
-            if (minPrice >= maxPrice) {
-                throw new BadRequestException("Min price must be less than max price.");
-            }
-
-            Page<Wine> wines = wineService.getWinesByPriceRange(pageable, minPrice, maxPrice);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/ratings")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getWinesByRating(
-            Pageable pageable,
-            @RequestParam
-                @NotNull(message = "Rating cannot be null.")
-                @PositiveOrZero(message = "Rating cannot be negative.")
+            @RequestParam(required = false)
+                @Schema(description = "Wine name", example = "Il Pettirosso")
+                String name,
+            @RequestParam(required = false)
+                @Schema(description = "Winery username", example = "arpepe3749")
+                String winery,
+            @RequestParam(required = false)
+                @Schema(description = "Region name", example = "Lombardia")
+                String region,
+            @RequestParam(required = false)
+                @Schema(description = "Country name", example = "Italia")
+                String country,
+            @RequestParam(required = false)
+                @Pattern(regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato", message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato.")
+                @Schema(description = "Wine type info", example = "rosso")
+                String type,
+            @RequestParam(required = false)
+                @Schema(description = "Grape name", example = "Nebbiolo")
+                String grape,
+            @RequestParam(required = false)
+                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
+                @Schema(description = "Min vintage price", example = "20.0")
+                Double minPrice,
+            @RequestParam(required = false)
+                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
+                @Schema(description = "Max vintage price", example = "120.0")
+                Double maxPrice,
+            @RequestParam(required = false)
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
-                Double minRating) {
-        try {
-            Page<Wine> wines = wineService.getWinesByMinAverageRating(pageable, minRating);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+                @Schema(description = "Min average wine rating", example = "2.0")
+                Double minAverageRating
+            ) {
+                
+        name = (name == null) ? "" : name;
+        winery = (winery == null) ? "" : winery;
+        region = (region == null) ? "" : region;
+        country = (country == null) ? "" : country;
+        type = (type == null) ? "" : type;
+        grape = (grape == null) ? "" : grape;
+        minPrice = (minPrice == null) ? 0.0 : minPrice;
+        maxPrice = (maxPrice == null) ? 2000.0 : maxPrice;
+        minAverageRating = (minAverageRating == null) ? 0.0 : minAverageRating;
+        if (minPrice > maxPrice) throw new BadRequestException("Min price cannot be greater than max price.");
+        
+        return ResponseEntity.status(HttpStatus.OK).body(wineService.searchWines(pageable, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
     }
 
     // ANALYTICS
     @GetMapping("/vintages/top-10")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getTop10Wines() {
-        try {
-            ArrayList<Wine> wines = wineService.getTop10Wines();
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        ArrayList<Wine> wines = wineService.getTop10Wines();
+        return ResponseEntity.status(HttpStatus.OK).body(wines);
     }
 
     @GetMapping("/users/{username}/popular-in-region")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getMostPopularWinesInUserRegion(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
-        try {
-            ArrayList<Wine> wines = wineService.getMostPopularWinesInUserRegion(username);
-            return ResponseEntity.status(HttpStatus.OK).body(wines);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        ArrayList<Wine> wines = wineService.getMostPopularWinesInUserRegion(username);
+        return ResponseEntity.status(HttpStatus.OK).body(wines);
     }
 
     @GetMapping("/{username}vintages/recommendations")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getRecommendedVintages(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
-        try {
-            ArrayList<Vintage> vintages = wineService.getRecommendedVintages(username);
-            return ResponseEntity.status(HttpStatus.OK).body(vintages);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        ArrayList<Vintage> vintages = wineService.getRecommendedVintages(username);
+        return ResponseEntity.status(HttpStatus.OK).body(vintages);
     }
 
     ////////////// PUT //////////////
     @PutMapping("/vintages/create")
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> addVintage(@RequestBody @Valid NewVintageDTO newVintage){
-        try {
-            // Prendo username della winery che vuole aggiungere la vintage al vino
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             
-            Wine savedWine = wineService.addVintage(newVintage, username);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Wine savedWine = wineService.addVintage(newVintage, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
     }
 
     @PutMapping
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> updateWine(@RequestBody @Valid UpdateWineDTO wine){
-        try {
-            // Prendo username della winery che vuole aggiungere la vintage al vino
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             
-            Wine updatedWine = wineService.updateWine(wine, username);
-            return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Wine updatedWine = wineService.updateWine(wine, username);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
     @PutMapping("/vintages/edit")
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> updateVintage(@RequestBody @Valid UpdateVintageDTO vintage){
-        try {
-            // Prendo username della winery che vuole aggiungere la vintage al vino
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             
-            Wine updatedWine = wineService.updateVintage(vintage, username);
-            return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        Wine updatedWine = wineService.updateVintage(vintage, username);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
     ////////////// DELETE //////////////
@@ -364,19 +195,11 @@ public class WineController {
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> deleteWine(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long id) {
-        try {
-            // Prendo username della winery che vuole aggiungere la vintage al vino
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             
-            wineService.deleteWineById(id, username);
-            return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        wineService.deleteWineById(id, username);
+        return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");
     }
 
     @DeleteMapping("/{wineId}/vintages/{vintageYear}")
@@ -384,29 +207,17 @@ public class WineController {
     public ResponseEntity<?> deleteVintage(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long wineId,
             @PathVariable @NotNull(message = "Vintage year cannot be null.") @Positive(message = "Vintage year cannot be negative.") Integer vintageYear) {
-        try {
-            // Prendo username della winery che vuole aggiungere la vintage al vino
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
             
-            wineService.deleteVintage(wineId, vintageYear, username);
-            return ResponseEntity.status(HttpStatus.OK).body("Vintage deleted successfully.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        wineService.deleteVintage(wineId, vintageYear, username);
+        return ResponseEntity.status(HttpStatus.OK).body("Vintage deleted successfully.");
     }
 
     @DeleteMapping
     // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteAllWines() {
-        try {
-            wineService.deleteAllWines();
-            return ResponseEntity.status(HttpStatus.OK).body("All wines deleted successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        wineService.deleteAllWines();
+        return ResponseEntity.status(HttpStatus.OK).body("All wines deleted successfully.");
     }    
 }

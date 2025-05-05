@@ -1,5 +1,6 @@
 package com.wineadvisor.wineadvisor.repository;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,4 +16,6 @@ public interface WineryRepository extends MongoRepository<Winery, Long> {
     Optional<Winery> findByEmail(String email);
     
     Page<Winery> findByNameContainingIgnoreCase(String name, PageRequest of);
+
+    ArrayList<Winery> findByRegion(String region);
 }

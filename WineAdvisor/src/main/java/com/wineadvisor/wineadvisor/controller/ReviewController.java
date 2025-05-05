@@ -12,15 +12,13 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
 import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
-import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.exception.BadRequestException;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 
 import lombok.RequiredArgsConstructor;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,29 +34,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
-@RequestMapping("/reviews")
+@RequestMapping("/api/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final ReviewService reviewService;
 
     ////////////// POST //////////////
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> addReview(@RequestBody @Valid CreateReviewDTO review) {        
-        try {
-            // Prendo lo username dell'utente che ha fatto la richiesta
-            String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            review.setUsername(username);
+        // Prendo lo username dell'utente che ha fatto la richiesta
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        review.setUsername(username);
 
-            Review savedReview = reviewService.addReview(review);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedReview); // 201 Created
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400 Bad Request
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404 Not Found
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500 Internal Server Error
-        }
+        Review savedReview = reviewService.addReview(review);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedReview);
     }
 
     ////////////// PUT //////////////
@@ -70,19 +63,11 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long id,
             @RequestBody @Valid UpdateReviewDTO updatedReview) {
-        try {
-            // Prendo username dell'utente che ha fatto la richiesta
-            String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
-            updatedReview.setUsername(username);
+        // Prendo username dell'utente che ha fatto la richiesta
+        String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
+        updatedReview.setUsername(username);
 
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview)); // 200 OK
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview));
     }
 
     ////////////// GET //////////////
@@ -92,19 +77,13 @@ public class ReviewController {
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.") Long id) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public Page<Review> getAllReviews(Pageable pageable) {
-        return reviewService.getAllReviews(pageable);
+    public ResponseEntity<?> getAllReviews(Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(pageable));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
@@ -119,15 +98,7 @@ public class ReviewController {
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
             Pageable pageable) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(pageable, wineId, vintageYear));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(pageable, wineId, vintageYear));
     }
 
     @GetMapping("/wines/{wineId}")
@@ -138,30 +109,14 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
                 Pageable pageable) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(pageable, wineId));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(pageable, wineId));
     }
 
     @GetMapping("/users/{username}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByUser(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username, Pageable pageable) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(pageable, username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); 
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(pageable, username));
     }
 
     @GetMapping("/users/{username}/wines/{wineId}")
@@ -175,71 +130,8 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             Pageable pageable) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(pageable, username, wineId));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        } 
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(pageable, username, wineId));
     }
-
-    // @GetMapping("/count")
-    // public ResponseEntity<?> getReviewsCount() {
-    //     try {
-    //         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCount());
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    //     }
-    // }
-
-    // @GetMapping("/count/wine/{wineId}")
-    // public ResponseEntity<?> getReviewsCountByWine(
-    //         @PathVariable
-    //             @NotNull(message = "ID cannot be null.")
-    //             @Positive(message = "ID must be positive.")
-    //             Long wineId) {
-    //     try {
-    //         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByWine(wineId));
-    //     } catch (ResourceNotFoundException e) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    //     }
-    // }
-
-    // @GetMapping("/count/user/{username}")
-    // public ResponseEntity<?> getReviewsCountByUser(
-    //         @PathVariable @NotBlank(message = "Username cannot be blank.") String username) {
-    //     try {
-    //         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByUser(username));
-    //     } catch (ResourceNotFoundException e) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    //     }
-    // }
-
-    // @GetMapping("/count/wine/{wineId}/vintage/{vintageYear}")
-    // public ResponseEntity<?> getReviewsCountByVintage(
-    //         @PathVariable
-    //             @NotNull(message = "ID cannot be null.")
-    //             @Positive(message = "ID must be positive.")
-    //             Long wineId,
-    //         @PathVariable
-    //             @NotNull(message = "Vintage year cannot be null.")
-    //             @PositiveOrZero(message = "Vintage year must be positive.")
-    //             Integer vintageYear) {
-    //     try {
-    //         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsCountByVintage(wineId, vintageYear));
-    //     } catch (ResourceNotFoundException e) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    //     }
-    // }
 
     @GetMapping("/average/wines/{wineId}/vintages/{year}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
@@ -252,13 +144,7 @@ public class ReviewController {
                 @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer year) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
     }
 
     @GetMapping("/wine/{wineId}/rating/{minRating}/{maxRating}")
@@ -277,19 +163,11 @@ public class ReviewController {
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
             Pageable pageable) {
-        try {
-            if (minRating > maxRating) {
-                throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(pageable, wineId, minRating, maxRating));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        if (minRating > maxRating) {
+            throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
         }
+
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(pageable, wineId, minRating, maxRating));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}/ratings/{minRating}/{maxRating}")
@@ -312,19 +190,11 @@ public class ReviewController {
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
             Pageable pageable) {
-        try {
-            if (minRating > maxRating) {
-                throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(pageable, wineId, vintageYear, minRating, maxRating));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        if (minRating > maxRating) {
+            throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
         }
+
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(pageable, wineId, vintageYear, minRating, maxRating));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{year}/num/{num}/popular")
@@ -342,13 +212,7 @@ public class ReviewController {
                 @NotNull(message = "Number of reviews cannot be null.")
                 @Positive(message = "Number of reviews must be positive.")
                 int num) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
 
     ////////////// DELETE //////////////
@@ -359,17 +223,11 @@ public class ReviewController {
             @NotNull(message = "ID cannot be null.")
             @Positive(message = "ID must be positive.")
             Long id) {
-        try {
-            // Prendo username dell'utente che ha fatto la richiesta
-            String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
+        // Prendo username dell'utente che ha fatto la richiesta
+        String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
 
-            reviewService.deleteReviewById(id, username);
-            return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        reviewService.deleteReviewById(id, username);
+        return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
     }
 
     @DeleteMapping("/wines/{wineId}")
@@ -379,27 +237,15 @@ public class ReviewController {
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId) {
-        try {
-            reviewService.deleteReviewsByWine(wineId);
-            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        reviewService.deleteReviewsByWine(wineId);
+        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
     @DeleteMapping("/user/{username}")
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteReviewsByUser(@PathVariable @NotBlank(message = "Username cannot be blank.") String username) {
-        try {
-            reviewService.deleteReviewsByUser(username);
-            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        reviewService.deleteReviewsByUser(username);
+        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
     @DeleteMapping("/wines/{wineId}/vintages/{vintageYear}")
@@ -413,24 +259,14 @@ public class ReviewController {
                 @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear) {
-        try {
-            reviewService.deleteReviewsByVintage(wineId, vintageYear);
-            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        reviewService.deleteReviewsByVintage(wineId, vintageYear);
+        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
     @DeleteMapping
     // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteAllReviews() {
-        try {
-            reviewService.deleteAllReviews();
-            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+        reviewService.deleteAllReviews();
+        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 }

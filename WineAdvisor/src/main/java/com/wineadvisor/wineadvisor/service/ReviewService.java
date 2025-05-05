@@ -471,12 +471,12 @@ public class ReviewService {
 
     // Funzioni di utilità
     // Restituisce il numero di recensioni totali presenti nella collection
-    public Long getReviewsCount() {
+    private Long getReviewsCount() {
         return reviewRepository.count();
     }
 
     // Restituisce il numero di recensioni fatte per un determinato vino
-    public Long getReviewsCountByWine(Long wineId) {
+    private Long getReviewsCountByWine(Long wineId) {
         // Controllo se il vino esiste
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
@@ -485,7 +485,7 @@ public class ReviewService {
     }
 
     // Restituisce il numero di recensioni di un determinato utente
-    public Long getReviewsCountByUser(String username) {
+    private Long getReviewsCountByUser(String username) {
         // Controllo se l'utente esiste
         if (userRepository.findByLogin_Username(username).isEmpty()) {
             throw new ResourceNotFoundException("User with username " + username + " not found.");
@@ -494,7 +494,7 @@ public class ReviewService {
     }
 
     // Restituisce il numero di recensioni di una determinata annata di un vino
-    public Long getReviewsCountByVintage(Long wineId, Integer vintageYear) {
+    private Long getReviewsCountByVintage(Long wineId, Integer vintageYear) {
         // Controllo se il vino esiste e se l'annata esiste
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
@@ -507,7 +507,7 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più recenti
-    public ArrayList<Review> getRecentReviews(int num) {
+    private ArrayList<Review> getRecentReviews(int num) {
         ArrayList<Review> reviews = (ArrayList<Review>) reviewRepository.findAll();
         // Controllo se reviews è vuoto
         if (reviews.isEmpty()) {
@@ -523,7 +523,7 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più recenti di un utente specifico
-    public ArrayList<Review> getRecentReviewsByUser(String username, int num) {
+    private ArrayList<Review> getRecentReviewsByUser(String username, int num) {
         // Controllo se l'utente esiste
         if (userRepository.findByLogin_Username(username).isEmpty()) {
             throw new ResourceNotFoundException("User with username " + username + " not found.");
@@ -544,7 +544,7 @@ public class ReviewService {
     }
 
     // Restituisce le num recensioni più recenti di un'annata specifica per un determinato vino
-    public ArrayList<Review> getRecentReviewsByVintage(Long wineId, Integer vintageYear, int num) {
+    private ArrayList<Review> getRecentReviewsByVintage(Long wineId, Integer vintageYear, int num) {
         // Controllo se il vino e la vintage esistono
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
@@ -569,7 +569,7 @@ public class ReviewService {
     }
 
     // Ordina e restituisce le recensioni ordinate sulla base del campo specificato, in ordine crescente o decrescente (terzo parametro)
-    public ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
+    ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
         reviews.sort((r1, r2) -> {
             switch (field) {
                 case "rating":
@@ -594,7 +594,7 @@ public class ReviewService {
 
     // Da chiamare dopo che è stata rimossa una (sola) recensione, aggiorna le collection wines, in cui per ogni vintage
     // devono esserci le 3 recensioni più recenti
-    public void updateWinesReviews(Long wineId, Integer vintageYear) {
+    private void updateWinesReviews(Long wineId, Integer vintageYear) {
         Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(wineId, vintageYear);
         if(wine_to_find.isPresent()){
             Wine wine = wine_to_find.get();
@@ -626,7 +626,7 @@ public class ReviewService {
     }
 
     // Da chiamare dopo che è stata rimossa una (sola) recensione, aggiorna la collection users dalla repository, in cui per ogni utente devono esserci le 3 recensioni più recenti
-    public void updateUsersReviews(String username){
+    private void updateUsersReviews(String username){
         Optional<User> user_to_find = userRepository.findByLogin_Username(username);
         if(user_to_find.isPresent()){
             User user = user_to_find.get();
@@ -650,10 +650,12 @@ public class ReviewService {
         }
     }
 
+    
+
     // OPERAZIONI ASINCRONE
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
     @Scheduled(cron = "0 0 0 * * ?") // Ogni giorno a mezzanotte
-    public void updateWinesAndUsers(){
+    private void updateWinesAndUsers(){
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++){
             ArrayList<Vintage> vintages = wines.get(i).getVintages();
