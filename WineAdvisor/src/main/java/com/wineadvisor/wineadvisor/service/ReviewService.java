@@ -28,7 +28,6 @@ import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,17 +36,27 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
     private final UserRepository userRepository;
+    
     private final MongoTemplate mongoTemplate;
 
-    @Autowired
     private IdCounterService idCounterService;
 
-    // CRUD operations
+    
 
-    // CREATE
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+    
+    /////////////////////////////////
+    /////// CRUD operations /////////
+
+    /// CREATE operations ///
     // Aggiunge una recensione alla collection "reviews" del database
     public Review addReview(CreateReviewDTO createdReview) {
         // Controllo se l'utente esiste
@@ -109,54 +118,8 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    // UPDATE
-    // Aggiorna una recensione nella collection "reviews" del db
-    public Review updateReview(Long id, UpdateReviewDTO updatedReview) {
-        return reviewRepository.findByIdAndUserId_Username(id, updatedReview.getUsername())
-                .map(review -> {
-                    if(review.getText().equals(updatedReview.getText()) && review.getRating().equals(updatedReview.getRating())) { // Controllo che rating e testo siano stati modificati
-                        throw new IllegalArgumentException("Rating and text are the same as the previous one.");
-                    }
-                    review.setRating(updatedReview.getRating());
-                    review.setText(updatedReview.getText());
 
-                    Wine wine = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear())
-                            .orElseThrow(() -> new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found."));
-                    
-                    User user = userRepository.findByLogin_Username(review.getUserId().getUsername())
-                            .orElseThrow(() -> new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found."));
-
-                    // Se dentro a wine è presente la recensione, devo aggiornala
-                    ArrayList<Vintage> vintages = wine.getVintages();
-                    for (Vintage vintage : vintages) {
-                        if (vintage.getYear().equals(review.getWineId().getYear())) {
-                            for (ReviewEmbedded embedded : vintage.getReviews()) {
-                                if (embedded.getReviewId().equals(id)) {
-                                    embedded.setRating(updatedReview.getRating());
-                                    embedded.setText(updatedReview.getText());
-                                    wineRepository.save(wine);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // Se dentro a user è presente la recensione, devo aggiornarla
-                    for (ReviewEmbedded embedded : user.getReviews()) {
-                        if (embedded.getReviewId().equals(id)) {
-                            embedded.setRating(updatedReview.getRating());
-                            embedded.setText(updatedReview.getText());
-                            userRepository.save(user);
-                            break;
-                        }
-                    }
-
-                    return reviewRepository.save(review);
-                }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
-    }
-
-    // READ
+    /// READ operations ///
     // Cerca una recensione per id nella collection "reviews" del database
     public Optional<Review> getReviewById(Long id) {
         Optional<Review> review = reviewRepository.findById(id);
@@ -333,7 +296,56 @@ public class ReviewService {
         return new ArrayList<>(popularReviews.subList(0, limit));
     }
 
-    // DELETE
+    
+    /// UPDATE operations ///
+    // Aggiorna una recensione nella collection "reviews" del db
+    public Review updateReview(Long id, UpdateReviewDTO updatedReview) {
+        return reviewRepository.findByIdAndUserId_Username(id, updatedReview.getUsername())
+                .map(review -> {
+                    if(review.getText().equals(updatedReview.getText()) && review.getRating().equals(updatedReview.getRating())) { // Controllo che rating e testo siano stati modificati
+                        throw new IllegalArgumentException("Rating and text are the same as the previous one.");
+                    }
+                    review.setRating(updatedReview.getRating());
+                    review.setText(updatedReview.getText());
+
+                    Wine wine = wineRepository.findByIdAndVintages_Year(review.getWineId().getId(), review.getWineId().getYear())
+                            .orElseThrow(() -> new ResourceNotFoundException("Wine with id " + review.getWineId().getId() + " and year " + review.getWineId().getYear() + " not found."));
+                    
+                    User user = userRepository.findByLogin_Username(review.getUserId().getUsername())
+                            .orElseThrow(() -> new ResourceNotFoundException("User with username " + review.getUserId().getUsername() + " not found."));
+
+                    // Se dentro a wine è presente la recensione, devo aggiornala
+                    ArrayList<Vintage> vintages = wine.getVintages();
+                    for (Vintage vintage : vintages) {
+                        if (vintage.getYear().equals(review.getWineId().getYear())) {
+                            for (ReviewEmbedded embedded : vintage.getReviews()) {
+                                if (embedded.getReviewId().equals(id)) {
+                                    embedded.setRating(updatedReview.getRating());
+                                    embedded.setText(updatedReview.getText());
+                                    wineRepository.save(wine);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+
+                    // Se dentro a user è presente la recensione, devo aggiornarla
+                    for (ReviewEmbedded embedded : user.getReviews()) {
+                        if (embedded.getReviewId().equals(id)) {
+                            embedded.setRating(updatedReview.getRating());
+                            embedded.setText(updatedReview.getText());
+                            userRepository.save(user);
+                            break;
+                        }
+                    }
+
+                    return reviewRepository.save(review);
+                }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
+    }
+
+    
+    /// DELETE operations ///
     // Cancella una recensione specifica
     public void deleteReviewById(Long id) {
         // Controllo se la recensione esiste
@@ -400,8 +412,6 @@ public class ReviewService {
             userRepository.save(user);
         }
 
-        // 
-
         reviewRepository.deleteAllByWineId_Id(wineId);
     }
 
@@ -465,7 +475,7 @@ public class ReviewService {
         }
         wineRepository.save(wine);
 
-        // Devo rimuoverle anche dall collection users
+        // Devo rimuoverle anche dalla collection users
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (User user : users) {
             user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId) && r.getWineId().getYear().equals(vintageYear));
@@ -649,7 +659,13 @@ public class ReviewService {
         }
     }
 
-    // OPERAZIONI ASINCRONE
+    //// END of crud operations ////
+    ////////////////////////////////
+
+
+    /////////////////////////////////
+    /////// Async. operations ///////
+    
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
     @Scheduled(cron = "0 0 0 * * ?") // Ogni giorno a mezzanotte
     public void updateWinesAndUsers(){
@@ -667,10 +683,15 @@ public class ReviewService {
         }
     }
 
-    // AGGREGATIONS
-    // Operazione che una volta al mese aggiorna l'aggregation che calcola la top 10 vintages (per popolarità = numero recensioni)
-    // per ogni regione
-    @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
+    //// END of async operations ////
+    /////////////////////////////////
+    
+    
+    /////////////////////////////////
+    ///// Aggregation pipelines /////
+
+    // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
+    @Scheduled(cron = "0 0 0 25 * ?")   // Ogni 25 del mese a mezzanotte
     public void updateTop10VintagesPerRegion() {
         List<Document> pipeline = Arrays.asList(
             new Document("$lookup", new Document("from", "users")
@@ -703,19 +724,20 @@ public class ReviewService {
                                                             .append("bottle", "$wine_image")
                                                             .append("count", "$count")))),
 
-            new Document("$project", new Document("region", "$_id")
-                .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
-
+            new Document("$project", new Document("_id", 0)
+            .append("name", 1)
+            .append("vintages", 1)),
+            
             new Document("$merge", new Document("into", "regions")
-                .append("on", "region")
+                .append("on", "name")
                 .append("whenMatched", "merge")
                 .append("whenNotMatched", "discard"))
         );
 
         AggregateIterable<Document> results = mongoTemplate
-            .getCollection("reviews")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
+        .getCollection("reviews")
+        .aggregate(pipeline)
+        .allowDiskUse(true);
 
         for (Document doc : results) {
             String regionName = doc.getString("region");
@@ -729,4 +751,7 @@ public class ReviewService {
             mongoTemplate.updateFirst(query, update, "regions");
         }
     }
+
+    /// END of aggregation pipelines ///
+    ////////////////////////////////////
 }

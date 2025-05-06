@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
@@ -46,16 +45,41 @@ import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 @Service
 @RequiredArgsConstructor
 public class WineService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final CountryRepository countryRepository;
+
     private final IdCounterService idCounterService;
     private final ReviewService reviewService;
 
-    // CRUD
-    // CREATE
+
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    /////////////////////////////////
+    ///// Aggregation pipelines /////
+    
+
+    //// END of aggr. pipelines /////
+    /////////////////////////////////
+    
+
+    
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+    
+    /////////////////////////////////
+    /////// CRUD operations /////////
+
+    /// CREATE operations ///
     // Aggiunge un nuovo vino alla collection wines
     public Wine addWine(CreateWineDTO createWineDTO, String wineryUsername) {
         // Controllo che esista la winery
@@ -126,7 +150,8 @@ public class WineService {
         return wineRepository.save(wine);
     }
 
-    // READ
+
+    /// READ operations ///
     // Restituisce un vino per id
     public Wine getWineById(Long wineId) {
         Wine wine = wineRepository.findById(wineId)
@@ -229,7 +254,8 @@ public class WineService {
         return wines;
     }
 
-    // UPDATE
+
+    /// UPDATE operations ///
     // Aggiunge una nuova annata ad un determinato vino
     public Wine addVintage(NewVintageDTO newVintage) {
         return wineRepository.findById(newVintage.getWineId())
@@ -372,7 +398,7 @@ public class WineService {
     }
 
 
-    // DELETE
+    /// DELETE operations ///
     // Elimina un vino
     public void deleteWineById(Long wineId) {
         // Controllo che il vino specificato esista
@@ -463,7 +489,7 @@ public class WineService {
     
     // Funzioni di utilità
     // Inserisce un elemento all'interno di un ArrayList<Wine> per rapporto qualità/prezzo decrescente
-    public ArrayList<Wine> insertWineRatio (ArrayList<Wine> wines, Wine wine, Double ratio){
+    public ArrayList<Wine> insertWineRatio(ArrayList<Wine> wines, Wine wine, Double ratio){
         if (wines.isEmpty()){
             wines.add(wine);
             return wines;
@@ -643,4 +669,118 @@ public class WineService {
     // }
 
 
+    ///////////////////////////////////////////////////////////////////////
+    ////// Codice per creare le view invece che le materialized view //////
+    
+    // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la nostra formula.
+    // Le classifiche sono calcolate per ogni tipologia di vino (rossi, bianchi, rosati...).
+    // Il risultato i viene memorizzato nel db in una view chiamata "top_vintages_by_qop_per_type"
+    // @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    // public void updateTopVintagesByQoPPerType() {
+    //     // Declaring the stages of the aggregation pipeline
+    //     System.out.println("--- INFO: Declaring aggregation pipeline stages.");
+        
+    //     //// Stage 1: Unwinding vintages
+    //     UnwindOperation unwindOperation1 = Aggregation.unwind("vintages");
+
+    //     //// Stage 2: Projecting only necessary fields
+    //     ProjectionOperation projectionOperation1 = Aggregation.project()
+    //         .andInclude("name", "type")
+    //         .and("winery.name").as("winery")
+    //         .and("vintages.year").as("year")
+    //         .and("vintages.image").as("image")
+    //         .and("vintages.statistics.ratings_count").as("ratings_count")
+    //         .and("vintages.statistics.ratings_average").as("quality")
+    //         .and("vintages.price").as("price")
+    //         .and(
+    //             ArithmeticOperators.Divide.valueOf(
+    //                 ArithmeticOperators.Multiply.valueOf(
+    //                     ArithmeticOperators.Exp.expValueOf("vintages.statistics.ratings_average")
+    //                 ).multiplyBy(
+    //                     ArithmeticOperators.Sqrt.sqrtOf("vintages.statistics.ratings_count")
+    //                 )
+    //             ).divideBy(
+    //                 ArithmeticOperators.Ln.lnValueOf("vintages.price")
+    //             )
+    //         ).as("qop");
+
+    //     //// Stage 3: Sorting by qop (quality/price, computed with our formula) and ratings_count
+    //     SortOperation sortOperation1 = Aggregation.sort(
+    //         Sort.by(
+    //             Sort.Order.desc("qop"),
+    //             Sort.Order.desc("ratings_count")));
+
+    //     //// Stage 4: Grouping by type to calculate max_qop for each type
+    //     GroupOperation groupOperation1 = Aggregation.group("type")
+    //         .max("qop").as("max_qop")
+    //         .push(
+    //             new Document("wine", "$name")
+    //                 .append("winery", "$winery")
+    //                 .append("year", "$year")
+    //                 .append("image", "$image")
+    //                 .append("ratings_count", "$ratings_count")
+    //                 .append("quality", "$quality")
+    //                 .append("price", "$price")
+    //                 .append("qop", "$qop")
+    //         ).as("vintages");
+
+    //     //// Stage 5: Unwinding vintages again to assing max_qop to each vintage (for further computations)
+    //     UnwindOperation unwindOperation2 = Aggregation.unwind("vintages");
+
+    //     //// Stage 6: Adding "points" field (calculated as percentage of max_qop for each type)
+    //     ArithmeticOperators.Divide divideOperation = ArithmeticOperators.Divide.valueOf("$vintages.qop").divideBy("$max_qop");
+    //     ArithmeticOperators.Multiply multiplyOperation = ArithmeticOperators.Multiply.valueOf(100).multiplyBy(divideOperation);
+    //     AddFieldsOperation addFieldsOperation1 = Aggregation.addFields()
+    //             .addField("vintages.points")
+    //             .withValue(multiplyOperation)
+    //             .build();
+
+    //     //// Stage 7: Grouping by _id (it's the actual type of the wine) and pushing vintages into an array, to separate them again by type
+    //     GroupOperation groupOperation2 = Aggregation.group("_id")
+    //         .push(
+    //             new Document("wine", "$vintages.wine")
+    //                 .append("winery", "$vintages.winery")
+    //                 .append("year", "$vintages.year")
+    //                 .append("image", "$vintages.image")
+    //                 .append("ratings_count", "$vintages.ratings_count")
+    //                 .append("quality", "$vintages.quality")
+    //                 .append("price", "$vintages.price")
+    //                 .append("points", "$vintages.points")
+    //         ).as("vintages");
+        
+    //     //// Stage 8: Projecting final fields
+    //     ProjectionOperation projectionOperation2 = Aggregation.project()
+    //         .and("_id").as("type")
+    //         .andInclude("vintages")
+    //         .andExclude("_id");
+
+    //     //// Stage 9: Sorting by type
+    //     SortOperation sortOperation2 = Aggregation.sort(
+    //         Sort.by(
+    //             Sort.Order.asc("type")));
+
+
+    //     // Instantiating the aggregation pipeline
+    //     System.out.println("--- INFO: Instantiating aggregation pipeline.");
+    //     AggregationPipeline pipeline = AggregationPipeline.of(
+    //         unwindOperation1,
+    //         projectionOperation1,
+    //         sortOperation1,
+    //         groupOperation1,
+    //         unwindOperation2,
+    //         addFieldsOperation1,
+    //         groupOperation2,
+    //         projectionOperation2,
+    //         sortOperation2
+    //     );
+
+
+    //     // Executing the pipeline, saving result in a view
+    //     System.out.println("--- INFO: Executing aggregation pipeline.");
+    //     mongoTemplate.createView(TOP_VINTAGES_OUR_QOP, Wine.class, pipeline);
+    //     System.out.println("--- INFO: Finished. Results saved in view \"" + TOP_VINTAGES_OUR_QOP + "\".\n\n");
+    // }
+
+    //// FINE Codice per creare le view invece che le materialized view ////
+    ////////////////////////////////////////////////////////////////////////
 }
