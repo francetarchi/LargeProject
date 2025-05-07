@@ -11,7 +11,6 @@ import com.wineadvisor.wineadvisor.DTO.wines.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -21,8 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +52,7 @@ public class WineController {
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
             @RequestParam @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
         Wine savedWine = wineService.addWine(wine, wineryId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/wine/" + savedWine.getId()).body(savedWine);
     }
 
     ////////////// GET //////////////
@@ -133,30 +130,6 @@ public class WineController {
         if (minPrice > maxPrice) throw new BadRequestException("Min price cannot be greater than max price.");
         
         return ResponseEntity.status(HttpStatus.OK).body(wineService.searchWines(pageable, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
-    }
-
-    // ANALYTICS
-    @GetMapping("/vintages/top-10")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getTop10Wines() {
-        ArrayList<Wine> wines = wineService.getTop10Wines();
-        return ResponseEntity.status(HttpStatus.OK).body(wines);
-    }
-
-    @GetMapping("/users/{username}/popular-in-region")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getMostPopularWinesInUserRegion(
-            @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
-        ArrayList<Wine> wines = wineService.getMostPopularWinesInUserRegion(username);
-        return ResponseEntity.status(HttpStatus.OK).body(wines);
-    }
-
-    @GetMapping("/{username}vintages/recommendations")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getRecommendedVintages(
-            @PathVariable @NotBlank(message = "Username cannot be blank.") String username){
-        ArrayList<Vintage> vintages = wineService.getRecommendedVintages(username);
-        return ResponseEntity.status(HttpStatus.OK).body(vintages);
     }
 
     ////////////// PUT //////////////

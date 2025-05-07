@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,29 +29,25 @@ public class RegionController {
 
     ////////////// POST //////////////
     @PostMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> createRegion(
         @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
         @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(regionService.addRegion(name, country));
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/region/" + name).body(regionService.addRegion(name, country));
     }
     
     ////////////// GET //////////////
     @GetMapping("/{name}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getRegionByName(
         @PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
         return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionByName(name));
     }
 
     @GetMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllRegions(Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(regionService.getAllRegions(pageable));
     }
 
     @GetMapping("/countries/{country}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getRegionsByCountry(
         Pageable pageable,
         @PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
@@ -61,7 +56,6 @@ public class RegionController {
 
     ////////////// PUT //////////////
     @PutMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateRegion(
         @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
         @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
@@ -70,21 +64,18 @@ public class RegionController {
 
     ////////////// DELETE //////////////
     @DeleteMapping("/{name}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteRegion(@PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
         regionService.deleteRegion(name);
         return ResponseEntity.status(HttpStatus.OK).body("Region " + name + " deleted successfully.");
     }
 
     @DeleteMapping("/countries/{country}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteRegionsByCountry(@PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
         regionService.deleteRegionsByCountry(country);
         return ResponseEntity.status(HttpStatus.OK).body("Regions in country " + country + " deleted successfully.");
     }
 
     @DeleteMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteAllRegions() {
         regionService.deleteAll();
         return ResponseEntity.status(HttpStatus.OK).body("Regions deleted successfully.");

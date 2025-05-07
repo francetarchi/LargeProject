@@ -51,7 +51,7 @@ public class ReviewController {
         review.setUsername(username);
 
         Review savedReview = reviewService.addReview(review);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedReview);
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/review/" + savedReview.getId()).body(savedReview);
     }
 
     ////////////// PUT //////////////

@@ -18,7 +18,6 @@ public class UpdateVintageDTO {
     private Long wineId;
 
     @PositiveOrZero(message = "Year info must be a positive number.")
-    @NotNull(message = "Year info cannot be blank.")
     @Schema(description = "Year info of the new vintage", example = "2000")
     private Integer year;
     
