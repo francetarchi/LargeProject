@@ -15,9 +15,17 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 @Service
 @RequiredArgsConstructor
 public class IdCounterService {
-
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final MongoOperations mongoOperations;
 
+
+
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+    // Genera un un nuovo id per la collection specificata (parametro 'seqName'), incrementando di 1 il valore memorizzato nel db per tale collection.
     public Long generateSequence(String seqName) {
         IdCounter counter = mongoOperations.findAndModify(
             Query.query(where("_id").is(seqName)),

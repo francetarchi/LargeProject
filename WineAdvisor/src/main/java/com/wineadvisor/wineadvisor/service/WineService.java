@@ -55,11 +55,15 @@ import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 @Service
 @RequiredArgsConstructor
 public class WineService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final CountryRepository countryRepository;
+
     private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
 
@@ -75,15 +79,36 @@ public class WineService {
     }
 
 
-    // CRUD
-    // CREATE
+
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    /////////////////////////////////
+    ///// Aggregation pipelines /////
+    
+
+    //// END of aggr. pipelines /////
+    /////////////////////////////////
+    
+
+    
+    /////////////////////////////////
+    //////// PUBLIC METHODS /////////
+    /////////////////////////////////
+    
+    /////////////////////////////////
+    /////// CRUD operations /////////
+
+    /// CREATE operations ///
     // Aggiunge un nuovo vino alla collection wines
-    public Wine addWine(CreateWineDTO createWineDTO, Long wineryId) {
+    public Wine addWine(CreateWineDTO createWineDTO, String wineryUsername) {
         // Controllo che esista la winery
-        Winery winery = wineryRepository.findById(wineryId)
-            .orElseThrow(() -> new ResourceNotFoundException("Winery not found with id: " + wineryId));
+        Winery winery = wineryRepository.findByLogin_Username(wineryUsername)
+            .orElseThrow(() -> new ResourceNotFoundException("Winery not found with username: " + wineryUsername));
         
-        // Controllo che esista il country nella collection wineries
+        // Controllo che esista il country nella collection country
         Country country = countryRepository.findByName(winery.getCountry())
             .orElseThrow(() -> new ResourceNotFoundException("Country not found with name: " + winery.getCountry()));
 
@@ -149,7 +174,8 @@ public class WineService {
         return wineRepository.save(wine);
     }
 
-    // READ
+
+    /// READ operations ///
     // Restituisce un vino per id
     public Wine getWineById(Long wineId) {
         Wine wine = wineRepository.findById(wineId)
@@ -193,7 +219,8 @@ public class WineService {
         return wines;
     }
 
-    // UPDATE
+
+    /// UPDATE operations ///
     // Aggiunge una nuova annata ad un determinato vino
     public Wine addVintage(NewVintageDTO newVintage, String username) {
         return wineRepository.findById(newVintage.getWineId())
@@ -350,7 +377,7 @@ public class WineService {
     }
 
 
-    // DELETE
+    /// DELETE operations ///
     // Elimina un vino
     public void deleteWineById(Long wineId, String username) {
         // Controllo che il vino specificato esista

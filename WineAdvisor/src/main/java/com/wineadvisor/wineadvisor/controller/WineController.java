@@ -11,6 +11,7 @@ import com.wineadvisor.wineadvisor.DTO.wines.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -50,8 +51,8 @@ public class WineController {
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
-            @RequestParam @NotNull(message = "Winery ID cannot be null.") @Positive(message = "Winery ID must be positive.") Long wineryId) {
-        Wine savedWine = wineService.addWine(wine, wineryId);
+            @NotBlank(message = "Winery username cannot be blank.") @RequestParam String wineryUsername) {
+        Wine savedWine = wineService.addWine(wine, wineryUsername);
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/wine/" + savedWine.getId()).body(savedWine);
     }
 

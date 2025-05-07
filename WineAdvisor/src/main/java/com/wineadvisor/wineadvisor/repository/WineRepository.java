@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import com.wineadvisor.wineadvisor.model.wines.Wine;
 
+
 @Repository
 public interface WineRepository extends MongoRepository<Wine, Long> {
     // Metodo per trovare un vino in base al suo id e all'annata
@@ -23,7 +24,7 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
     // Metodo per trovare un vino in base allo username della cantina
     Page<Wine> findByWinery_Username(Pageable pageable, String username);
 
-    // Metodo per trovare un vino in base al nome della region
+    // Metodi per trovare un vino in base al nome della region
     Page<Wine> findByRegion_Name(Pageable pageable, String region);
     ArrayList<Wine> findByRegion_Name(String region);
 
@@ -38,6 +39,7 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
 
     // Metodo per trovare un vino in base al nome del country
     Page<Wine> findByRegion_Country_Name(Pageable pageable, String country);
+    ArrayList<Wine> findByRegion_Country_Name(String country);
 
     // Metodo per trovare un vino in base al tipo
     Page<Wine> findByType(Pageable pageable, String type);
