@@ -1,5 +1,8 @@
 package com.wineadvisor.wineadvisor.repository;
 
+import java.util.ArrayList;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -7,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 
-import java.util.*;
 
 @Repository
 public interface ReviewRepository extends MongoRepository<Review, Long> {    
@@ -55,5 +57,4 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
 
     // metodo che elimina tutte le recensioni di un'annata specifica di un determinato vino
     void deleteAllByWineId_IdAndWineId_Year(Long wineId, Integer year);
-
 }

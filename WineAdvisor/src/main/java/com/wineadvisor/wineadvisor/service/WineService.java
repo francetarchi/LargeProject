@@ -15,9 +15,9 @@ import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wineries.Winery;
-import com.wineadvisor.wineadvisor.model.wines.*;
+import com.wineadvisor.wineadvisor.model.countries.Country;
+import com.wineadvisor.wineadvisor.model.wines.Wine;
 import com.wineadvisor.wineadvisor.model.wines.fields.BaselineStructure;
-import com.wineadvisor.wineadvisor.model.wines.fields.Country;
 import com.wineadvisor.wineadvisor.model.wines.fields.Food;
 import com.wineadvisor.wineadvisor.model.wines.fields.Grape;
 import com.wineadvisor.wineadvisor.model.wines.fields.RegionEmbedded;
@@ -86,7 +86,7 @@ public class WineService {
         Winery winery = wineryRepository.findByLogin_Username(wineryUsername)
             .orElseThrow(() -> new ResourceNotFoundException("Winery not found with username: " + wineryUsername));
         
-        // Controllo che esista il country nella collection wineries
+        // Controllo che esista il country nella collection country
         Country country = countryRepository.findByName(winery.getCountry())
             .orElseThrow(() -> new ResourceNotFoundException("Country not found with name: " + winery.getCountry()));
 
@@ -145,7 +145,7 @@ public class WineService {
         
         wine.setRegion(new RegionEmbedded());
         wine.getRegion().setName(winery.getRegion());
-        wine.getRegion().setCountry(country);
+        // wine.getRegion().setCountry(country);
 
         return wineRepository.save(wine);
     }

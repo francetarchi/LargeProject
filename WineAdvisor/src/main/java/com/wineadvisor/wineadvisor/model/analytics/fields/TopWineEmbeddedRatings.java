@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TopWinesEmbeddedRatings {
+public class TopWineEmbeddedRatings {
     private String wine;
     private String winery;
     private String image;

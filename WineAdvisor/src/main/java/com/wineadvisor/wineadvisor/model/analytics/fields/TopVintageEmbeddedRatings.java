@@ -1,6 +1,8 @@
 package com.wineadvisor.wineadvisor.model.analytics.fields;
 
-import com.wineadvisor.wineadvisor.model.utils.TopVintagesEmbedded;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import com.wineadvisor.wineadvisor.model.utils.TopVintageEmbedded;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +13,7 @@ import lombok.EqualsAndHashCode;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class TopVintagesEmbeddedQop extends TopVintagesEmbedded {
-    private Double quality;
-    private Double points;
+public class TopVintageEmbeddedRatings extends TopVintageEmbedded {
+    @Field("ratings_average")
+    private Double ratingsAverage;
 }

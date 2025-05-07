@@ -36,6 +36,7 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
+    /////////// COSTANTI ////////////
     private static final int PAGE_SIZE = 20;
 
 
@@ -311,21 +312,21 @@ public class UserService {
 
     // Restituisce tutti gli utenti con un determinato nome e cognome
     public Page<User> getUsersByFullName(String firstName, String lastName, Integer page) throws ResourceNotFoundException, BadRequestException {
-        Page<User> users = userRepository.findByName_FirstAndName_Last(firstName, lastName, PageRequest.of(page, PAGE_SIZE));
+        Page<User> users = userRepository.findByName_FirstContainingIgnoreCaseAndName_LastContainingIgnoreCase(firstName, lastName, PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(users, "Users with first name \"" + firstName + "\" and last name \"" + lastName + "\" not found.");
         return users;
     }
 
     // Restituisce tutti gli utenti con un determinato nome
     public Page<User> getUsersByFirstName(String firstName, Integer page) throws ResourceNotFoundException, BadRequestException {
-        Page<User> users = userRepository.findByName_First(firstName, PageRequest.of(page, PAGE_SIZE));
+        Page<User> users = userRepository.findByName_FirstContainingIgnoreCase(firstName, PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(users, "Users with first name \"" + firstName + "\" not found.");
         return users;
     }
 
     // Restituisce tutti gli utenti con un determinato cognome
     public Page<User> getUsersByLastName(String lastName, Integer page) throws ResourceNotFoundException, BadRequestException {
-        Page<User> users = userRepository.findByName_Last(lastName, PageRequest.of(page, PAGE_SIZE));
+        Page<User> users = userRepository.findByName_LastContainingIgnoreCase(lastName, PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(users, "Users with last name \"" + lastName + "\" not found.");
         return users;
     }
@@ -402,7 +403,7 @@ public class UserService {
                 }
             )
             .orElseThrow(
-                () -> new ResourceNotFoundException("Username not updatable because \"" + targetUsername + "\" no user uses it.")
+                () -> new ResourceNotFoundException("Username \"" + targetUsername + "\" not updatable because no user uses it.")
             );
     }
 
@@ -661,6 +662,11 @@ public class UserService {
 
 
     /// DELETE operations ///
+    // Elimina tutti gli utenti presenti nella collection "users" del database
+    public void deleteAllUsers() {
+        userRepository.deleteAll();
+    }
+
     // Elimina un utente con un determinato username
     public void deleteUser(String targetUsername) throws ResourceNotFoundException {
         final User targetUser = userRepository

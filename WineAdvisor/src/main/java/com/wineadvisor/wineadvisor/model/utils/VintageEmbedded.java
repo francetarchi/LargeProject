@@ -7,15 +7,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class TopVintagesEmbedded {
-    private String wine;
-    private String winery;
-    private Integer year;
-    private Double rating;
-    private String image;
+@NoArgsConstructor
+public class VintageEmbedded {
+    @Field("wine_id")
+    private Long wineId;
 
-    @Field("ratings_count")
-    private Long ratingsCount;
+    @Field("wine_name")
+    private String wineName;
+
+    private Integer year;
+
+    private String bottle;
+
+    private Long count;
 }

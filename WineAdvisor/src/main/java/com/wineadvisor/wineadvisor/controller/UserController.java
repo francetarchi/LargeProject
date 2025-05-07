@@ -32,6 +32,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.Valid;
 
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -48,9 +49,10 @@ public class UserController {
     public ResponseEntity<?> createUser(
             @NotNull(message = "New user info cannot be null.") @Valid @RequestBody CreateUserDTO createUserDTO) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/user/" + createUserDTO.getUsername())
+                .header("Location", "/api/users/" + createUserDTO.getUsername())
                 .body(userService.createUser(createUserDTO));
     }
+
 
     ////////////// GET //////////////
     @GetMapping
@@ -93,6 +95,7 @@ public class UserController {
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserByUsername(username));
     }
+
 
     ////////////// PUT //////////////
     @PutMapping("/{username}")
@@ -216,6 +219,14 @@ public class UserController {
 
     
     ////////////// DELETE //////////////
+    @DeleteMapping
+    // TODO: Uncomment the following if you want to add admin authentication
+    // @Secured({ "ROLE_ADMIN" })
+    public ResponseEntity<?> deleteAllUsers() {
+        userService.deleteAllUsers();
+        return ResponseEntity.status(HttpStatus.OK).body("All users deleted successfully.");
+    }
+
     @DeleteMapping("/{username}")
     @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username")

@@ -25,13 +25,13 @@ public class UpdateUserDTO {
     @Schema(description = "Gender of the updated user", example = "male")
     private String gender;
 
-    @NotNull(message = "Name info cannot be blank.")
+    @NotNull(message = "Name info cannot be null.")
     @Valid
     @Schema(name = "name", description = "Name info of the updated user")
     @JsonProperty("name")
     private NameDTO nameDTO;
 
-    @NotNull(message = "Address info cannot be blank.")
+    @NotNull(message = "Address info cannot be null.")
     @Valid
     @Schema(name = "address", description = "Home address of the updated user")
     @JsonProperty("address")
@@ -59,7 +59,8 @@ public class UpdateUserDTO {
 
 
     ///////////// METODI PUBBLICI /////////////
-    // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)). Ritorna l'utente aggiornato.
+    // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)).
+    // Ritorna l'utente aggiornato.
     public User toUser(User targetUser) {
         targetUser.setName(this.getNameDTO().toName());
         targetUser.setAddress(this.getAddressDTO().toAddress());

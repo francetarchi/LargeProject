@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.wineadvisor.wineadvisor.model.analytics.fields.TopWinesEmbeddedRatings;
+import com.wineadvisor.wineadvisor.model.analytics.fields.TopWineEmbeddedRatings;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,5 +22,5 @@ public class TopWinesRatingsType {
 
     private String type;
 
-    private ArrayList<TopWinesEmbeddedRatings> wines;
+    private ArrayList<TopWineEmbeddedRatings> wines;
 }

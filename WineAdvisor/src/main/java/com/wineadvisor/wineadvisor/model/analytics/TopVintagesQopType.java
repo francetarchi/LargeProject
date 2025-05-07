@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.wineadvisor.wineadvisor.model.analytics.fields.TopVintagesEmbeddedQop;
+import com.wineadvisor.wineadvisor.model.analytics.fields.TopVintageEmbeddedQop;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,5 +23,5 @@ public class TopVintagesQopType {
 
     private String type;
 
-    private ArrayList<TopVintagesEmbeddedQop> vintages;
+    private ArrayList<TopVintageEmbeddedQop> vintages;
 }
