@@ -21,5 +21,5 @@ public interface WineryRepository extends MongoRepository<Winery, ObjectId> {
 
     ArrayList<Winery> findByRegion(String region);
     
-    ArrayList<Winery> findByWinery_Country_Name(String name);
+    ArrayList<Winery> findByCountry(String name);
 }

@@ -68,7 +68,7 @@ public class CountryController {
 
     @PutMapping("/{name}/name/update")
     public ResponseEntity<?> updateCountryName(
-            @NotBlank(message = "Name cannot be blank.") @PathVariable String targetName,
+            @NotBlank(message = "Name cannot be blank.") @PathVariable(name = "name") String targetName,
             @NotBlank(message = "New name cannot be blank.") @RequestParam String newName) {
         return ResponseEntity.status(HttpStatus.OK).body(countryService.updateCountryName(targetName, newName));
     }

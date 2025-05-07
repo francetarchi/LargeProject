@@ -83,7 +83,7 @@ public class CountryService {
     // Ricerca le cantine di una certa nazione e aggiorna correttamente il campo "name" della nazione
     private void updateWinery_CountryByCountryName(String targetName, String updatedName) {
         wineryRepository
-            .findByWinery_Country_Name(targetName)
+            .findByCountry(targetName)
             .forEach(
                 winery -> {
                     winery.setCountry(updatedName);
