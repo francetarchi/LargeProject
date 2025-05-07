@@ -25,6 +25,7 @@ import com.wineadvisor.wineadvisor.repository.analytics.TopWinesRatingsTypeRepos
 
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class AnalyticsService {
@@ -49,12 +50,39 @@ public class AnalyticsService {
     private static final Integer TOP_LENGTH = 10; // Lunghezza attuale di default delle classifiche
 
 
+
     ////////////////////////////////
     /////// PRIVATE METHODS ////////
     ////////////////////////////////
     
     ////////////////////////////////
-    //// Creation of mat. views //// (functions called by the respective scheduled methods which update the materialized views)
+    ///// Checking operations //////
+
+    // Controlla che il tipo di vino sia valido (rossi, bianchi, rosati...).
+    private String checkType(String type) {
+        type = type.toLowerCase();
+
+        if (
+            !type.equalsIgnoreCase("rosso")
+            && !type.equalsIgnoreCase("bianco")
+            && !type.equalsIgnoreCase("rosato")
+            && !type.equalsIgnoreCase("spumante")
+            && !type.equalsIgnoreCase("vino da dessert")
+            && !type.equalsIgnoreCase("vino liquoroso")
+            && !type.equalsIgnoreCase("vino aromatizzato")
+        ) {
+            throw new BadRequestException("Invalid type: \"" + type + "\". Valid types are: rosso, bianco, rosato, spumante, vino da dessert, vino liquoroso, vino aromatizzato.");
+        }
+
+        return type;
+    }
+
+    /// END of checking operations ///
+    //////////////////////////////////
+    
+
+    //////////////////////////////////
+    ///// Creation of mat. views ///// (functions called by the respective scheduled methods which update the materialized views)
     
     // Crea la meterialized view "top_vintages_by_our_qop_per_type" che contiene le migliori annate per rapporto qualità/prezzo (calcolati secondo la nostra formula), se non esiste già.
     // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
@@ -579,32 +607,6 @@ public class AnalyticsService {
 
     /// END of aggregation pipelines ///
     ////////////////////////////////////
-    
-
-    ////////////////////////////////
-    ///// Checking operations //////
-
-    // Controlla che il tipo di vino sia valido (rossi, bianchi, rosati...).
-    private String checkType(String type) {
-        type = type.toLowerCase();
-
-        if (
-            !type.equalsIgnoreCase("rosso")
-            && !type.equalsIgnoreCase("bianco")
-            && !type.equalsIgnoreCase("rosato")
-            && !type.equalsIgnoreCase("spumante")
-            && !type.equalsIgnoreCase("vino da dessert")
-            && !type.equalsIgnoreCase("vino liquoroso")
-            && !type.equalsIgnoreCase("vino aromatizzato")
-        ) {
-            throw new BadRequestException("Invalid type: \"" + type + "\". Valid types are: rosso, bianco, rosato, spumante, vino da dessert, vino liquoroso, vino aromatizzato.");
-        }
-
-        return type;
-    }
-
-    /// END of checking operations //
-    /////////////////////////////////
 
 
 

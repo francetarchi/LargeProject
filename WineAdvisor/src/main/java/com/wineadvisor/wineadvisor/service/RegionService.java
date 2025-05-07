@@ -1,7 +1,6 @@
 package com.wineadvisor.wineadvisor.service;
 
-import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
 
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
@@ -16,19 +15,38 @@ import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
-import java.util.ArrayList;
-
+import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class RegionService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final RegionRepository regionRepository;
     private final CountryRepository countryRepository;
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final WineRepository wineRepository;
+
+
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+
+    // No private methods for now //
+
+
+
+    ////////////////////////////////
+    //////// PUBLIC METHODS ////////
+    ////////////////////////////////
+    
     /////////////////////////////////
     /////// CRUD operations /////////
 
@@ -52,6 +70,7 @@ public class RegionService {
         
         return regionRepository.save(region);
     }
+
 
     /// READ operations ///
     // Restituisce la region di nome name
@@ -81,6 +100,7 @@ public class RegionService {
 
         return regions;
     }
+    
     
     /// UPDATE operations ///
     // Aggiorna il country di una region
@@ -123,6 +143,7 @@ public class RegionService {
             }).orElseThrow(() -> new ResourceNotFoundException("Region " + name + " not found"));
     }
     
+    
     /// DELETE operations ///
     // Elimina la region di nome name
     public void deleteRegion(String name) {
@@ -146,4 +167,7 @@ public class RegionService {
     public void deleteAll() {
         regionRepository.deleteAll();
     }
+
+    //// END of CRUD operations ////
+    ////////////////////////////////
 }

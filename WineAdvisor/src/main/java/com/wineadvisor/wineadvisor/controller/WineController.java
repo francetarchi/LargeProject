@@ -4,24 +4,15 @@ import com.wineadvisor.wineadvisor.model.wines.Wine;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.service.WineService;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
+import com.wineadvisor.wineadvisor.DTO.wines.CreateWineDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.NewVintageDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.UpdateWineDTO;
+import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.wineadvisor.wineadvisor.DTO.wines.*;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
-
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +27,17 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
+import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/wines")
@@ -45,6 +47,8 @@ public class WineController {
     /////////// VARIABLES //////////
     ////////////////////////////////
     private final WineService wineService;
+
+
 
     ////////////// POST //////////////
     @PostMapping

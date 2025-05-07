@@ -1,10 +1,12 @@
 package com.wineadvisor.wineadvisor.service;
 
 import org.bson.Document;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.time.LocalDateTime;
 
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
@@ -17,22 +19,24 @@ import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.*;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 
-import lombok.RequiredArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.*;
-
-import com.mongodb.client.AggregateIterable;
 import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
 import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
+import com.mongodb.client.AggregateIterable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +49,272 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
+
+
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    ////////////////////////////////
+    ///// Checking operations //////
+    
+    // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
+    private void checkReturnedPage(Page<Review> page, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
+        if (page.getTotalElements() == 0) {
+            throw new ResourceNotFoundException(notFoundMessage);
+        }
+        if (page.getPageable().getPageNumber() >= page.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
+    }
+
+    /// END of checking operations //
+    /////////////////////////////////
+    
+
+    ////////////////////////////////
+    /////// Updates on wines ///////
+
+    // Aggiorna le collection wines, in cui per ogni vintage devono esserci le 3 recensioni più recenti
+    private void updateWinesReviews(Long wineId, Integer vintageYear) {
+        Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(wineId, vintageYear);
+        if(!wine_to_find.isEmpty()){
+            Wine wine = wine_to_find.get();
+
+            // prendo le reviews di quell'annata di quel vino dalla collection delle reviews
+            ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
+
+            // ordino le reviews in base alla data di creazione (createdAt) in ordine decrescente e prendo solo le prime 3
+            ArrayList<Review> reviews_sorted = sortReviewsByField(reviews, "createdAt", false);
+            int limit = Math.min(3, reviews_sorted.size());
+            ArrayList<Review> recentReviews = new ArrayList<>(reviews_sorted.subList(0, limit));
+            
+            // Devo farle diventare del tipo Reviewembedded
+            ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
+            for (int i = 0; i < recentReviews.size(); i++){
+                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
+                recentReviewsEmbedded.add(reviewEmbedded);
+            }
+
+            // aggiorno la vintage di quel vino con le (max 3) recensioni più recenti
+            for (int i = 0; i < wine.getVintages().size(); i++){
+                if (wine.getVintages().get(i).getYear() == null && vintageYear == null){
+                    wine.getVintages().get(i).setReviews(recentReviewsEmbedded);
+                    break;
+                }
+                else if (wine.getVintages().get(i).getYear().equals(vintageYear)){
+                    wine.getVintages().get(i).setReviews(recentReviewsEmbedded);
+                    break;
+                }
+            }
+            wineRepository.save(wine);
+        }
+    }
+
+    //// END of updates on wines ////
+    /////////////////////////////////
+    
+
+    /////////////////////////////////
+    /////// Updates on users ////////
+
+    // Aggiorna la collection users, in cui per ogni utente devono esserci le 3 recensioni più recenti
+    private void updateUsersReviews(String username){
+        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+        if(!user_to_find.isEmpty()){
+            User user = user_to_find.get();
+            // prendo le reviews di quell'utente dalla collection delle reviews
+            ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
+            // ordino le reviews in base alla data di creazione (createdAt) in ordine decrescente e prendo solo le prime 3
+            ArrayList<Review> reviews_sorted = sortReviewsByField(reviews, "createdAt", false);
+            int limit = Math.min(3, reviews_sorted.size());
+            ArrayList<Review> recentReviews = new ArrayList<>(reviews_sorted.subList(0, limit));
+
+            // Devo farle diventare del tipo ReviewEmbedded
+            ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
+            for (int i = 0; i < recentReviews.size(); i++){
+                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
+                recentReviewsEmbedded.add(reviewEmbedded);
+            }
+
+            // aggiorno l'utente con le (max 3) recensioni più recenti
+            user.setReviews(recentReviewsEmbedded);
+            userRepository.save(user);
+        }
+    }
+
+    //// END of updates on users ////
+    /////////////////////////////////
+    
+
+    /////////////////////////////////
+    /////// Async. operations ///////
+    
+    // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
+    @Scheduled(cron = "0 * * * * ?") // Ogni giorno a mezzanotte
+    private void updateReviewsEmbeddedWinesAndUsers(){
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
+        for (int i = 0; i < wines.size(); i++){
+            ArrayList<Vintage> vintages = wines.get(i).getVintages();
+            for (int j = 0; j < vintages.size(); j++){
+                updateWinesReviews(wines.get(i).getId(), vintages.get(j).getYear());
+            }
+        }
+
+        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
+        for (int i = 0; i < users.size(); i++){
+            updateUsersReviews(users.get(i).getLogin().getUsername());
+        }
+    }
+
+    //// END of async operations ////
+    /////////////////////////////////
+    
+
+    /////////////////////////////////
+    ///// Aggregation pipelines /////
+
+    // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
+    @Scheduled(cron = "0 0 0 25 * ?")   // Ogni 25 del mese a mezzanotte
+    private void updateTop10VintagesPerRegion() {
+        List<Document> pipeline = Arrays.asList(
+            new Document("$lookup", new Document("from", "users")
+                .append("localField", "user_id.username")
+                .append("foreignField", "login.username")
+                .append("as", "result")),
+            
+            new Document("$unwind", new Document("path", "$result")),
+
+            new Document("$project", new Document("_id", 0)
+                .append("wine_id", "$wine_id.id")
+                .append("wine_name", "$wine_id.name")
+                .append("wine_image", "$wine_id.image")
+                .append("year", "$wine_id.year")
+                .append("region", "$result.address.region")),
+
+            new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
+                                                        .append("year", "$year")
+                                                        .append("region", "$region"))
+                .append("wine_name", new Document("$first", "$wine_name"))
+                .append("wine_image", new Document("$first", "$wine_image"))
+                .append("count", new Document("$sum", 1))),
+
+            new Document("$sort", new Document("count", -1)),
+
+            new Document("$group", new Document("_id", "$_id.region")
+                .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
+                                                            .append("wine_name", "$wine_name")
+                                                            .append("year", "$_id.year")
+                                                            .append("bottle", "$wine_image")
+                                                            .append("count", "$count")))),
+
+            new Document("$project", new Document("name", "$_id")
+                .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
+
+            new Document("$project", new Document("_id", 0)
+            .append("name", 1)
+            .append("top_10_vintages_of_the_month", "$vintages")),
+            
+            new Document("$merge", new Document("into", "regions")
+                .append("on", "name")
+                .append("whenMatched", "merge")
+                .append("whenNotMatched", "discard"))            
+        );
+
+        AggregateIterable<Document> results = mongoTemplate
+        .getCollection("reviews")
+        .aggregate(pipeline)
+        .allowDiskUse(true);
+
+        for (Document doc : results) {
+            String regionName = doc.getString("region");
+
+            @SuppressWarnings("unchecked")
+            List<Document> vintages = (List<Document>) doc.get("top_10_vintages_of_the_month");
+
+            // Aggiorno la regione corrispondente con il campo "top_10_vintages_of_the_month"
+            Query query = new Query(Criteria.where("name").is(regionName));
+            Update update = new Update().set("top_10_vintages_of_the_month", vintages);
+            mongoTemplate.updateFirst(query, update, "regions");
+        }
+    }
+
+    // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
+    @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
+    private void updateTop100VintagesPerCountry() {
+        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
+            new Document("from", "users")
+                    .append("localField", "user_id.username")
+                    .append("foreignField", "login.username")
+                    .append("as", "result")), 
+            new Document("$unwind", 
+            new Document("path", "$result")), 
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("wine_id", "$wine_id.id")
+                    .append("wine_name", "$wine_id.name")
+                    .append("wine_image", "$wine_id.image")
+                    .append("year", "$wine_id.year")
+                    .append("country", "$result.address.country")), 
+            new Document("$group", 
+            new Document("_id", 
+            new Document("wine_id", "$wine_id")
+                        .append("year", "$year")
+                        .append("country", "$country"))
+                    .append("wine_name", 
+            new Document("$first", "$wine_name"))
+                    .append("wine_image", 
+            new Document("$first", "$wine_image"))
+                    .append("count", 
+            new Document("$sum", 1L))), 
+            new Document("$sort", 
+            new Document("count", -1L)), 
+            new Document("$group", 
+            new Document("_id", "$_id.country")
+                    .append("vintages", 
+            new Document("$push", 
+            new Document("wine_id", "$_id.wine_id")
+                            .append("wine_name", "$wine_name")
+                            .append("year", "$_id.year")
+                            .append("bottle", "$wine_image")
+                            .append("count", "$count")))), 
+            new Document("$project", 
+            new Document("_id", 0L)
+                    .append("name", "$_id")
+                    .append("vintages", 
+            new Document("$slice", Arrays.asList("$vintages", 100L)))),
+
+            new Document("$project", new Document("_id", 0)
+            .append("name", 1)
+            .append("top_100_vintages_of_the_month", "$vintages")),
+
+            new Document("$merge", new Document("into", "countries")
+                .append("on", "name")
+                .append("whenMatched", "merge")
+                .append("whenNotMatched", "discard"))
+        );
+
+        AggregateIterable<Document> results = mongoTemplate
+            .getCollection("reviews")
+            .aggregate(pipeline)
+            .allowDiskUse(true);
+
+        for (Document doc : results) {
+            String countryName = doc.getString("country");
+
+            @SuppressWarnings("unchecked")
+            List<Document> vintages = (List<Document>) doc.get("top_100_vintages_of_the_month");
+
+            // Aggiorno il country corrispondente con il campo "top_100_vintages_of_the_month"
+            Query query = new Query(Criteria.where("name").is(countryName));
+            Update update = new Update().set("top_100_vintages_of_the_month", vintages);
+            mongoTemplate.updateFirst(query, update, "countries");
+        }
+    }
+
+    /// END of aggregation pipelines ///
+    ////////////////////////////////////
 
 
 
@@ -430,20 +700,15 @@ public class ReviewService {
         reviewRepository.deleteAll();
     }
 
+    //// END of crud operations ////
+    ////////////////////////////////
+    
 
-    // Funzioni di utilità
-    // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
-    private void checkReturnedPage(Page<Review> page, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
-        if (page.getTotalElements() == 0) {
-            throw new ResourceNotFoundException(notFoundMessage);
-        }
-        if (page.getPageable().getPageNumber() >= page.getTotalPages()) {
-            throw new BadRequestException("Page requested too high.");
-        }
-    }
-
+    ////////////////////////////////
+    /// Utility public functions ///
+    
     // Ordina e restituisce le recensioni ordinate sulla base del campo specificato, in ordine crescente o decrescente (terzo parametro)
-    ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
+    public ArrayList<Review> sortReviewsByField(ArrayList<Review> reviews, String field, boolean ascendingOrder) {
         reviews.sort((r1, r2) -> {
             switch (field) {
                 case "rating":
@@ -462,240 +727,10 @@ public class ReviewService {
                     return 0;
             }
         });
+
         return reviews;
-                
     }
 
-    // Aggiorna le collection wines, in cui per ogni vintage devono esserci le 3 recensioni più recenti
-    private void updateWinesReviews(Long wineId, Integer vintageYear) {
-        Optional<Wine> wine_to_find = wineRepository.findByIdAndVintages_Year(wineId, vintageYear);
-        if(!wine_to_find.isEmpty()){
-            Wine wine = wine_to_find.get();
-
-            // prendo le reviews di quell'annata di quel vino dalla collection delle reviews
-            ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
-
-            // ordino le reviews in base alla data di creazione (createdAt) in ordine decrescente e prendo solo le prime 3
-            ArrayList<Review> reviews_sorted = sortReviewsByField(reviews, "createdAt", false);
-            int limit = Math.min(3, reviews_sorted.size());
-            ArrayList<Review> recentReviews = new ArrayList<>(reviews_sorted.subList(0, limit));
-            
-            // Devo farle diventare del tipo Reviewembedded
-            ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
-            for (int i = 0; i < recentReviews.size(); i++){
-                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
-                recentReviewsEmbedded.add(reviewEmbedded);
-            }
-
-            // aggiorno la vintage di quel vino con le (max 3) recensioni più recenti
-            for (int i = 0; i < wine.getVintages().size(); i++){
-                if (wine.getVintages().get(i).getYear() == null && vintageYear == null){
-                    wine.getVintages().get(i).setReviews(recentReviewsEmbedded);
-                    break;
-                }
-                else if (wine.getVintages().get(i).getYear().equals(vintageYear)){
-                    wine.getVintages().get(i).setReviews(recentReviewsEmbedded);
-                    break;
-                }
-            }
-            wineRepository.save(wine);
-        }
-    }
-
-    // Aggiorna la collection users, in cui per ogni utente devono esserci le 3 recensioni più recenti
-    private void updateUsersReviews(String username){
-        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
-        if(!user_to_find.isEmpty()){
-            User user = user_to_find.get();
-            // prendo le reviews di quell'utente dalla collection delle reviews
-            ArrayList<Review> reviews = reviewRepository.findByUserId_Username(username);
-            // ordino le reviews in base alla data di creazione (createdAt) in ordine decrescente e prendo solo le prime 3
-            ArrayList<Review> reviews_sorted = sortReviewsByField(reviews, "createdAt", false);
-            int limit = Math.min(3, reviews_sorted.size());
-            ArrayList<Review> recentReviews = new ArrayList<>(reviews_sorted.subList(0, limit));
-
-            // Devo farle diventare del tipo ReviewEmbedded
-            ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
-            for (int i = 0; i < recentReviews.size(); i++){
-                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
-                recentReviewsEmbedded.add(reviewEmbedded);
-            }
-
-            // aggiorno l'utente con le (max 3) recensioni più recenti
-            user.setReviews(recentReviewsEmbedded);
-            userRepository.save(user);
-        }
-    }
-
-    //// END of crud operations ////
+    /// END of util. pub. funct. ///
     ////////////////////////////////
-
-
-    /////////////////////////////////
-    /////// Async. operations ///////
-    
-    // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
-    @Scheduled(cron = "0 * * * * ?") // Ogni giorno a mezzanotte
-    private void updateReviewsEmbeddedWines(){
-        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
-        for (int i = 0; i < wines.size(); i++){
-            ArrayList<Vintage> vintages = wines.get(i).getVintages();
-            for (int j = 0; j < vintages.size(); j++){
-                updateWinesReviews(wines.get(i).getId(), vintages.get(j).getYear());
-            }
-        }
-
-        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
-        for (int i = 0; i < users.size(); i++){
-            updateUsersReviews(users.get(i).getLogin().getUsername());
-        }
-    }
-
-    //// END of async operations ////
-    /////////////////////////////////
-    
-    
-    /////////////////////////////////
-    ///// Aggregation pipelines /////
-
-    // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
-    @Scheduled(cron = "0 0 1 25 * ?")   // Ogni 25 del mese all'una di notte
-    public void updateTop10VintagesPerRegion() {
-        List<Document> pipeline = Arrays.asList(
-            new Document("$lookup", new Document("from", "users")
-                .append("localField", "user_id.username")
-                .append("foreignField", "login.username")
-                .append("as", "result")),
-            
-            new Document("$unwind", new Document("path", "$result")),
-
-            new Document("$project", new Document("_id", 0)
-                .append("wine_id", "$wine_id.id")
-                .append("wine_name", "$wine_id.name")
-                .append("wine_image", "$wine_id.image")
-                .append("year", "$wine_id.year")
-                .append("region", "$result.address.region")),
-
-            new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
-                                                        .append("year", "$year")
-                                                        .append("region", "$region"))
-                .append("wine_name", new Document("$first", "$wine_name"))
-                .append("wine_image", new Document("$first", "$wine_image"))
-                .append("count", new Document("$sum", 1))),
-
-            new Document("$sort", new Document("count", -1)),
-
-            new Document("$group", new Document("_id", "$_id.region")
-                .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
-                                                            .append("wine_name", "$wine_name")
-                                                            .append("year", "$_id.year")
-                                                            .append("bottle", "$wine_image")
-                                                            .append("count", "$count")))),
-
-            new Document("$project", new Document("name", "$_id")
-                .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
-
-            new Document("$project", new Document("_id", 0)
-            .append("name", 1)
-            .append("top_10_vintages_of_the_month", "$vintages")),
-            
-            new Document("$merge", new Document("into", "regions")
-                .append("on", "name")
-                .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))            
-        );
-
-        AggregateIterable<Document> results = mongoTemplate
-        .getCollection("reviews")
-        .aggregate(pipeline)
-        .allowDiskUse(true);
-
-        for (Document doc : results) {
-            String regionName = doc.getString("region");
-
-            @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("top_10_vintages_of_the_month");
-
-            // Aggiorno la regione corrispondente con il campo "top_10_vintages_of_the_month"
-            Query query = new Query(Criteria.where("name").is(regionName));
-            Update update = new Update().set("top_10_vintages_of_the_month", vintages);
-            mongoTemplate.updateFirst(query, update, "regions");
-        }
-    }
-
-    // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
-    @Scheduled(cron = "0 0 2 25 * ?") // Ogni 25 del mese alle 2:00
-    private void updateTop100VintagesPerCountry() {
-        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
-            new Document("from", "users")
-                    .append("localField", "user_id.username")
-                    .append("foreignField", "login.username")
-                    .append("as", "result")), 
-            new Document("$unwind", 
-            new Document("path", "$result")), 
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("wine_id", "$wine_id.id")
-                    .append("wine_name", "$wine_id.name")
-                    .append("wine_image", "$wine_id.image")
-                    .append("year", "$wine_id.year")
-                    .append("country", "$result.address.country")), 
-            new Document("$group", 
-            new Document("_id", 
-            new Document("wine_id", "$wine_id")
-                        .append("year", "$year")
-                        .append("country", "$country"))
-                    .append("wine_name", 
-            new Document("$first", "$wine_name"))
-                    .append("wine_image", 
-            new Document("$first", "$wine_image"))
-                    .append("count", 
-            new Document("$sum", 1L))), 
-            new Document("$sort", 
-            new Document("count", -1L)), 
-            new Document("$group", 
-            new Document("_id", "$_id.country")
-                    .append("vintages", 
-            new Document("$push", 
-            new Document("wine_id", "$_id.wine_id")
-                            .append("wine_name", "$wine_name")
-                            .append("year", "$_id.year")
-                            .append("bottle", "$wine_image")
-                            .append("count", "$count")))), 
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("name", "$_id")
-                    .append("vintages", 
-            new Document("$slice", Arrays.asList("$vintages", 100L)))),
-
-            new Document("$project", new Document("_id", 0)
-            .append("name", 1)
-            .append("top_100_vintages_of_the_month", "$vintages")),
-
-            new Document("$merge", new Document("into", "countries")
-                .append("on", "name")
-                .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))
-        );
-
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("reviews")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
-
-        for (Document doc : results) {
-            String countryName = doc.getString("country");
-
-            @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("top_100_vintages_of_the_month");
-
-            // Aggiorno il country corrispondente con il campo "top_100_vintages_of_the_month"
-            Query query = new Query(Criteria.where("name").is(countryName));
-            Update update = new Update().set("top_100_vintages_of_the_month", vintages);
-            mongoTemplate.updateFirst(query, update, "countries");
-        }
-    }
-
-    /// END of aggregation pipelines ///
-    ////////////////////////////////////
 }

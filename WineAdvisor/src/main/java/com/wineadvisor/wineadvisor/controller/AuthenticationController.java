@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wineadvisor.wineadvisor.DTO.authentication.AuthenticateUserDTO;
 
 import jakarta.validation.constraints.NotNull;
+
 import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/authentication")

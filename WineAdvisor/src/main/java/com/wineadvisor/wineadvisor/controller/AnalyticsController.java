@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wineadvisor.wineadvisor.service.AnalyticsService;
 
 import jakarta.validation.constraints.NotBlank;
+
 import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/analytics")
