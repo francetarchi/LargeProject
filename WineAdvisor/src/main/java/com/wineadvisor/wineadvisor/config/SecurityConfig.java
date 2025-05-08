@@ -67,7 +67,10 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .httpBasic(httpBasic -> httpBasic.realmName("WineAdvisor"));    // Configuro l'autenticazione Basic per Postman
-        
+            
+            .and() //TEST
+            .httpBasic(); //TEST
+
         return http.build();
     }
 
