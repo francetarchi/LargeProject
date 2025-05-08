@@ -51,21 +51,19 @@ public class SecurityConfig {
     
     // TEST
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http
         .csrf(csrf -> csrf.disable())
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/authentication/login").anonymous()
-            .requestMatchers(HttpMethod.POST, "/api/users").anonymous()
-            .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()
-            .anyRequest().authenticated()
+            .requestMatchers("/api/test-auth").authenticated()
+            .anyRequest().permitAll()
         )
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authenticationProvider(authenticationProvider())
-        .httpBasic(); // <--- Questa è la riga giusta per abilitare Basic Auth
-
-    return http.build();
+        .httpBasic(Customizer.withDefaults())
+        .build();
 }
+
 
 
     //// END of auth. settings ////
