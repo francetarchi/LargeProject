@@ -49,30 +49,24 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
     
-    // Imposta i vari settaggi necessari per l'autenticazione degli utenti e dei loro privilegi
+    // TEST
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())   // Permette tutte le richieste senza autenticazione
-            .csrf(csrf -> csrf.disable())   // Disabilito CSRF (utile per testare con Postman)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))   // Nessuna sessione
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/authentication/login").anonymous()   // Permetto l'accesso a /api/authentication/** solamente ad utenti non autenticati (endpoint di login e logout)
-                .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
-                .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()  // Permetto l'accesso a /api/wineries solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un'azienda vinicola)
-                /* TODO: Uncomment the following if you want to add admin authentication */
-                // .requestMatchers("/api/regions").hasRole("ADMIN")  // Permetto l'accesso a /api/countries solamente ad utenti con ruolo ADMIN (endpoint di gestione delle regioni)
-                // .requestMatchers("/api/countries").hasRole("ADMIN")  // Permetto l'accesso a /api/countries solamente ad utenti con ruolo ADMIN (endpoint di gestione delle nazioni)
-                .anyRequest().authenticated()   // Tutte le altre richieste richiedono autenticazione (senza specificare il ruolo)
-            )
-            .authenticationProvider(authenticationProvider())
-            .httpBasic(httpBasic -> httpBasic.realmName("WineAdvisor"));    // Configuro l'autenticazione Basic per Postman
-            
-            .and() //TEST
-            .httpBasic(); //TEST
+    http
+        .csrf(csrf -> csrf.disable())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/authentication/login").anonymous()
+            .requestMatchers(HttpMethod.POST, "/api/users").anonymous()
+            .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()
+            .anyRequest().authenticated()
+        )
+        .authenticationProvider(authenticationProvider())
+        .httpBasic(); // <--- Questa è la riga giusta per abilitare Basic Auth
 
-        return http.build();
-    }
+    return http.build();
+}
+
 
     //// END of auth. settings ////
     ///////////////////////////////
