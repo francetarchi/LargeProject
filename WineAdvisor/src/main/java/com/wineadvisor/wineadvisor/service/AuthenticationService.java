@@ -89,26 +89,28 @@ public class AuthenticationService implements UserDetailsService {
     /////////////////////////////////
     /////// Util operations /////////
     
+    //TEST
     /// READ operations ///
     // Recupera un utente dal database in base all'username fornito (override dell'omonimo metodo della classe UserDetailsService)
     @Override
-    public UserDetails loadUserByUsername(String username) throws ResourceNotFoundException {
-        User user = userRepository.findByLogin_Username(username).orElse(null);
-        Winery winery = wineryRepository.findByLogin_Username(username).orElse(null);
-        // TODO: Uncomment the following if you want to add admin authentication
-        // Admin admin = adminRepository.findByLogin_Username(username).orElse(null);
+public UserDetails loadUserByUsername(String username) throws ResourceNotFoundException {
+    System.out.println("🔍 Cerco utente con username: " + username);
 
-        if (user != null) {
-            return buildUserDetails(user);
-        } else if (winery != null) {
-            return buildUserDetails(winery);
-        // TODO: Uncomment the following if you want to add admin authentication
-        // } else if (admin != null) {
-        //     return buildUserDetails(admin);
-        } else {
-            throw new ResourceNotFoundException("User with username \"" + username + "\" does not exist.");
-        }
+    User user = userRepository.findByLogin_Username(username).orElse(null);
+    Winery winery = wineryRepository.findByLogin_Username(username).orElse(null);
+
+    if (user != null) {
+        System.out.println("✅ Utente trovato: " + user.getLogin().getUsername());
+        return buildUserDetails(user);
+    } else if (winery != null) {
+        System.out.println("✅ Azienda trovata: " + winery.getLogin().getUsername());
+        return buildUserDetails(winery);
+    } else {
+        System.out.println("❌ Nessun utente trovato con username: " + username);
+        throw new ResourceNotFoundException("User with username \"" + username + "\" does not exist.");
     }
+}
+
 
     //// END of util operations ////
     ////////////////////////////////
