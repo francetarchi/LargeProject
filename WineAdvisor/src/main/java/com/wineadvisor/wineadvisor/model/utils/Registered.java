@@ -1,11 +1,12 @@
 package com.wineadvisor.wineadvisor.model.utils;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 
 public class Registered extends DateTimePattern {
     ///////////// METODI PUBBLICI /////////////
     // Setta la data di registrazione a quella attuale per aggiornare il campo "age" in automatico
     public void adjustRegistrationDate() {
-        this.setDateTime(LocalDateTime.now().withNano((LocalDateTime.now().getNano() / 1_000_000) * 1_000_000));
+        this.setDateTime(Clock.systemUTC().instant().truncatedTo(ChronoUnit.MILLIS));
     }
 }

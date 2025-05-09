@@ -1,15 +1,16 @@
 package com.wineadvisor.wineadvisor.model.wines.fields;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-
-import org.springframework.data.mongodb.core.mapping.Field;
+import java.time.Instant;
 
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
+
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 
 @Data
 @AllArgsConstructor
@@ -22,5 +23,5 @@ public class Vintage {
     private ArrayList<ReviewEmbedded> reviews;
     
     @Field("created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

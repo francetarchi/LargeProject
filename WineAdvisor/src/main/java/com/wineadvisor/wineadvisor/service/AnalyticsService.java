@@ -666,80 +666,79 @@ public class AnalyticsService {
 
 
     /// DELETE operations ///
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la nostra formula) per tipologia di vino.
-    // public void deleteTopVintagesByOurQopPerType() {
-    //     topVintagesOurQopTypeRepository.deleteAll();
-    // }
+    // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la nostra formula) per tipologia di vino.
+    public void deleteTopVintagesByOurQopPerType() {
+        topVintagesOurQopTypeRepository.deleteAll();
+    }
 
-    // // Elimina il documento di un certo tipo di vino dalla top vintages per qualità/prezzo (calcolati secondo la nostra formula) per tipologia di vino.
-    // public void deleteTopVintagesByOurQopPerTypeByType(String type) {
-    //     TopVintagesOurQopType topVintagesOurQopType = topVintagesOurQopTypeRepository.findByType(checkType(type)).orElseThrow(
-    //         () -> new ResourceNotFoundException("Top vintages by our qop for type: " + type + "\" not found.")
-    //     );
+    // Elimina il documento di un certo tipo di vino dalla top vintages per qualità/prezzo (calcolati secondo la nostra formula) per tipologia di vino.
+    public void deleteTopVintagesByOurQopPerTypeByType(String type) {
+        TopVintagesOurQopType topVintagesOurQopType = topVintagesOurQopTypeRepository.findByType(checkType(type)).orElseThrow(
+            () -> new ResourceNotFoundException("Top vintages by our qop for type: " + type + "\" not found.")
+        );
 
-    //     topVintagesOurQopTypeRepository.delete(topVintagesOurQopType);
-    // }
-
-
-    // // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la formula "base") per tipologia di vino.
-    // public void deleteTopVintagesByQopPerType() {
-    //     topVintagesQopTypeRepository.deleteAll();
-    // }
-
-    // // Elimina il documento di un certo tipo di vino dalla top vintages per qualità/prezzo (calcolati secondo la formula "base") per tipologia di vino.
-    // public void deleteTopVintagesByQopPerTypeByType(String type) {
-    //     TopVintagesQopType topVintagesQopType = topVintagesQopTypeRepository.findByType(checkType(type)).orElseThrow(
-    //         () -> new ResourceNotFoundException("Top vintages by qop for type: " + type + "\" not found.")
-    //     );
-
-    //     topVintagesQopTypeRepository.delete(topVintagesQopType);
-    // }
+        topVintagesOurQopTypeRepository.delete(topVintagesOurQopType);
+    }
 
 
-    // // Elimina tutti i documenti dalla top vintages per valutazione media per tipologia di vino.
-    // public void deleteTopVintagesByRatingsPerType() {
-    //     topVintagesRatingsTypeRepository.deleteAll();
-    // }
+    // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la formula "base") per tipologia di vino.
+    public void deleteTopVintagesByQopPerType() {
+        topVintagesQopTypeRepository.deleteAll();
+    }
 
-    // // Elimina il documento di un certo tipo di vino dalla top vintages per valutazione media per tipologia di vino.
-    // public void deleteTopVintagesByRatingsPerTypeByType(String type) {
-    //     TopVintagesRatingsType topVintagesRatingsType = topVintagesRatingsTypeRepository.findByType(checkType(type)).orElseThrow(
-    //         () -> new ResourceNotFoundException("Top vintages by ratings for type: " + type + "\" not found.")
-    //     );
+    // Elimina il documento di un certo tipo di vino dalla top vintages per qualità/prezzo (calcolati secondo la formula "base") per tipologia di vino.
+    public void deleteTopVintagesByQopPerTypeByType(String type) {
+        TopVintagesQopType topVintagesQopType = topVintagesQopTypeRepository.findByType(checkType(type)).orElseThrow(
+            () -> new ResourceNotFoundException("Top vintages by qop for type: " + type + "\" not found.")
+        );
 
-    //     topVintagesRatingsTypeRepository.delete(topVintagesRatingsType);
-    // }
-
-
-    // // Elimina tutti i documenti dalla top wines per valutazione media per tipologia di vino.
-    // public void deleteTopWinesByRatingsPerType() {
-    //     topWinesRatingsTypeRepository.deleteAll();
-    // }
-
-    // // Elimina il documento di un certo tipo di vino dalla top wines per valutazione media per tipologia di vino.
-    // public void deleteTopWinesByRatingsPerTypeByType(String type) {
-    //     TopWinesRatingsType topWinesRatingsType = topWinesRatingsTypeRepository.findByType(checkType(type)).orElseThrow(
-    //         () -> new ResourceNotFoundException("Top wines by ratings for type: " + type + "\" not found.")
-    //     );
-
-    //     topWinesRatingsTypeRepository.delete(topWinesRatingsType);
-    // }
+        topVintagesQopTypeRepository.delete(topVintagesQopType);
+    }
 
 
-    // // Elimina tutti i documenti dalla top wineries per valutazione media dei propri vini.
-    // public void deleteTopWineriesByWinesRatings() {
-    //     topWineriesRatingsRepository.deleteAll();
-    // }
+    // Elimina tutti i documenti dalla top vintages per valutazione media per tipologia di vino.
+    public void deleteTopVintagesByRatingsPerType() {
+        topVintagesRatingsTypeRepository.deleteAll();
+    }
 
-    // // Elimina il documento di una certa winery dalla top wineries per valutazione media dei propri vini.
-    // public void deleteTopWineriesByWinesRatingsByWineryUsername(String winery_username) {
-    //     TopWineriesRatings topWineriesRatings = topWineriesRatingsRepository.findByWineryUsername(winery_username).orElseThrow(
-    //         () -> new ResourceNotFoundException("Top wineries by wines ratings for winery: " + winery_username + "\" not found.")
-    //     );
+    // Elimina il documento di un certo tipo di vino dalla top vintages per valutazione media per tipologia di vino.
+    public void deleteTopVintagesByRatingsPerTypeByType(String type) {
+        TopVintagesRatingsType topVintagesRatingsType = topVintagesRatingsTypeRepository.findByType(checkType(type)).orElseThrow(
+            () -> new ResourceNotFoundException("Top vintages by ratings for type: " + type + "\" not found.")
+        );
 
-    //     topWineriesRatingsRepository.delete(topWineriesRatings);
-    // }
+        topVintagesRatingsTypeRepository.delete(topVintagesRatingsType);
+    }
+
+
+    // Elimina tutti i documenti dalla top wines per valutazione media per tipologia di vino.
+    public void deleteTopWinesByRatingsPerType() {
+        topWinesRatingsTypeRepository.deleteAll();
+    }
+
+    // Elimina il documento di un certo tipo di vino dalla top wines per valutazione media per tipologia di vino.
+    public void deleteTopWinesByRatingsPerTypeByType(String type) {
+        TopWinesRatingsType topWinesRatingsType = topWinesRatingsTypeRepository.findByType(checkType(type)).orElseThrow(
+            () -> new ResourceNotFoundException("Top wines by ratings for type: " + type + "\" not found.")
+        );
+
+        topWinesRatingsTypeRepository.delete(topWinesRatingsType);
+    }
+
+
+    // Elimina tutti i documenti dalla top wineries per valutazione media dei propri vini.
+    public void deleteTopWineriesByWinesRatings() {
+        topWineriesRatingsRepository.deleteAll();
+    }
+
+    // Elimina il documento di una certa winery dalla top wineries per valutazione media dei propri vini.
+    public void deleteTopWineriesByWinesRatingsByWineryUsername(String winery_username) {
+        TopWineriesRatings topWineriesRatings = topWineriesRatingsRepository.findByWineryUsername(winery_username).orElseThrow(
+            () -> new ResourceNotFoundException("Top wineries by wines ratings for winery: " + winery_username + "\" not found.")
+        );
+
+        topWineriesRatingsRepository.delete(topWineriesRatings);
+    }
     
     //// END of crud operations ////
     ////////////////////////////////

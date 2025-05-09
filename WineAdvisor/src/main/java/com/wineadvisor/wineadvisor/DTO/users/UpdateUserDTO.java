@@ -1,15 +1,16 @@
 package com.wineadvisor.wineadvisor.DTO.users;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wineadvisor.wineadvisor.DTO.users.fields.AddressDTO;
-import com.wineadvisor.wineadvisor.DTO.users.fields.NameDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.NameDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
 import com.wineadvisor.wineadvisor.model.users.User;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -18,8 +19,9 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+
 @Data
-@JsonPropertyOrder({ "name", "location", "email", "telephone", "dob", "picture" })
+@JsonPropertyOrder({ "gender", "name", "address", "email", "telephone", "date of birth", "profile picture" })
 public class UpdateUserDTO {
     @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
     @Schema(description = "Gender of the updated user", example = "male")
@@ -47,13 +49,13 @@ public class UpdateUserDTO {
     private String telephone;
 
     @PastOrPresent(message = "Date must be in the past.")
-    // @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", message = "Date must follow the format 'yyyy-MM-ddTHH:mm:ssZ'")
+    // TODO: DA CONTROLLARE SE PUò SERVIRE O NO: @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", message = "Date must follow the format 'yyyy-MM-ddTHH:mm:ssZ'")
     @Schema(name = "date of birth", description = "Date of birth of the updated user", example = "1970-01-01T00:00:00.000Z")
-    @JsonProperty("dob")
-    private LocalDateTime dob;
+    @JsonProperty("date of birth")
+    private Instant dob;
 
-    @Schema(name = "picture", description = "Picture info of the updated user")
-    @JsonProperty("picture")
+    @Schema(name = "profile picture", description = "Picture info of the updated user")
+    @JsonProperty("profile picture")
     private PictureDTO pictureDTO;
 
 
@@ -62,6 +64,7 @@ public class UpdateUserDTO {
     // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)).
     // Ritorna l'utente aggiornato.
     public User toUser(User targetUser) {
+        targetUser.setGender(this.getGender());
         targetUser.setName(this.getNameDTO().toName());
         targetUser.setAddress(this.getAddressDTO().toAddress());
         targetUser.setEmail(this.getEmail());

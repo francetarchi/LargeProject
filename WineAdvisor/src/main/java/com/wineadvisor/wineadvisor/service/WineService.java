@@ -3,12 +3,10 @@ package com.wineadvisor.wineadvisor.service;
 import org.bson.BsonNull;
 import org.bson.Document;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import com.mongodb.client.AggregateIterable;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.time.Instant;
 
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
@@ -18,6 +16,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.scheduling.annotation.Scheduled;
+
+import com.mongodb.client.AggregateIterable;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.model.users.User;
@@ -386,7 +386,7 @@ public class WineService {
 
                 vintage.setReviews(new ArrayList<ReviewEmbedded>());
 
-                vintage.setCreatedAt(LocalDateTime.now());
+                vintage.setCreatedAt(Instant.now());
 
                 wine.getVintages().add(vintage);
 

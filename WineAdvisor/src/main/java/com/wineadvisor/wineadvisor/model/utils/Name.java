@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.users.fields;
+package com.wineadvisor.wineadvisor.model.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

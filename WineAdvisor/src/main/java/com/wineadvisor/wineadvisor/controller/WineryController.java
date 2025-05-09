@@ -50,8 +50,7 @@ public class WineryController {
 
     ////////////// GET /////////////
     @GetMapping
-    // TODO: Uncomment the following if you want to add admin authentication
-    // @Secured({ "ROLE_ADMIN" })
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> getAllWineries(
             @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.getAllWineries(page));
@@ -73,10 +72,8 @@ public class WineryController {
 
     ////////////// PUT /////////////
     @PutMapping("/{username}")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWinery(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Winery update info cannot be null.") @Valid @RequestBody UpdateWineryDTO UpdateWineryDTO) {
@@ -84,10 +81,8 @@ public class WineryController {
     }
 
     @PutMapping("{username}/username/update")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#targetUsername == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#targetUsername == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#targetUsername == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWineryUsername(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String targetUsername,
             @NotBlank(message = "New username cannot be blank.") @RequestParam String newUsername) {
@@ -95,10 +90,8 @@ public class WineryController {
     }
 
     @PutMapping("{username}/password/update")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWineryPassword(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
@@ -110,10 +103,8 @@ public class WineryController {
     }
 
     @PutMapping("/{username}/addImage")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addImage(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true) String image) {
@@ -121,10 +112,8 @@ public class WineryController {
     }
 
     @PutMapping("/{username}/removeImage")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> removeImage(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true) String image) {
@@ -134,10 +123,8 @@ public class WineryController {
     
     //////////// DELETE ////////////
     @DeleteMapping("/{username}")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteWinery(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         wineryService.deleteWinery(username);

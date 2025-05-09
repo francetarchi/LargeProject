@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
@@ -93,7 +93,17 @@ public class ReviewService {
             // Devo farle diventare del tipo Reviewembedded
             ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
             for (int i = 0; i < recentReviews.size(); i++){
-                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
+                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(
+                        recentReviews.get(i).getId(),
+                        recentReviews.get(i).getUserId(),
+                        recentReviews.get(i).getWineId(),
+                        recentReviews.get(i).getRating(),
+                        recentReviews.get(i).getText(),
+                        recentReviews.get(i).getCreatedAt(),
+                        recentReviews.get(i).getLikesCount(),
+                        recentReviews.get(i).getDislikesCount()
+                );
+
                 recentReviewsEmbedded.add(reviewEmbedded);
             }
 
@@ -134,7 +144,16 @@ public class ReviewService {
             // Devo farle diventare del tipo ReviewEmbedded
             ArrayList<ReviewEmbedded> recentReviewsEmbedded = new ArrayList<>();
             for (int i = 0; i < recentReviews.size(); i++){
-                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(), recentReviews.get(i).getUserId(), recentReviews.get(i).getWineId(), recentReviews.get(i).getRating(), recentReviews.get(i).getText(), recentReviews.get(i).getCreatedAt(), recentReviews.get(i).getLikesCount(), recentReviews.get(i).getDislikesCount());
+                ReviewEmbedded reviewEmbedded = new ReviewEmbedded(recentReviews.get(i).getId(),
+                        recentReviews.get(i).getUserId(),
+                        recentReviews.get(i).getWineId(),
+                        recentReviews.get(i).getRating(),
+                        recentReviews.get(i).getText(),
+                        recentReviews.get(i).getCreatedAt(),
+                        recentReviews.get(i).getLikesCount(),
+                        recentReviews.get(i).getDislikesCount()
+                );
+                
                 recentReviewsEmbedded.add(reviewEmbedded);
             }
 
@@ -152,7 +171,7 @@ public class ReviewService {
     /////// Async. operations ///////
     
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
-    @Scheduled(cron = "0 * * * * ?") // Ogni giorno a mezzanotte
+    @Scheduled(cron = "0 0 0 * * ?")   // Ogni giorno a mezzanotte
     private void updateReviewsEmbeddedWinesAndUsers(){
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++){
@@ -357,7 +376,7 @@ public class ReviewService {
         review.getWineId().setName(wine.getName());
         review.setLikesCount((long) 0);
         review.setDislikesCount((long) 0);
-        review.setCreatedAt(LocalDateTime.now());
+        review.setCreatedAt(Instant.now());
         
         // Setto l'id della recensione
         review.setId(idCounterService.generateSequence("reviews"));

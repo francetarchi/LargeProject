@@ -1,6 +1,7 @@
 package com.wineadvisor.wineadvisor.exception;
 
 import java.util.List;
+import java.nio.file.AccessDeniedException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,8 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 
 import io.swagger.v3.oas.annotations.Hidden;
 
-
 import jakarta.validation.ConstraintViolationException;
+
 
 @Hidden
 @RestControllerAdvice
@@ -26,14 +27,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InternalAuthenticationServiceException.class)
     public ResponseEntity<?> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException e) {
         System.out.println("--- WRN: InternalAuthenticationServiceException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("--- ERR: " + e.getMessage());
     }
     
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException e) {
         System.out.println("--- WRN: BadCredentialsException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("--- ERR: " + e.getMessage());
     }
 
@@ -42,8 +43,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
         System.out.println("--- WRN: AuthorizationDeniedException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: " + e.getMessage());
+        System.err.println("--- ERR: " + e.getMessage() + ": user is trying to access to a resource which is not his.\n\n");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: " + e.getMessage() + ": the resource you are trying to access is not yours.");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException e) {
+        System.out.println("--- WRN: AccessDeniedException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + ": user is trying to access to a resource which is not his.\n\n");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: " + e.getMessage() + ": the resource you are trying to access is not yours.");
     }
 
 
@@ -51,7 +59,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         System.out.println("--- WRN: HttpMessageNotReadableException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + e.getMessage());
     }
     
@@ -66,7 +74,7 @@ public class GlobalExceptionHandler {
         .findFirst()
                 .orElse("Validation error: some fields are invalid.");
 
-        System.err.println("--- ERR: " + errorMessage + "\n");        
+        System.err.println("--- ERR: " + errorMessage + "\n\n");        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + errorMessage);
     }    
 
@@ -88,34 +96,43 @@ public class GlobalExceptionHandler {
             }    
         }    
         
-        System.err.println("--- ERR: " + errorMessage + "\n");
+        System.err.println("--- ERR: " + errorMessage + "\n\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + errorMessage);
-    }    
+    }
+    
+    
+    //////// ILLEGAL STATE EXCEPTION ////////
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> handleIllegalStateException(IllegalStateException e) {
+        System.out.println("--- WRN: IllegalStateException thrown and intercepted.");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("--- ERR: " + e.getMessage());
+    }
 
 
     //////// ILLEGAL ARGUMENT EXCEPTION ////////
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
         System.out.println("--- WRN: IllegalArgumentException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + e.getMessage());
-    }    
+    }
 
 
     //////// BAD REQUEST EXCEPTION (MY EXCEPTION) ////////
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<?> handleBadRequestException(BadRequestException e) {
         System.out.println("--- WRN: BadRequestException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("--- ERR: " + e.getMessage());
     }
 
 
-    //////// CONFLICT EXCEPTION (MY EXCEPTION) ////////
+    //////// ALREADY EXISTS EXCEPTION (MY EXCEPTION) ////////
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<?> handleResourceAlreadyExistsException(ResourceAlreadyExistsException e) {
         System.out.println("--- WRN: ResourceAlreadyExistsException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.CONFLICT).body("--- ERR: " + e.getMessage());
     }
 
@@ -124,7 +141,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException e) {
         System.out.println("--- WRN: ResourceNotFoundException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("--- ERR: " + e.getMessage());
     }
 
@@ -132,7 +149,7 @@ public class GlobalExceptionHandler {
     //////// DEBUG EXCEPTION (MY EXCEPTION) ////////
     @ExceptionHandler(DebugException.class)
     public ResponseEntity<?> handleDebugException(DebugException e) {
-        System.out.println("--- DEBUG: " + e.getMessage() + "\n");
+        System.out.println("--- DEBUG: " + e.getMessage() + "\n\n");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("--- ERR: " + e.getMessage());
     }
 
@@ -141,8 +158,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
         System.out.println("--- WRN: Generic exception thrown and intercepted.\n--- WRN: Exception type: " + e.getClass().getName());
-        System.err.println("--- ERR: " + e.getMessage() + "\n");
+        System.err.println("--- ERR: " + e.getMessage());
         e.printStackTrace();
+        System.err.println("\n\n");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("--- ERR: " + e.getMessage());
     }
 }

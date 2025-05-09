@@ -1,11 +1,11 @@
 package com.wineadvisor.wineadvisor.model.utils;
 
-import java.time.LocalDateTime;
-
-import org.springframework.data.mongodb.core.mapping.Field;
+import java.time.Instant;
 
 import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
 import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
+
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,7 +30,7 @@ public class ReviewEmbedded {
     private String text;
 
     @Field("created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Field("likes_count")
     private Long likesCount;

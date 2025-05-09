@@ -13,6 +13,7 @@ import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wineries.Winery;
+import com.wineadvisor.wineadvisor.repository.AdminRepository;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
@@ -27,13 +28,15 @@ public class WineryService {
     ////////////////////////////////
     /////////// VARIABLES //////////
     ////////////////////////////////
+    private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
+    private final AdminRepository adminRepository;
     private final WineRepository wineRepository;
     private final ReviewRepository reviewRepository;
-    private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
+    /////////// COSTANTI ///////////
     private static final int PAGE_SIZE = 20;
 
 
@@ -52,6 +55,34 @@ public class WineryService {
         }
         if (wineries.getPageable().getPageNumber() >= wineries.getTotalPages()) {
             throw new BadRequestException("Page requested too high.");
+        }
+    }
+
+    // Controlla che i parametri passati per la creazione di una winery siano validi
+    private void checkAccountParams(String username, String email, PasswordDTO passwordDTO) throws ResourceAlreadyExistsException, BadRequestException {
+        if (userRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with username \"" + username + "\" already exists.");
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with email \"" + email + "\" already exists.");
+        }
+        if (wineryRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with username \"" + username + "\" already exists.");
+        }
+        if (wineryRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with email \"" + email + "\" already exists.");
+        }
+        if (adminRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("Admin with username \"" + username + "\" already exists.");
+        }
+        if (adminRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("Admin with email \"" + email + "\" already exists.");
+        }
+        if (!passwordDTO.passwordPatternVerifier()) {
+            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
+        }
+        if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
+            throw new BadRequestException("Passwords do not match.");
         }
     }
 
@@ -164,18 +195,7 @@ public class WineryService {
     /// CREATE operations ///
     // Aggiunge una winery alla collection "wineries" del database
     public Object createWinery(CreateWineryDTO createWineryDTO) throws ResourceAlreadyExistsException, BadRequestException {
-		if (wineryRepository.findByLogin_Username(createWineryDTO.getUsername()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Winery with username \"" + createWineryDTO.getUsername() + "\" already exists.");
-        }
-        if (wineryRepository.findByEmail(createWineryDTO.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Winery with email \"" + createWineryDTO.getEmail() + "\" already exists.");
-        }
-        if (!createWineryDTO.getPasswordDTO().passwordPatternVerifier()) {
-            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
-        }
-        if (!createWineryDTO.getPasswordDTO().getNewPass().equals(createWineryDTO.getPasswordDTO().getConfirmPass())) {
-            throw new BadRequestException("Passwords do not match.");
-        }
+		checkAccountParams(createWineryDTO.getUsername(), createWineryDTO.getEmail(), createWineryDTO.getPasswordDTO());
         
         Winery newWinery = createWineryDTO.toWinery();
         newWinery.adjustFieldsForCreation(passwordEncoder.encode(createWineryDTO.getPasswordDTO().getNewPass()));
