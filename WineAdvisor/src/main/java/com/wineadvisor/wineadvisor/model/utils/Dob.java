@@ -9,7 +9,6 @@ public class Dob extends DateTimePattern {
         if (this.equals(null) || this.getDateTime() == null) {
             this.setDateTime(null);
         } else {
-            // TODO: DA ELIMINARE SE FUNZIONA TUTTO: this.setDateTime(this.getDateTime().withNano((this.getDateTime().getNano() / 1_000_000) * 1_000_000));
             this.setDateTime(this.getDateTime().truncatedTo(ChronoUnit.MILLIS));
         }
     }
