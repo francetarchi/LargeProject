@@ -1,7 +1,6 @@
 package com.wineadvisor.wineadvisor.exception;
 
 import java.util.List;
-import java.nio.file.AccessDeniedException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,8 +49,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException e) {
         System.out.println("--- WRN: AccessDeniedException thrown and intercepted.");
-        System.err.println("--- ERR: " + e.getMessage() + ": user is trying to access to a resource which is not his.\n\n");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: " + e.getMessage() + ": the resource you are trying to access is not yours.");
+        System.err.println("--- ERR: ACCESS DENIED: user is trying to access to a resource which is not his.\n\n");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("--- ERR: ACCESS DENIED: the resource you are trying to access is not yours.");
     }
 
 

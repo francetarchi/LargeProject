@@ -3,7 +3,6 @@ package com.wineadvisor.wineadvisor.DTO.reviews;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -15,10 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateReviewDTO {
-    @NotBlank(message = "Username cannot be null.")
-    @Schema(description = "Username of the user who created the review.", example = "silverelephant535")
-    private String username;
-
     @Positive(message = "Wine ID must be a positive number.")
     @NotNull(message = "Wine ID cannot be blank.")
     @Schema(description = "Wine ID info of the new vintage", example = "542")

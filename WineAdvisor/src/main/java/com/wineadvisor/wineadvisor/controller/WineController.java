@@ -11,11 +11,11 @@ import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,25 +52,31 @@ public class WineController {
 
     ////////////// POST //////////////
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_WINERY')")
+    @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
             @NotBlank(message = "Winery username cannot be blank.") @RequestParam String wineryUsername) {
         Wine savedWine = wineService.addWine(wine, wineryUsername);
-        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/wine/" + savedWine.getId()).body(savedWine);
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/wines/" + savedWine.getId()).body(savedWine);
     }
 
+
     ////////////// GET //////////////
+    @GetMapping
+    @Secured({ "ROLE_ADMIN" })
+    public ResponseEntity<?> getAllWines(Pageable pageable) {
+        Page<Wine> wines = wineService.getAllWines(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(wines);
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> getWineById(
-            @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long id) {
+            @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) {
         Wine wine = wineService.getWineById(id);
         return ResponseEntity.status(HttpStatus.OK).body(wine);
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getVintageById(
             @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
             @PathVariable @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
@@ -78,15 +84,7 @@ public class WineController {
         return ResponseEntity.status(HttpStatus.OK).body(vintage);
     }
 
-    @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getAllWines(Pageable pageable) {
-        Page<Wine> wines = wineService.getAllWines(pageable);
-        return ResponseEntity.status(HttpStatus.OK).body(wines);
-    }
-
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> searchWines(
             Pageable pageable,
             @RequestParam(required = false)
@@ -121,7 +119,7 @@ public class WineController {
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 @Schema(description = "Min average wine rating", example = "2.0")
                 Double minAverageRating
-            ) {
+            ) throws BadRequestException {
                 
         name = (name == null) ? "" : name;
         winery = (winery == null) ? "" : winery;
@@ -132,70 +130,73 @@ public class WineController {
         minPrice = (minPrice == null) ? 0.0 : minPrice;
         maxPrice = (maxPrice == null) ? 2000.0 : maxPrice;
         minAverageRating = (minAverageRating == null) ? 0.0 : minAverageRating;
-        if (minPrice > maxPrice) throw new BadRequestException("Min price cannot be greater than max price.");
         
-        return ResponseEntity.status(HttpStatus.OK).body(wineService.searchWines(pageable, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
+        if (minPrice > maxPrice) {
+            throw new BadRequestException("Min price cannot be greater than max price.");
+        }
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(wineService.searchWines(pageable, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
     }
 
+    
     ////////////// PUT //////////////
-    @PutMapping("/vintages/create")
-    @PreAuthorize("hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> addVintage(@RequestBody @Valid NewVintageDTO newVintage){
-        // Prendo username della winery che vuole aggiungere la vintage al vino
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
-        Wine savedWine = wineService.addVintage(newVintage, username);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
-    }
-
     @PutMapping
-    @PreAuthorize("hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> updateWine(@RequestBody @Valid UpdateWineDTO wine){
-        // Prendo username della winery che vuole aggiungere la vintage al vino
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
+    @Secured({ "ROLE_WINERY" })
+    public ResponseEntity<?> updateWine(
+                @RequestBody @Valid UpdateWineDTO wine) {
+        // Prendo username della winery che vuole modificare il vino
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine updatedWine = wineService.updateWine(wine, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
-    @PutMapping("/vintages/edit")
-    @PreAuthorize("hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> updateVintage(@RequestBody @Valid UpdateVintageDTO vintage){
-        // Prendo username della winery che vuole aggiungere la vintage al vino
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
+    @PutMapping("/vintages/addVintage")
+    @Secured({ "ROLE_WINERY" })
+    public ResponseEntity<?> addVintage(
+                @RequestBody @Valid NewVintageDTO newVintage) {
+        // Prendo username della winery che vuole aggiungere la vintage
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Wine savedWine = wineService.addVintage(newVintage, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
+    }
+
+    @PutMapping("/vintages/editVintage")
+    @Secured({ "ROLE_WINERY" })
+    public ResponseEntity<?> updateVintage(
+                @RequestBody @Valid UpdateVintageDTO vintage) {
+        // Prendo username della winery che vuole modificare la vintage
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine updatedWine = wineService.updateVintage(vintage, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
-    ////////////// DELETE //////////////
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> deleteWine(
-            @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long id) {
-        // Prendo username della winery che vuole aggiungere la vintage al vino
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
-        wineService.deleteWineById(id, username);
-        return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");
-    }
-
-    @DeleteMapping("/{wineId}/vintages/{vintageYear}")
-    @PreAuthorize("hasRole('ROLE_WINERY')")
+    @PutMapping("/vintages/deleteVintage")
+    @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> deleteVintage(
-            @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long wineId,
-            @PathVariable @NotNull(message = "Vintage year cannot be null.") @Positive(message = "Vintage year cannot be negative.") Integer vintageYear) {
-        // Prendo username della winery che vuole aggiungere la vintage al vino
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-            
-        wineService.deleteVintage(wineId, vintageYear, username);
-        return ResponseEntity.status(HttpStatus.OK).body("Vintage deleted successfully.");
+                @RequestBody @Valid UpdateVintageDTO vintage) {
+        // Prendo username della winery che vuole togliere la vintage
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Wine updatedWine = wineService.deleteVintage(vintage, username);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
+
+    ////////////// DELETE //////////////
     @DeleteMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteAllWines() {
         wineService.deleteAllWines();
         return ResponseEntity.status(HttpStatus.OK).body("All wines deleted successfully.");
-    }    
+    }
+
+    @DeleteMapping("/{id}")
+    @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
+    public ResponseEntity<?> deleteWine(
+                @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long id) {
+        // Prendo username della winery che vuole aggiungere la vintage al vino
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        wineService.deleteWineById(id, username);
+        return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");
+    }
 }

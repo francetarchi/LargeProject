@@ -355,6 +355,11 @@ public class WineryService {
     }
 
     /// DELETE operations ///
+    // Elimina tutte le wineries dalla collection "wineries"
+    public void deleteAllWineries() {
+        wineryRepository.deleteAll();
+    }
+
     // Elimina una winery con un determinato username
     public void deleteWinery(String targetUsername) throws ResourceNotFoundException {
         final Winery targetWinery = wineryRepository

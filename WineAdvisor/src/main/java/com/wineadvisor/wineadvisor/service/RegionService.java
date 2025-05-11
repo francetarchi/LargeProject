@@ -52,7 +52,7 @@ public class RegionService {
 
     /// CREATE operations ///
     // Aggiunge una regione alla collection "regions" del database
-    public Region addRegion(String name, String country) {
+    public Region addRegion(String name, String country) throws ResourceAlreadyExistsException, ResourceNotFoundException {
         // Controllo che la region non esista già
         if(regionRepository.findByName(name).isPresent()){
             throw new ResourceAlreadyExistsException("Region " + name + " already exists.");
@@ -73,28 +73,30 @@ public class RegionService {
 
 
     /// READ operations ///
-    // Restituisce la region di nome name
-    public Region getRegionByName(String name) {
-        Region region = regionRepository.findByName(name)
-            .orElseThrow(() -> new ResourceNotFoundException("Region " + name + " not found."));
-
-        return region;
-    }
-
     // Restituisce tutte le regions della collection
     public Page<Region> getAllRegions(Pageable pageable) {
         return regionRepository.findAll(pageable);
     }
+    
+    // Restituisce la region di nome name
+    public Region getRegionByName(String name) throws ResourceNotFoundException {
+        Region region = regionRepository
+                .findByName(name)
+                .orElseThrow(
+                    () -> new ResourceNotFoundException("Region " + name + " not found.")
+                );
+
+        return region;
+    }
 
     // Restituisce tutte le regions di un determinato country
-    public Page<Region> getRegionsByCountry(Pageable pageable, String country) {
-        if(countryRepository.findByName(country).isEmpty()){
+    public Page<Region> getRegionsByCountry(Pageable pageable, String country) throws ResourceNotFoundException {
+        if(countryRepository.findByName(country).isEmpty()) {
             throw new ResourceNotFoundException("Country " + country + " not found.");
         }
 
         Page<Region> regions = regionRepository.findByCountry(pageable, country);
-
-        if(regions.isEmpty()){
+        if(regions.isEmpty()) {
             throw new ResourceNotFoundException("No regions found in country " + country + ".");
         }
 
@@ -104,7 +106,7 @@ public class RegionService {
     
     /// UPDATE operations ///
     // Aggiorna il country di una region
-    public Region updateRegion(String name, String country_name) {
+    public Region updateRegion(String name, String country_name) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         return regionRepository.findByName(name)
             .map(region -> {
                 // Controllo che il country esista
@@ -140,32 +142,37 @@ public class RegionService {
                 }
 
                 return regionRepository.save(region);
-            }).orElseThrow(() -> new ResourceNotFoundException("Region " + name + " not found"));
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Region " + name + " not found")
+            );
     }
     
     
     /// DELETE operations ///
+    // Elimina tutte le regions dalla collection "regions"
+    public void deleteAll() {
+        regionRepository.deleteAll();
+    }
+
     // Elimina la region di nome name
-    public void deleteRegion(String name) {
+    public void deleteRegion(String name) throws ResourceNotFoundException {
         // Controllo che la region esista
-        regionRepository.findByName(name)
-            .orElseThrow(() -> new ResourceNotFoundException("Region " + name + " not found."));
+        regionRepository.findByName(name).orElseThrow(
+            () -> new ResourceNotFoundException("Region " + name + " not found.")
+        );
         
         regionRepository.deleteByName(name);
     }
 
     // Elimina tutte le regions di un determinato country
-    public void deleteRegionsByCountry(String country) {
+    public void deleteRegionsByCountry(String country) throws ResourceNotFoundException {
         // Controllo che il country esista
-        countryRepository.findByName(country)
-            .orElseThrow(() -> new ResourceNotFoundException("Country " + country + " not found."));
+        countryRepository.findByName(country).orElseThrow(
+            () -> new ResourceNotFoundException("Country " + country + " not found.")
+        );
         
         regionRepository.deleteAllByCountry(country);
-    }
-
-    // Elimina tutte le regions dalla collection regions
-    public void deleteAll() {
-        regionRepository.deleteAll();
     }
 
     //// END of CRUD operations ////

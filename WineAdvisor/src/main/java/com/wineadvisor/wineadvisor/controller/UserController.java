@@ -115,8 +115,7 @@ public class UserController {
     }
 
     @PutMapping("{username}/password/update")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> updateUserPassword(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
@@ -127,9 +126,9 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPassword(username, passwordDTO));
     }
 
+    ///// Operazioni su like e dislike /////
     @PutMapping("/{username}/addLike")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addLike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
@@ -137,8 +136,7 @@ public class UserController {
     }
 
     @PutMapping("/{username}/removeLike")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeLike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
@@ -146,8 +144,7 @@ public class UserController {
     }
 
     @PutMapping("/{username}/addDislike")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addDislike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
@@ -155,17 +152,16 @@ public class UserController {
     }
 
     @PutMapping("/{username}/removeDislike")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeDislike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
     }
 
+    ///// Operazioni sui vini preferiti /////
     @PutMapping("/{username}/addFavorite")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addFavorite(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Wine info cannot be null.") @Valid @RequestBody addFavoriteDTO addFavoriteDTO) {
@@ -173,8 +169,7 @@ public class UserController {
     }
 
     @PutMapping("/{username}/removeFavorite")
-    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeFavorite(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "wineId cannot be null.") @Positive(message = "wineId must be a positive integer number.") @RequestParam(name = "wineId", required = true) Long wineId) {

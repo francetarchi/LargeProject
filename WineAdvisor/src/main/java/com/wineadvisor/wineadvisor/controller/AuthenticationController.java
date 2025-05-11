@@ -33,7 +33,7 @@ public class AuthenticationController {
     //// AUTHENTICATION ENDPOINT (POST) ///
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(
-            @NotNull(message = "Login info cannot be null.") @RequestBody AuthenticateUserDTO authenticateUserDTO) {
+            @NotNull(message = "Login info cannot be null.") @RequestBody AuthenticateUserDTO authenticateUserDTO) throws InternalAuthenticationServiceException {
         System.out.println("--- AUTH: Authenticating user \"" + authenticateUserDTO.getUsername() + "\" from authentication endpoint...");
 
         Authentication authentication = authenticationManager.authenticate( new UsernamePasswordAuthenticationToken(authenticateUserDTO.getUsername(), authenticateUserDTO.getPassword()) );

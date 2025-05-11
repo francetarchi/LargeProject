@@ -47,6 +47,7 @@ import com.wineadvisor.wineadvisor.DTO.wines.NewGrapeDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.NewVintageDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateWineDTO;
+import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
@@ -242,14 +243,16 @@ public class WineService {
 
     /// CREATE operations ///
     // Aggiunge un nuovo vino alla collection wines
-    public Wine addWine(CreateWineDTO createWineDTO, String wineryUsername) {
+    public Wine addWine(CreateWineDTO createWineDTO, String wineryUsername) throws ResourceNotFoundException {
         // Controllo che esista la winery
-        Winery winery = wineryRepository.findByLogin_Username(wineryUsername)
-            .orElseThrow(() -> new ResourceNotFoundException("Winery not found with username: " + wineryUsername));
+        Winery winery = wineryRepository.findByLogin_Username(wineryUsername).orElseThrow(
+            () -> new ResourceNotFoundException("Winery not found with username: " + wineryUsername + ".")
+        );
         
         // Controllo che esista il country nella collection country
-        Country country = countryRepository.findByName(winery.getCountry())
-            .orElseThrow(() -> new ResourceNotFoundException("Country not found with name: " + winery.getCountry()));
+        Country country = countryRepository.findByName(winery.getCountry()).orElseThrow(
+            () -> new ResourceNotFoundException("Country not found with name: " + winery.getCountry() + ".")
+        );
 
         Wine wine = new Wine();
         
@@ -315,29 +318,33 @@ public class WineService {
 
 
     /// READ operations ///
-    // Restituisce un vino per id
-    public Wine getWineById(Long wineId) {
-        Wine wine = wineRepository.findById(wineId)
-            .orElseThrow(() -> new ResourceNotFoundException("Wine with id " + wineId + " not found."));
-        return wine;
-    }
-
-    // Restituisce un'annata di un vino specifico
-    public Vintage getVintage(Long wineId, Integer year) {
-        Wine wine = wineRepository.findByIdAndVintages_Year(wineId, year)
-            .orElseThrow(() -> new ResourceNotFoundException("Vintage with wineId " + wineId + " and year " + year + " not found."));
-        
-        for (Vintage vintage : wine.getVintages()) {
-            if (vintage.getYear().equals(year)) return vintage;
-        }
-        return null;
-    }
-
     // Restituisce tutti i vini (con paginazione)
     public Page<Wine> getAllWines(Pageable pageable) {
         Page<Wine> wines = wineRepository.findAll(pageable);
         checkReturnedPage(wines, "No wines found.");
         return wines;
+    }
+
+    // Restituisce un vino per id
+    public Wine getWineById(Long wineId) throws ResourceNotFoundException {
+        Wine wine = wineRepository.findById(wineId).orElseThrow(
+            () -> new ResourceNotFoundException("Wine with id " + wineId + " not found.")
+        );
+
+        return wine;
+    }
+
+    // Restituisce un'annata di un vino specifico
+    public Vintage getVintage(Long wineId, Integer year) throws ResourceNotFoundException {
+        Wine wine = wineRepository.findByIdAndVintages_Year(wineId, year).orElseThrow(
+            () -> new ResourceNotFoundException("Vintage with wineId " + wineId + " and year " + year + " not found.")
+        );
+        
+        for (Vintage vintage : wine.getVintages()) {
+            if (vintage.getYear().equals(year)) return vintage;
+        }
+
+        return null;
     }
 
     // Restituisce vini sulla base dei filtri di ricerca indicati 
@@ -360,42 +367,8 @@ public class WineService {
 
 
     /// UPDATE operations ///
-    // Aggiunge una nuova annata ad un determinato vino
-    public Wine addVintage(NewVintageDTO newVintage, String username) {
-        return wineRepository.findById(newVintage.getWineId())
-            .map(wine -> {
-                // Controllo che il vino sia della winery username
-                if(wineRepository.findByIdAndWinery_Username(newVintage.getWineId(), username).isEmpty()){
-                    throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + newVintage.getWineId() + ".");
-                }
-
-                // Controllo che la vintage non esista già
-                if (wineRepository.findByIdAndVintages_Year(newVintage.getWineId(), newVintage.getYear()).isPresent()){
-                    throw new ResourceAlreadyExistsException("Vintage with wineId " + newVintage.getWineId() + " and year " + newVintage.getYear() + " already exists.");
-                }
-
-                Vintage vintage = new Vintage();
-
-                vintage.setYear(newVintage.getYear());
-                vintage.setPrice(newVintage.getPrice());
-                vintage.setImage(newVintage.getImage());
-
-                vintage.setStatistics(new Statistics());
-                vintage.getStatistics().setRatingsAverage(0.0);
-                vintage.getStatistics().setRatingsCount((long) 0);
-
-                vintage.setReviews(new ArrayList<ReviewEmbedded>());
-
-                vintage.setCreatedAt(Instant.now());
-
-                wine.getVintages().add(vintage);
-
-                return wineRepository.save(wine);
-            }).orElseThrow(() -> new ResourceNotFoundException("Wine with id " + newVintage.getWineId() + " not found."));
-    }
-
     // Modifica dati del vino 
-    public Wine updateWine(UpdateWineDTO updatedWine, String username) {
+    public Wine updateWine(UpdateWineDTO updatedWine, String username) throws ResourceNotFoundException {
         return wineRepository.findById(updatedWine.getWineId())
             .map(wine -> {  
                 // Controllo che il vino sia della winery username
@@ -469,17 +442,57 @@ public class WineService {
                 }
 
                 return wineRepository.save(wine);
-            }).orElseThrow(() -> new ResourceNotFoundException("Wine with id " + updatedWine.getWineId() + " not found."));
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Wine with id " + updatedWine.getWineId() + " not found.")
+            );
     }
 
-    // Modifica dati della vintage di un vino
-    public Wine updateVintage(UpdateVintageDTO updatedVintage, String username) {
+    // Aggiunge una nuova annata ad un determinato vino
+    public Wine addVintage(NewVintageDTO newVintage, String username) throws ResourceNotFoundException, ResourceAlreadyExistsException {
+        return wineRepository.findById(newVintage.getWineId())
+            .map(wine -> {
+                // Controllo che il vino sia della winery username
+                if(wineRepository.findByIdAndWinery_Username(newVintage.getWineId(), username).isEmpty()){
+                    throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + newVintage.getWineId() + ".");
+                }
+
+                // Controllo che la vintage non esista già
+                if (wineRepository.findByIdAndVintages_Year(newVintage.getWineId(), newVintage.getYear()).isPresent()){
+                    throw new ResourceAlreadyExistsException("Vintage with wineId " + newVintage.getWineId() + " and year " + newVintage.getYear() + " already exists.");
+                }
+
+                Vintage vintage = new Vintage();
+
+                vintage.setYear(newVintage.getYear());
+                vintage.setPrice(newVintage.getPrice());
+                vintage.setImage(newVintage.getImage());
+
+                vintage.setStatistics(new Statistics());
+                vintage.getStatistics().setRatingsAverage(0.0);
+                vintage.getStatistics().setRatingsCount((long) 0);
+
+                vintage.setReviews(new ArrayList<ReviewEmbedded>());
+
+                vintage.setCreatedAt(Instant.now());
+
+                wine.getVintages().add(vintage);
+
+                return wineRepository.save(wine);
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Wine with id " + newVintage.getWineId() + " not found.")
+            );
+    }
+
+    // Modifica dati di una vintage di un vino
+    public Wine updateVintage(UpdateVintageDTO updatedVintage, String username) throws ResourceNotFoundException {
         return wineRepository.findByIdAndVintages_Year(updatedVintage.getWineId(), updatedVintage.getYear())
             .map(wine -> {  
                 // Controllo che il vino sia della winery username
                 if(wineRepository.findByIdAndWinery_Username(updatedVintage.getWineId(), username).isEmpty()){
                     throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + updatedVintage.getWineId() + ".");
-                }              
+                }
                 
                 for (Vintage vintage : wine.getVintages()){
                     if (vintage.getYear().equals(updatedVintage.getYear())){
@@ -512,13 +525,63 @@ public class WineService {
                 }
 
                 return wineRepository.save(wine);
-            }).orElseThrow(() -> new ResourceNotFoundException("Vintage with wineId " + updatedVintage.getWineId() + " and year " + updatedVintage.getYear() +" not found."));
+            })
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Vintage with wineId " + updatedVintage.getWineId() + " and year " + updatedVintage.getYear() +" not found.")
+            );
+    }
+
+    // Elimina una vintage da un vino
+    public Wine deleteVintage(UpdateVintageDTO targetVintage, String username) throws ResourceNotFoundException, AccessDeniedException {
+        return wineRepository
+            .findByIdAndVintages_Year(targetVintage.getWineId(), targetVintage.getYear())
+            .map(
+                wine -> {
+                    // Controllo che il vino appartenga alla winery username
+                    if(!wine.getWinery().getUsername().equals(username)) {
+                        throw new AccessDeniedException();
+                    }
+
+                    ArrayList<Review> reviews_to_delete = reviewRepository.findByWineId_IdAndWineId_Year(targetVintage.getWineId(), targetVintage.getYear());
+                    ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
+                    for (User user : users){
+                        boolean modified = user.getReviews().removeIf(r -> r.getWineId().getId().equals(targetVintage.getWineId()) && r.getWineId().getYear().equals(targetVintage.getYear()));
+
+                        if (user.getLikes().removeIf(likeId ->
+                                reviews_to_delete.stream().anyMatch(r -> r.getId().equals(likeId)))) {
+                            modified = true;
+                        }
+
+                        if (user.getDislikes().removeIf(dislikeId ->
+                                reviews_to_delete.stream().anyMatch(r -> r.getId().equals(dislikeId)))) {
+                            modified = true;
+                        }
+
+                        if (modified) {
+                            userRepository.save(user);
+                        }
+                    }
+
+                    reviewRepository.deleteAllByWineId_IdAndWineId_Year(targetVintage.getWineId(), targetVintage.getYear());
+                    
+                    wine.getVintages().removeIf(vintage -> vintage.getYear().equals(targetVintage.getYear()));
+                    return wineRepository.save(wine);
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Vintage with wineId " + targetVintage.getWineId() + " and year " + targetVintage.getYear() + " not found.")
+            );
     }
 
 
     /// DELETE operations ///
-    // Elimina un vino
-    public void deleteWineById(Long wineId, String username) {
+    // Elimina tutti i vini dalla collection "wines"
+    public void deleteAllWines(){  
+        wineRepository.deleteAll();
+    }
+
+    // Elimina un vino in base al suo id
+    public void deleteWineById(Long wineId, String username) throws ResourceNotFoundException {
         // Controllo che il vino specificato esista
         if (wineRepository.findById(wineId).isEmpty()){
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
@@ -553,48 +616,6 @@ public class WineService {
 
         reviewRepository.deleteAllByWineId_Id(wineId);
         wineRepository.deleteById(wineId);
-    }
-
-    // Elimina una vintage di un vino
-    public void deleteVintage(Long wineId, Integer year, String username){
-        // Controllo che l'annata specificata esista
-        Wine wine = wineRepository.findByIdAndVintages_Year(wineId, year)
-            .orElseThrow(() -> new ResourceNotFoundException("Vintage with wineId " + wineId + " and year " + year + " not found."));
-        
-        // Controllo che il vino sia della winery username
-        if(wineRepository.findByIdAndWinery_Username(wineId, username).isEmpty()){
-            throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + wineId + ".");
-        }
-
-        ArrayList<Review> reviews_to_delete = reviewRepository.findByWineId_IdAndWineId_Year(wineId, year);
-        ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
-        for (User user : users){
-            boolean modified = user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId) && r.getWineId().getYear().equals(year));
-
-            if (user.getLikes().removeIf(likeId ->
-                    reviews_to_delete.stream().anyMatch(r -> r.getId().equals(likeId)))) {
-                modified = true;
-            }
-
-            if (user.getDislikes().removeIf(dislikeId ->
-                    reviews_to_delete.stream().anyMatch(r -> r.getId().equals(dislikeId)))) {
-                modified = true;
-            }
-
-            if (modified) {
-                userRepository.save(user);
-            }
-        }
-
-        reviewRepository.deleteAllByWineId_IdAndWineId_Year(wineId, year);
-        
-        wine.getVintages().removeIf(vintage -> vintage.getYear().equals(year));
-        wineRepository.save(wine);
-    }
-
-    // Elimina tutti i vini
-    public void deleteAllWines(){  
-        wineRepository.deleteAll();
     }
 
     //// END of crud operations ////

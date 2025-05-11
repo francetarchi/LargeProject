@@ -90,8 +90,7 @@ public class WineryController {
     }
 
     @PutMapping("{username}/password/update")
-    @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_WINERY') and #username == authentication.principal.username")
     public ResponseEntity<?> updateWineryPassword(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
@@ -122,12 +121,19 @@ public class WineryController {
 
     
     //////////// DELETE ////////////
+    @DeleteMapping
+    @Secured({ "ROLE_ADMIN" })
+    public ResponseEntity<?> deleteAllWineries() {
+        wineryService.deleteAllWineries();
+        return ResponseEntity.status(HttpStatus.OK).body("All wineries deleted successfully.");
+    }
+
     @DeleteMapping("/{username}")
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteWinery(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         wineryService.deleteWinery(username);
-        return ResponseEntity.status(HttpStatus.OK).body("Cantina \"" + username + "\" eliminata correttamente.");
+        return ResponseEntity.status(HttpStatus.OK).body("Winery \"" + username + "\" deleted successfully.");
     }
 }
