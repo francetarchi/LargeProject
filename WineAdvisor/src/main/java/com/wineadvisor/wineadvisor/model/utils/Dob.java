@@ -1,6 +1,6 @@
-package com.wineadvisor.wineadvisor.model.users.fields;
+package com.wineadvisor.wineadvisor.model.utils;
 
-import com.wineadvisor.wineadvisor.model.utils.DateTimePattern;
+import java.time.temporal.ChronoUnit;
 
 public class Dob extends DateTimePattern {
     ///////////// METODI PUBBLICI /////////////
@@ -9,7 +9,8 @@ public class Dob extends DateTimePattern {
         if (this.equals(null) || this.getDateTime() == null) {
             this.setDateTime(null);
         } else {
-            this.setDateTime(this.getDateTime().withNano((this.getDateTime().getNano() / 1_000_000) * 1_000_000));
+            // TODO: DA ELIMINARE SE FUNZIONA TUTTO: this.setDateTime(this.getDateTime().withNano((this.getDateTime().getNano() / 1_000_000) * 1_000_000));
+            this.setDateTime(this.getDateTime().truncatedTo(ChronoUnit.MILLIS));
         }
     }
 }

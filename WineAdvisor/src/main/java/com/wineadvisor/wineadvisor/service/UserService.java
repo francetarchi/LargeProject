@@ -13,9 +13,11 @@ import com.wineadvisor.wineadvisor.DTO.users.addFavoriteDTO;
 import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
 import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
+import com.wineadvisor.wineadvisor.repository.AdminRepository;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
+import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
@@ -32,6 +34,8 @@ public class UserService {
     /////////// VARIABLES //////////
     ////////////////////////////////
     private final UserRepository userRepository;
+    private final WineryRepository wineryRepository;
+    private final AdminRepository adminRepository;
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
 
@@ -56,6 +60,34 @@ public class UserService {
         }
         if (page.getPageable().getPageNumber() >= page.getTotalPages()) {
             throw new BadRequestException("Page requested too high.");
+        }
+    }
+
+    // Controlla che i parametri passati per la creazione di un utente siano validi
+    private void checkAccountParams(String username, String email, PasswordDTO passwordDTO) throws ResourceAlreadyExistsException, BadRequestException {
+        if (userRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with username \"" + username + "\" already exists.");
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("User with email \"" + email + "\" already exists.");
+        }
+        if (wineryRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with username \"" + username + "\" already exists.");
+        }
+        if (wineryRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("Winery with email \"" + email + "\" already exists.");
+        }
+        if (adminRepository.findByLogin_Username(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("Admin with username \"" + username + "\" already exists.");
+        }
+        if (adminRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("Admin with email \"" + email + "\" already exists.");
+        }
+        if (!passwordDTO.passwordPatternVerifier()) {
+            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
+        }
+        if (!passwordDTO.getNewPass().equals(passwordDTO.getConfirmPass())) {
+            throw new BadRequestException("Passwords do not match.");
         }
     }
     
@@ -283,18 +315,7 @@ public class UserService {
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
     public User createUser(CreateUserDTO createUserDTO) throws ResourceAlreadyExistsException, BadRequestException {
-        if (userRepository.findByLogin_Username(createUserDTO.getUsername()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with username \"" + createUserDTO.getUsername() + "\" already exists.");
-        }
-        if (userRepository.findByEmail(createUserDTO.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User with email \"" + createUserDTO.getEmail() + "\" already exists.");
-        }
-        if (!createUserDTO.getPasswordDTO().passwordPatternVerifier()) {
-            throw new BadRequestException("Password does not meet the minimum requirements: at least 8 characters, 1 digit, 1 lowercase, 1 uppercase, 1 special character among \"!@#$%^&*()\\-_=+.,:;");
-        }
-        if (!createUserDTO.getPasswordDTO().getNewPass().equals(createUserDTO.getPasswordDTO().getConfirmPass())) {
-            throw new BadRequestException("Passwords do not match.");
-        }
+        checkAccountParams(createUserDTO.getUsername(), createUserDTO.getEmail(), createUserDTO.getPasswordDTO());
         
         User newUser = createUserDTO.toUser();
         newUser.adjustFieldsForCreation(passwordEncoder.encode(createUserDTO.getPasswordDTO().getNewPass()));
@@ -334,12 +355,9 @@ public class UserService {
 
     // Restituisce un utente con un determinato username
     public User getUserByUsername(String username) throws ResourceNotFoundException {
-        User user = userRepository.findByLogin_Username(username).orElse(null);
-        
-        if (user == null) {
-            throw new ResourceNotFoundException("User with username \"" + username + "\" not found.");
-        }
-
+        User user = userRepository.findByLogin_Username(username).orElseThrow(
+            () -> new ResourceNotFoundException("User with username \"" + username + "\" not found.")
+        );
         return user;
     }
 

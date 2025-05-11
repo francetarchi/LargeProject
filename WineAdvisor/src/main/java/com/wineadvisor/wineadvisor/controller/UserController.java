@@ -56,10 +56,9 @@ public class UserController {
 
     ////////////// GET //////////////
     @GetMapping
-    // TODO: Uncomment the following if you want to add admin authentication
-    // @Secured({ "ROLE_ADMIN" })
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> getAllUsers(
-            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or omitted).") Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers(page));
     }
 
@@ -86,7 +85,6 @@ public class UserController {
             result = userService.getUsersByLastName(lastName, page);
         }
 
-        // return ResponseEntity.status(HttpStatus.OK).header("documentCount", String.valueOf(result.size())).body(result);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
@@ -99,10 +97,8 @@ public class UserController {
 
     ////////////// PUT //////////////
     @PutMapping("/{username}")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUser(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "User update info cannot be null.") @Valid @RequestBody UpdateUserDTO updateUserDTO) {
@@ -110,21 +106,16 @@ public class UserController {
     }
 
     @PutMapping("{username}/username/update")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#targetUsername == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#targetUsername == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({"ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#targetUsername == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUserUsername(
             @NotBlank(message = "Username cannot be blank.") @PathVariable(name = "username") String targetUsername,
-            @NotBlank(message = "New username cannot be blank.") @Valid @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "The new username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.") @RequestParam(required = true, name = "newUsername") String newUsername) {
+            @NotBlank(message = "New username cannot be blank.") @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "The new username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.") @RequestParam(required = true, name = "newUsername") String newUsername) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserUsername(targetUsername, newUsername));
     }
 
     @PutMapping("{username}/password/update")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> updateUserPassword(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
@@ -135,103 +126,68 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserPassword(username, passwordDTO));
     }
 
+    ///// Operazioni su like e dislike /////
     @PutMapping("/{username}/addLike")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addLike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
-        if (reviewId <= 0) {
-            throw new BadRequestException("reviewId must be greater than 0.");
-        }
-
+            @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addLike(username, reviewId));
     }
 
     @PutMapping("/{username}/removeLike")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeLike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
-        if (reviewId <= 0) {
-            throw new BadRequestException("reviewId must be greater than 0.");
-        }
-
+            @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeLike(username, reviewId));
     }
 
     @PutMapping("/{username}/addDislike")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addDislike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
-        if (reviewId <= 0) {
-            throw new BadRequestException("reviewId must be greater than 0.");
-        }
-
+            @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addDislike(username, reviewId));
     }
 
     @PutMapping("/{username}/removeDislike")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeDislike(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "reviewId cannot be null.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
-        if (reviewId <= 0) {
-            throw new BadRequestException("reviewId must be greater than 0.");
-        }
-
+            @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true) Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
     }
 
+    ///// Operazioni sui vini preferiti /////
     @PutMapping("/{username}/addFavorite")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO:  Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addFavorite(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "Wine info cannot be null.") @RequestBody @Valid addFavoriteDTO addFavoriteDTO) {
+            @NotNull(message = "Wine info cannot be null.") @Valid @RequestBody addFavoriteDTO addFavoriteDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addFavorite(username, addFavoriteDTO));
     }
 
     @PutMapping("/{username}/removeFavorite")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO:  Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeFavorite(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotNull(message = "wineId cannot be null.") @RequestParam(name = "wineId", required = true) @Valid @Positive Long wineId) {
+            @NotNull(message = "wineId cannot be null.") @Positive(message = "wineId must be a positive integer number.") @RequestParam(name = "wineId", required = true) Long wineId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
     
     ////////////// DELETE //////////////
     @DeleteMapping
-    // TODO: Uncomment the following if you want to add admin authentication
-    // @Secured({ "ROLE_ADMIN" })
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteAllUsers() {
         userService.deleteAllUsers();
         return ResponseEntity.status(HttpStatus.OK).body("All users deleted successfully.");
     }
 
     @DeleteMapping("/{username}")
-    @Secured({ /* TODO: Uncomment the following if you want to add admin authentication */ /* "ROLE_ADMIN", */ "ROLE_USER" })
-    @PreAuthorize("#username == authentication.principal.username")
-    /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
-    // @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         userService.deleteUser(username);

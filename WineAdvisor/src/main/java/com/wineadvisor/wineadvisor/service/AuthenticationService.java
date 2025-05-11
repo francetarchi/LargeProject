@@ -1,17 +1,14 @@
 package com.wineadvisor.wineadvisor.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+import com.wineadvisor.wineadvisor.model.admin.Admin;
 import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.wineries.Winery;
+import com.wineadvisor.wineadvisor.repository.AdminRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
@@ -26,6 +23,7 @@ public class AuthenticationService implements UserDetailsService {
     ////////////////////////////////
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
+    private final AdminRepository adminRepository;
 
 
 
@@ -38,44 +36,36 @@ public class AuthenticationService implements UserDetailsService {
     
     // Costruisce un oggetto UserDetails a partire da un oggetto User
     private UserDetails buildUserDetails(User user) {
-        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        // TODO: Uncomment the following if you want to add admin authentication
-        // if (user.isAdmin()) {
-        //     grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        // }
+        System.out.println("--- INFO: Processing USER login for account \"" + user.getLogin().getUsername() + "\".");
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getLogin().getUsername())
                 .password(user.getLogin().getPassword())
-                .authorities(grantedAuthorities)
+                .roles("USER")
                 .build();
     }
 
     // Costruisce un oggetto UserDetails a partire da un oggetto Winery
     private UserDetails buildUserDetails(Winery winery) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_WINERY"));
+        System.out.println("--- INFO: Processing WINERY login for account \"" + winery.getLogin().getUsername() + "\".");
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(winery.getLogin().getUsername())
                 .password(winery.getLogin().getPassword())
-                .authorities(authorities)
+                .roles("WINERY")
                 .build();
     }
+    
+    // Costruisce un oggetto UserDetails a partire da un oggetto Admin
+    private UserDetails buildUserDetails(Admin admin) {
+        System.out.println("--- INFO: Processing ADMIN login for account \"" + admin.getLogin().getUsername() + "\".");
 
-    // TODO: Uncomment the following if you want to add admin authentication
-    // // Costruisce un oggetto UserDetails a partire da un oggetto Admin
-    // private UserDetails buildUserDetails(Admin admin) {
-    //     List<GrantedAuthority> authorities = new ArrayList<>();
-    //     authorities.add(new SimpleGrantedAuthority(ROLE_ADMIN));
-
-    //     return org.springframework.security.core.userdetails.User.builder()
-    //             .username(admin.getLogin().getUsername())
-    //             .password(admin.getLogin().getPassword())
-    //             .authorities(authorities)
-    //             .build();
-    // }
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(admin.getLogin().getUsername())
+                .password(admin.getLogin().getPassword())
+                .roles("ADMIN")
+                .build();
+    }
 
     // END of authentication logic //
     /////////////////////////////////
@@ -89,24 +79,34 @@ public class AuthenticationService implements UserDetailsService {
     /////////////////////////////////
     /////// Util operations /////////
     
-    /// READ operations ///
-    // Recupera un utente dal database in base all'username fornito (override dell'omonimo metodo della classe UserDetailsService)
+    // Recupera un account (che sia User, Winery o Admin) dal database in base all'username fornito (override dell'omonimo metodo della classe UserDetailsService)
     @Override
     public UserDetails loadUserByUsername(String username) throws ResourceNotFoundException {
+        System.out.println("--- INFO: Searching for account with username: \"" + username + "\".");
+
         User user = userRepository.findByLogin_Username(username).orElse(null);
         Winery winery = wineryRepository.findByLogin_Username(username).orElse(null);
-        // TODO: Uncomment the following if you want to add admin authentication
-        // Admin admin = adminRepository.findByLogin_Username(username).orElse(null);
+        Admin admin = adminRepository.findByLogin_Username(username).orElse(null);
 
+        UserDetails userDetails = null;
+        Boolean accountFound = false;
         if (user != null) {
-            return buildUserDetails(user);
+            userDetails = buildUserDetails(user);
+            accountFound = true;
         } else if (winery != null) {
-            return buildUserDetails(winery);
-        // TODO: Uncomment the following if you want to add admin authentication
-        // } else if (admin != null) {
-        //     return buildUserDetails(admin);
+            userDetails = buildUserDetails(winery);
+            accountFound = true;
+        } else if (admin != null) {
+            userDetails = buildUserDetails(admin);
+            accountFound = true;
+        }
+
+        if (accountFound) {
+            System.out.println("--- INFO: Account found successfully in a collection.\n\n");
+            return userDetails;
         } else {
-            throw new ResourceNotFoundException("User with username \"" + username + "\" does not exist.");
+            System.out.println("--- WRN: Authentication failed.");
+            throw new ResourceNotFoundException("Account with username \"" + username + "\" does not exist in any collection.");
         }
     }
 

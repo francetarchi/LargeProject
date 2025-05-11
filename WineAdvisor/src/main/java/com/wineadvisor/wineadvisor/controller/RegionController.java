@@ -28,59 +28,64 @@ public class RegionController {
     ////////////////////////////////
     private final RegionService regionService;
 
+
+
     ////////////// POST //////////////
     @PostMapping
     public ResponseEntity<?> createRegion(
-        @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
-        @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
-        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/region/" + name).body(regionService.addRegion(name, country));
+                @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
+                @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/regions/" + name).body(regionService.addRegion(name, country));
     }
     
-    ////////////// GET //////////////
-    @GetMapping("/{name}")
-    public ResponseEntity<?> getRegionByName(
-        @PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
-        return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionByName(name));
-    }
 
+    ////////////// GET //////////////
     @GetMapping
     public ResponseEntity<?> getAllRegions(
-        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
-    ) {
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(regionService.getAllRegions(page));
+    }
+
+    @GetMapping("/{name}")
+    public ResponseEntity<?> getRegionByName(
+                @PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
+        return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionByName(name));
     }
 
     @GetMapping("/countries/{country}")
     public ResponseEntity<?> getRegionsByCountry(
-        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page,
-        @PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
-            return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionsByCountry(page, country));
-        }
+                @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page,
+                @PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
+        return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionsByCountry(page, country));
+    }
 
     ////////////// PUT //////////////
     @PutMapping
     public ResponseEntity<?> updateRegion(
-        @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
-        @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
+                @RequestParam @NotBlank(message = "Region name cannot be blank.") String name,
+                @RequestParam @NotBlank(message = "Country name cannot be blank.") String country) {
         return ResponseEntity.status(HttpStatus.OK).body(regionService.updateRegion(name, country));
     }
 
+
     ////////////// DELETE //////////////
+    @DeleteMapping
+    public ResponseEntity<?> deleteAllRegions() {
+        regionService.deleteAll();
+        return ResponseEntity.status(HttpStatus.OK).body("Regions deleted successfully.");
+    }
+    
     @DeleteMapping("/{name}")
-    public ResponseEntity<?> deleteRegion(@PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
+    public ResponseEntity<?> deleteRegion(
+                @PathVariable @NotBlank(message = "Region name cannot be blank.") String name) {
         regionService.deleteRegion(name);
         return ResponseEntity.status(HttpStatus.OK).body("Region " + name + " deleted successfully.");
     }
 
     @DeleteMapping("/countries/{country}")
-    public ResponseEntity<?> deleteRegionsByCountry(@PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
+    public ResponseEntity<?> deleteRegionsByCountry(
+                @PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
         regionService.deleteRegionsByCountry(country);
         return ResponseEntity.status(HttpStatus.OK).body("Regions in country " + country + " deleted successfully.");
-    }
-
-    @DeleteMapping
-    public ResponseEntity<?> deleteAllRegions() {
-        regionService.deleteAll();
-        return ResponseEntity.status(HttpStatus.OK).body("Regions deleted successfully.");
     }
 }

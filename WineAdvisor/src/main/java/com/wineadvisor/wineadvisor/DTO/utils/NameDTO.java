@@ -1,8 +1,8 @@
-package com.wineadvisor.wineadvisor.DTO.users.fields;
+package com.wineadvisor.wineadvisor.DTO.utils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wineadvisor.wineadvisor.model.users.fields.Name;
+import com.wineadvisor.wineadvisor.model.utils.Name;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

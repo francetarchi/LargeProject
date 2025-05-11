@@ -1,41 +1,34 @@
-package com.wineadvisor.wineadvisor.model.users;
+package com.wineadvisor.wineadvisor.model.admin;
 
-import java.util.ArrayList;
+import com.wineadvisor.wineadvisor.model.utils.Name;
+import com.wineadvisor.wineadvisor.model.utils.Login;
+import com.wineadvisor.wineadvisor.model.utils.Registered;
+import com.wineadvisor.wineadvisor.model.utils.Dob;
+import com.wineadvisor.wineadvisor.model.utils.Picture;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wineadvisor.wineadvisor.model.users.fields.Address;
-import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
-import com.wineadvisor.wineadvisor.model.utils.Dob;
-import com.wineadvisor.wineadvisor.model.utils.Login;
-import com.wineadvisor.wineadvisor.model.utils.Name;
-import com.wineadvisor.wineadvisor.model.utils.Picture;
-import com.wineadvisor.wineadvisor.model.utils.Registered;
-import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
-
-import org.bson.types.ObjectId;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "users")
+@Document(collection = "admins")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User {
+public class Admin {
     @Id
     private ObjectId _id;
 
     private String gender;
 
     private Name name;
-
-    private Address address;
 
     private String email;
     private String telephone;
@@ -47,12 +40,6 @@ public class User {
 
     private Picture picture;
 
-    private ArrayList<ReviewEmbedded> reviews;
-    private ArrayList<Long> likes;
-    private ArrayList<Long> dislikes;
-
-    private ArrayList<WineFavorite> wineFavorites;
-    
 
 
     ///////////// METODI PRIVATI /////////////
@@ -65,23 +52,15 @@ public class User {
         this.getDob().adjustDobDate();
     }
 
-    // Eseguo la trim per tutti i campi dello User
+    // Esegue la trim per tutti i campi dell'Admin
     private void trimAllFields(){
         this.gender = this.gender.trim();
-
+        
         this.name.setTitle(this.name.getTitle().trim());
         this.name.setFirst(this.name.getFirst().trim());
         this.name.setLast(this.name.getLast().trim());
 
-        this.address.getStreet().setNumber(this.address.getStreet().getNumber().trim());
-        this.address.getStreet().setName(this.address.getStreet().getName().trim());
-        this.address.setCity(this.address.getCity().trim());
-        this.address.setRegion(this.address.getRegion().trim());
-        this.address.setCountry(this.address.getCountry().trim());
-        this.address.setPostcode(this.address.getPostcode().trim());
-
         this.email = this.email.trim();
-        
         this.telephone = this.telephone.trim();
 
         this.login.setUsername(this.login.getUsername().trim());
@@ -91,7 +70,7 @@ public class User {
         this.picture.setThumbnail(this.picture.getThumbnail().trim());
     }
 
-    // Effettuo alcune correzioni per rendere consistente un utente appena creato o aggiornato
+    // Effettua ulteriori correzioni per rendere consistente un admin appena creato o aggiornato
     private void adjustFields(final Character isFrom) {
         // setto correttamente la data di registrazione e la data di nascita
         this.adjustDates(isFrom);
@@ -103,19 +82,16 @@ public class User {
 
 
     ///////////// METODI PUBBLICI /////////////
-    // Effettua alcune operazioni per rendere consistente un utente appena creato
+    // Effettua alcune operazioni per rendere consistente un admin appena creato
     public void adjustFieldsForCreation(final String encodedPassword) {
         this.set_id(null);
         this.getRegistered().setDateTime(null);
-        this.setReviews(new ArrayList<>());
-        this.setLikes(new ArrayList<>());
-        this.setDislikes(new ArrayList<>());
         this.login.setPassword(encodedPassword);
 
         this.adjustFields('C');
     }
 
-    // Effettua alcune operazioni per rendere consistente un utente appena aggiornato
+    // Effettua alcune operazioni per rendere consistente un admin appena aggiornato
     public void adjustFieldsForUpdate() {
         this.adjustFields('U');
     }

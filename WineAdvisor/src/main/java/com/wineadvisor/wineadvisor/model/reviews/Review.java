@@ -1,18 +1,20 @@
 package com.wineadvisor.wineadvisor.model.reviews;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.Instant;
 
-import java.time.LocalDateTime;
+import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
+import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
-import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Data
 @Document(collection = "reviews")
@@ -35,7 +37,7 @@ public class Review {
     private String text;
 
     @Field("created_at")
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Field("likes_count")
     private Long likesCount;

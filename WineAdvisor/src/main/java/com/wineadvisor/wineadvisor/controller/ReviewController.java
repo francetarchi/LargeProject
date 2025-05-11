@@ -4,13 +4,15 @@ import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
 import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
-
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.data.domain.Pageable;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -45,35 +46,24 @@ public class ReviewController {
 
     ////////////// POST //////////////
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @Secured({ "ROLE_USER" })
     public ResponseEntity<?> addReview(@RequestBody @Valid CreateReviewDTO review) {        
-        // Prendo lo username dell'utente che ha fatto la richiesta
-        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-        review.setUsername(username);
-
-        Review savedReview = reviewService.addReview(review);
-        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/review/" + savedReview.getId()).body(savedReview);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Review savedReview = reviewService.addReview(username, review);
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
     }
 
-    ////////////// PUT //////////////
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<?> updateReview(
-            @PathVariable
-                @NotNull(message = "ID cannot be null.")
-                @Positive(message = "ID must be positive.")
-                Long id,
-            @RequestBody @Valid UpdateReviewDTO updatedReview) {
-        // Prendo username dell'utente che ha fatto la richiesta
-        String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
-        updatedReview.setUsername(username);
-
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview));
-    }
 
     ////////////// GET //////////////
+    @GetMapping
+    @Secured({ "ROLE_ADMIN" })
+    public ResponseEntity<?> getAllReviews(
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(page));
+    }
+    
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewById(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -81,16 +71,7 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
     }
 
-    @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getAllReviews(
-        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(page));
-    }
-
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByVintage(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -106,7 +87,6 @@ public class ReviewController {
     }
 
     @GetMapping("/wines/{wineId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByWine(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -118,7 +98,6 @@ public class ReviewController {
     }
 
     @GetMapping("/users/{username}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByUser(
             @PathVariable @NotBlank(message = "Username cannot be blank.") String username,
             @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
@@ -126,7 +105,6 @@ public class ReviewController {
     }
 
     @GetMapping("/users/{username}/wines/{wineId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByUserAndWine(
             @PathVariable 
                 @NotBlank(message = "Username cannot be blank.")
@@ -141,7 +119,6 @@ public class ReviewController {
     }
 
     @GetMapping("/average/wines/{wineId}/vintages/{year}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getAverageRatingByVintage(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -155,7 +132,6 @@ public class ReviewController {
     }
 
     @GetMapping("/wine/{wineId}/rating/{minRating}/{maxRating}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByWineAndRating(
             @PathVariable 
                 @NotNull(message = "ID cannot be null.")
@@ -178,7 +154,6 @@ public class ReviewController {
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}/ratings/{minRating}/{maxRating}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByVintageAndRating(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -206,7 +181,6 @@ public class ReviewController {
     }
 
     @GetMapping("/wines/{wineId}/vintages/{year}/num/{num}/popular")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getPopularReviewsByVintage(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
@@ -223,58 +197,62 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
 
-    ////////////// DELETE //////////////
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<?> deleteReview(
-        @PathVariable
-            @NotNull(message = "ID cannot be null.")
-            @Positive(message = "ID must be positive.")
-            Long id) {
-        // Prendo username dell'utente che ha fatto la richiesta
-        String username = (String) SecurityContextHolder.getContext().getAuthentication().getName();
+    
+    ////////////// PUT //////////////
+    @PutMapping("/{id}")
+    @Secured({ "ROLE_USER" })
+    public ResponseEntity<?> updateReview(
+                @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id,
+                @Valid @RequestBody UpdateReviewDTO updatedReview) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, username, updatedReview));
+    }
 
-        reviewService.deleteReviewById(id, username);
+
+    ////////////// DELETE //////////////
+    @DeleteMapping
+    @Secured({ "ROLE_ADMIN" })
+    public ResponseEntity<?> deleteAllReviews() {
+        reviewService.deleteAllReviews();
+        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
+    }
+
+    @DeleteMapping("/{id}")
+    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
+    public ResponseEntity<?> deleteReviewById(
+                @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) throws InternalAuthenticationServiceException, AccessDeniedException {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        GrantedAuthority grantedAuthority = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().findFirst().orElseThrow(
+            () -> new InternalAuthenticationServiceException("No role found for authenticated user. Try with another account.")
+        );
+        
+        reviewService.deleteReviewById(id, username, grantedAuthority.getAuthority());
         return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
     }
 
+    @DeleteMapping("/user/{username}")
+    @Secured({ "ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteReviewsByUser(
+        @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            reviewService.deleteReviewsByUser(username);
+            return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
+        }
+        
     @DeleteMapping("/wines/{wineId}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteReviewsByWine(
-            @PathVariable
-                @NotNull(message = "ID cannot be null.")
-                @Positive(message = "ID must be positive.")
-                Long wineId) {
+                @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId) {
         reviewService.deleteReviewsByWine(wineId);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
-    @DeleteMapping("/user/{username}")
-    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_USER')")
-    public ResponseEntity<?> deleteReviewsByUser(@PathVariable @NotBlank(message = "Username cannot be blank.") String username) {
-        reviewService.deleteReviewsByUser(username);
-        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-    }
-
     @DeleteMapping("/wines/{wineId}/vintages/{vintageYear}")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteReviewsByVintage(
-            @PathVariable 
-                @NotNull(message = "ID cannot be null.")
-                @Positive(message = "ID must be positive.")
-                Long wineId,
-            @PathVariable
-                @NotNull(message = "Vintage year cannot be null.")
-                @PositiveOrZero(message = "Vintage year must be positive.")
-                Integer vintageYear) {
+                @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId,
+                @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
-        return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-    }
-
-    @DeleteMapping
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> deleteAllReviews() {
-        reviewService.deleteAllReviews();
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 }
