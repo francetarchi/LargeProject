@@ -17,6 +17,7 @@ import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements UserDetailsService {
@@ -86,7 +87,7 @@ public class AuthenticationService implements UserDetailsService {
     /////////////////////////////////
     
     /////////////////////////////////
-    /////// CRUD operations /////////
+    /////// Util operations /////////
     
     /// READ operations ///
     // Recupera un utente dal database in base all'username fornito (override dell'omonimo metodo della classe UserDetailsService)
@@ -109,6 +110,6 @@ public class AuthenticationService implements UserDetailsService {
         }
     }
 
-    //// END of crud operations ////
+    //// END of util operations ////
     ////////////////////////////////
 }

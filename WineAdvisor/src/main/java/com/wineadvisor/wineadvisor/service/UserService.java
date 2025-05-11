@@ -1,7 +1,5 @@
 package com.wineadvisor.wineadvisor.service;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +21,9 @@ import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
+
+import lombok.RequiredArgsConstructor;
+
 
 @Service
 @RequiredArgsConstructor

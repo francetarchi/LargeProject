@@ -1,7 +1,6 @@
 package com.wineadvisor.wineadvisor.service;
 
-import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
 
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
@@ -17,10 +16,11 @@ import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
-import java.util.ArrayList;
-
+import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -84,6 +84,7 @@ public class RegionService {
         return regionRepository.save(region);
     }
 
+
     /// READ operations ///
     // Restituisce la region di nome name
     public Region getRegionByName(String name) {
@@ -110,6 +111,7 @@ public class RegionService {
         checkReturnedPage(regions, "No regions found in country " + country + ".");
         return regions;
     }
+    
     
     /// UPDATE operations ///
     // Aggiorna il country di una region
@@ -151,6 +153,7 @@ public class RegionService {
                 return regionRepository.save(region);
             }).orElseThrow(() -> new ResourceNotFoundException("Region " + name + " not found"));
     }
+    
     
     /// DELETE operations ///
     // Elimina la region di nome name

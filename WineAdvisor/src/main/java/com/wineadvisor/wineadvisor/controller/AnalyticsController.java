@@ -18,6 +18,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 
+
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
