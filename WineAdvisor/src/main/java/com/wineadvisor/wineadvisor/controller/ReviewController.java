@@ -15,8 +15,6 @@ import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 
-import org.springframework.data.domain.Pageable;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -25,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -82,8 +81,10 @@ public class ReviewController {
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getAllReviews(Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(pageable));
+    public ResponseEntity<?> getAllReviews(
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(page));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
@@ -97,8 +98,9 @@ public class ReviewController {
                 @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
-            Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(pageable, wineId, vintageYear));
+            @RequestParam(required = false, name = "page number", defaultValue = "0") 
+                @PositiveOrZero Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintage(page, wineId, vintageYear));
     }
 
     @GetMapping("/wines/{wineId}")
@@ -108,15 +110,17 @@ public class ReviewController {
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-                Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(pageable, wineId));
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWine(page, wineId));
     }
 
     @GetMapping("/users/{username}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> getReviewsByUser(
-            @PathVariable @NotBlank(message = "Username cannot be blank.") String username, Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(pageable, username));
+            @PathVariable @NotBlank(message = "Username cannot be blank.") String username,
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUser(page, username));
     }
 
     @GetMapping("/users/{username}/wines/{wineId}")
@@ -129,8 +133,9 @@ public class ReviewController {
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-            Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(pageable, username, wineId));
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page) {
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(page, username, wineId));
     }
 
     @GetMapping("/average/wines/{wineId}/vintages/{year}")
@@ -162,12 +167,12 @@ public class ReviewController {
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
-            Pageable pageable) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page) {
         if (minRating > maxRating) {
             throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
         }
-
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(pageable, wineId, minRating, maxRating));
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(page, wineId, minRating, maxRating));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}/ratings/{minRating}/{maxRating}")
@@ -189,12 +194,13 @@ public class ReviewController {
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
-            Pageable pageable) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page) {
         if (minRating > maxRating) {
             throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
         }
 
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(pageable, wineId, vintageYear, minRating, maxRating));
+        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByVintageAndRatingRange(page, wineId, vintageYear, minRating, maxRating));
     }
 
     @GetMapping("/wines/{wineId}/vintages/{year}/num/{num}/popular")

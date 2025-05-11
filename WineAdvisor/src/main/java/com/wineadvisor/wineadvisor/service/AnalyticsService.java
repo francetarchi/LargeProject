@@ -1,9 +1,15 @@
 package com.wineadvisor.wineadvisor.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.bson.Document;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -17,6 +23,15 @@ import com.wineadvisor.wineadvisor.model.analytics.TopVintagesQopType;
 import com.wineadvisor.wineadvisor.model.analytics.TopVintagesRatingsType;
 import com.wineadvisor.wineadvisor.model.analytics.TopWineriesRatings;
 import com.wineadvisor.wineadvisor.model.analytics.TopWinesRatingsType;
+import com.wineadvisor.wineadvisor.model.countries.Country;
+import com.wineadvisor.wineadvisor.model.regions.Region;
+import com.wineadvisor.wineadvisor.model.users.User;
+import com.wineadvisor.wineadvisor.model.utils.VintageEmbedded;
+import com.wineadvisor.wineadvisor.model.wineries.Winery;
+import com.wineadvisor.wineadvisor.repository.CountryRepository;
+import com.wineadvisor.wineadvisor.repository.RegionRepository;
+import com.wineadvisor.wineadvisor.repository.UserRepository;
+import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.repository.analytics.TopVintagesOurQopTypeRepository;
 import com.wineadvisor.wineadvisor.repository.analytics.TopVintagesQopTypeRepository;
 import com.wineadvisor.wineadvisor.repository.analytics.TopVintagesRatingsTypeRepository;
@@ -36,6 +51,10 @@ public class AnalyticsService {
     private final TopVintagesRatingsTypeRepository topVintagesRatingsTypeRepository;
     private final TopWinesRatingsTypeRepository topWinesRatingsTypeRepository;
     private final TopWineriesRatingsRepository topWineriesRatingsRepository;
+    private final RegionRepository regionRepository;
+    private final CountryRepository countryRepository;
+    private final UserRepository userRepository;
+    private final WineryRepository wineryRepository;
 
     private final MongoTemplate mongoTemplate;
     
@@ -47,6 +66,8 @@ public class AnalyticsService {
     private static final String TOP_WINERIES_RATINGS = "top_wineries_by_wines_ratings";
 
     private static final Integer TOP_LENGTH = 10; // Lunghezza attuale di default delle classifiche
+
+    private static final int PAGE_SIZE = 20;
 
 
     ////////////////////////////////
@@ -662,6 +683,63 @@ public class AnalyticsService {
         return topWineriesRatings;
     }
 
+    // Restituisce la top 10 vintages of the month della region dell'utente, (aggregation) contenuta in regions
+    public ArrayList<VintageEmbedded> getTop10VintagesOfTheMonth(String username) {
+        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+        String region_name = "";
+        
+        if(user_to_find.isEmpty()){
+            Winery winery = wineryRepository.findByLogin_Username(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
+            region_name = winery.getRegion();   
+        } else {
+            if(user_to_find.isEmpty()){
+                throw new ResourceNotFoundException("User " + username + " not found.");
+            }
+            User user = user_to_find.get();
+            region_name = user.getAddress().getRegion();
+        }
+
+        Region region  = regionRepository.findByName(region_name)
+                .orElseThrow(() -> new ResourceNotFoundException("Region not found."));
+
+        ArrayList<VintageEmbedded> vintages = region.getTop10VintagesOfTheMonth();
+
+        return vintages;
+    }
+
+    // Restituisce la top 100 vintages of the month del country dell'utente, (aggregation) contenuta in countries
+    public Page<VintageEmbedded> getTop100VintagesOfTheMonth(String username, Integer page) {
+        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+        String country_name = "";
+        
+        if(user_to_find.isEmpty()){
+            Winery winery = wineryRepository.findByLogin_Username(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
+            country_name = winery.getCountry();
+        } else {
+            if(user_to_find.isEmpty()){
+                throw new ResourceNotFoundException("User " + username + " not found.");
+            }
+            User user = user_to_find.get();
+            country_name = user.getAddress().getCountry();
+        }
+
+        Country country = countryRepository.findByName(country_name)
+                .orElseThrow(() -> new ResourceNotFoundException("Country not found."));
+
+        ArrayList<VintageEmbedded> vintages = country.getTop100VintagesOfTheMonth();
+
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+
+        // Calcolo degli indici di inizio e fine pagina
+        int start = Math.min((int) pageable.getOffset(), vintages.size());
+        int end = Math.min(start + pageable.getPageSize(), vintages.size());
+
+        List<VintageEmbedded> paginatedList = vintages.subList(start, end);
+
+        return new PageImpl<>(paginatedList, pageable, vintages.size());
+    }
 
     /// DELETE operations ///
     /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */

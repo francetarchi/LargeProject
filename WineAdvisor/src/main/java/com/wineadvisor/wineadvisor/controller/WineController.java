@@ -11,13 +11,11 @@ import com.wineadvisor.wineadvisor.DTO.wines.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
 import lombok.RequiredArgsConstructor;
@@ -50,8 +48,8 @@ public class WineController {
     @PostMapping
     @PreAuthorize("hasRole('ROLE_WINERY')")
     public ResponseEntity<?> createWine(
-            @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine,
-            @NotBlank(message = "Winery username cannot be blank.") @RequestParam String wineryUsername) {
+            @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine) {
+        String wineryUsername = (String) SecurityContextHolder.getContext().getAuthentication().getName();
         Wine savedWine = wineService.addWine(wine, wineryUsername);
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/wine/" + savedWine.getId()).body(savedWine);
     }
@@ -76,15 +74,18 @@ public class WineController {
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
-    public ResponseEntity<?> getAllWines(Pageable pageable) {
-        Page<Wine> wines = wineService.getAllWines(pageable);
+    public ResponseEntity<?> getAllWines(
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
+    ) {
+        Page<Wine> wines = wineService.getAllWines(page);
         return ResponseEntity.status(HttpStatus.OK).body(wines);
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_WINERY')")
     public ResponseEntity<?> searchWines(
-            Pageable pageable,
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page,
             @RequestParam(required = false)
                 @Schema(description = "Wine name", example = "Il Pettirosso")
                 String name,
@@ -130,7 +131,7 @@ public class WineController {
         minAverageRating = (minAverageRating == null) ? 0.0 : minAverageRating;
         if (minPrice > maxPrice) throw new BadRequestException("Min price cannot be greater than max price.");
         
-        return ResponseEntity.status(HttpStatus.OK).body(wineService.searchWines(pageable, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
+        return ResponseEntity.status(HttpStatus.OK).body(wineService.searchWines(page, name, winery, region, country, type, grape, minPrice, maxPrice, minAverageRating));
     }
 
     ////////////// PUT //////////////

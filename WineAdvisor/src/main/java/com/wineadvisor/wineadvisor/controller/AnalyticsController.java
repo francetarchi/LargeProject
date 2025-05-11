@@ -2,17 +2,20 @@ package com.wineadvisor.wineadvisor.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */
 // import org.springframework.security.access.annotation.Secured;
 // import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wineadvisor.wineadvisor.service.AnalyticsService;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -64,6 +67,19 @@ public class AnalyticsController {
         return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopWineriesByWinesRatings());
     }
 
+    @GetMapping("/top-10-vintages")
+    public ResponseEntity<?> getTop10VintagesOfTheMonth() {
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop10VintagesOfTheMonth(username));
+    }
+
+    @GetMapping("/top-100-vintages")
+    public ResponseEntity<?> getTop100VintagesOfTheMonth(
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
+        ) {
+        String username = ((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop100VintagesOfTheMonth(username, page));
+    }
     
     ///////////// DELETE ////////////
     /* TODO: Uncomment the following and delete the previous line if you want to add admin authentication */

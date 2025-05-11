@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.service;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
+import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.regions.Region;
@@ -19,16 +20,46 @@ import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import java.util.ArrayList;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
 public class RegionService {
+    ////////////////////////////////
+    /////////// VARIABLES //////////
+    ////////////////////////////////
     private final RegionRepository regionRepository;
     private final CountryRepository countryRepository;
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final WineRepository wineRepository;
+
+    /////////// COSTANTI ////////////
+    private static final int PAGE_SIZE = 20;
+
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    ////////////////////////////////
+    ///// Checking operations //////
+    
+    // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
+    private void checkReturnedPage(Page<Region> page, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
+        if (page.getTotalElements() == 0) {
+            throw new ResourceNotFoundException(notFoundMessage);
+        }
+        if (page.getPageable().getPageNumber() >= page.getTotalPages()) {
+            throw new BadRequestException("Page requested too high.");
+        }
+    }
+    
+    /// END of checking operations //
+    /////////////////////////////////
+
+
+
     /////////////////////////////////
     /////// CRUD operations /////////
 
@@ -63,22 +94,20 @@ public class RegionService {
     }
 
     // Restituisce tutte le regions della collection
-    public Page<Region> getAllRegions(Pageable pageable) {
-        return regionRepository.findAll(pageable);
+    public Page<Region> getAllRegions(Integer page) {
+        Page<Region> regions = regionRepository.findAll(PageRequest.of(page, PAGE_SIZE));
+        checkReturnedPage(regions, "No regions found.");
+        return regions;
     }
 
     // Restituisce tutte le regions di un determinato country
-    public Page<Region> getRegionsByCountry(Pageable pageable, String country) {
+    public Page<Region> getRegionsByCountry(Integer page, String country) {
         if(countryRepository.findByName(country).isEmpty()){
             throw new ResourceNotFoundException("Country " + country + " not found.");
         }
 
-        Page<Region> regions = regionRepository.findByCountry(pageable, country);
-
-        if(regions.isEmpty()){
-            throw new ResourceNotFoundException("No regions found in country " + country + ".");
-        }
-
+        Page<Region> regions = regionRepository.findByCountry(PageRequest.of(page, PAGE_SIZE), country);
+        checkReturnedPage(regions, "No regions found in country " + country + ".");
         return regions;
     }
     
@@ -146,4 +175,7 @@ public class RegionService {
     public void deleteAll() {
         regionRepository.deleteAll();
     }
+
+    //// END of crud operations ////
+    ////////////////////////////////
 }

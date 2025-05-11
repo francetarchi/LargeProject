@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.controller;
 import lombok.RequiredArgsConstructor;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.data.domain.Pageable;
 
 import com.wineadvisor.wineadvisor.service.RegionService;
 
@@ -43,15 +43,17 @@ public class RegionController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllRegions(Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(regionService.getAllRegions(pageable));
+    public ResponseEntity<?> getAllRegions(
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(regionService.getAllRegions(page));
     }
 
     @GetMapping("/countries/{country}")
     public ResponseEntity<?> getRegionsByCountry(
-        Pageable pageable,
+        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page,
         @PathVariable @NotBlank(message = "Country name cannot be blank.") String country) {
-            return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionsByCountry(pageable, country));
+            return ResponseEntity.status(HttpStatus.OK).body(regionService.getRegionsByCountry(page, country));
         }
 
     ////////////// PUT //////////////

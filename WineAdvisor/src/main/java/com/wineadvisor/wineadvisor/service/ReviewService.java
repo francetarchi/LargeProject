@@ -30,7 +30,7 @@ import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +46,8 @@ public class ReviewService {
     private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
 
+    /////////// COSTANTI ////////////
+    private static final int PAGE_SIZE = 20;
 
 
     /////////////////////////////////
@@ -116,36 +118,36 @@ public class ReviewService {
     }
 
     // Restituisce tutte le recensioni dalla collection "reviews" del database
-    public Page<Review> getAllReviews(Pageable pageable) {
-        Page<Review> reviews = reviewRepository.findAll(pageable);
+    public Page<Review> getAllReviews(Integer page) {
+        Page<Review> reviews = reviewRepository.findAll(PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(reviews, "No reviews found.");
         return reviews;
     }    
 
     // Restituisce tutte le recensioni di un vino specifico di un'annata specifica dalla collection "reviews" del database
-    public Page<Review> getReviewsByVintage(Pageable pageable, Long wineId, Integer vintageYear) {
-        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(pageable, wineId, vintageYear);
+    public Page<Review> getReviewsByVintage(Integer page, Long wineId, Integer vintageYear) {
+        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(PageRequest.of(page, PAGE_SIZE), wineId, vintageYear);
         checkReturnedPage(reviews, "Reviews for wine with id " + wineId + " and year " + vintageYear + " not found.");
         return reviews;
     }
 
     // Restituisce tutte le recensioni di un vino specifico dalla collection "reviews" del database
-    public Page<Review> getReviewsByWine(Pageable pageable, Long wineId) {
-        Page<Review> reviews = reviewRepository.findByWineId_Id(pageable, wineId);
+    public Page<Review> getReviewsByWine(Integer page, Long wineId) {
+        Page<Review> reviews = reviewRepository.findByWineId_Id(PageRequest.of(page, PAGE_SIZE), wineId);
         checkReturnedPage(reviews, "Reviews for wine with id " + wineId + " not found.");
         return reviews;
     }
 
     // Restituisce tutte le recensioni di un utente specifico dalla collection "reviews" del database
-    public Page<Review> getReviewsByUser(Pageable pageable, String username) {
-        Page<Review> reviews = reviewRepository.findByUserId_Username(pageable, username);
+    public Page<Review> getReviewsByUser(Integer page, String username) {
+        Page<Review> reviews = reviewRepository.findByUserId_Username(PageRequest.of(page, PAGE_SIZE), username);
         checkReturnedPage(reviews, "Reviews for user with username " + username + " not found.");
         return reviews;
     }
 
     // Restituisce tutte le recensioni di un utente specifico per un vino specifico dalla collection "reviews" del database
-    public Page<Review> getReviewsByUserAndWine(Pageable pageable, String username, Long wineId) {
-        Page<Review> reviews = reviewRepository.findByUserId_UsernameAndWineId_Id(pageable, username, wineId);
+    public Page<Review> getReviewsByUserAndWine(Integer page, String username, Long wineId) {
+        Page<Review> reviews = reviewRepository.findByUserId_UsernameAndWineId_Id(PageRequest.of(page, PAGE_SIZE), username, wineId);
         checkReturnedPage(reviews, "Reviews for user with username " + username + " and wine with id " + wineId + " not found.");
         return reviews;
     }
@@ -181,18 +183,18 @@ public class ReviewService {
     }
 
     // Restituisce le recensioni di un vino specifico in un range di rating specifico
-    public Page<Review> getReviewsByWineAndRatingRange(Pageable pageable, Long wineId, Double minRating, Double maxRating) {
+    public Page<Review> getReviewsByWineAndRatingRange(Integer page, Long wineId, Double minRating, Double maxRating) {
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
         
-        Page<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(pageable, wineId, minRating, maxRating);
+        Page<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(PageRequest.of(page, PAGE_SIZE), wineId, minRating, maxRating);
         checkReturnedPage(reviews, "No reviews found for wine with id " + wineId + " in the rating range [" + minRating + ", " + maxRating + "].");
         return reviews;
     }
 
     // Restituisce le recensioni di un'annata specifica per un determinato vino in un range di rating specifico
-    public Page<Review> getReviewsByVintageAndRatingRange(Pageable pageable, Long wineId, Integer year, Double minRating, Double maxRating) {
+    public Page<Review> getReviewsByVintageAndRatingRange(Integer page, Long wineId, Integer year, Double minRating, Double maxRating) {
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
@@ -200,7 +202,7 @@ public class ReviewService {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
         }
 
-        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(pageable, wineId, year, minRating, maxRating);
+        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(PageRequest.of(page, PAGE_SIZE), wineId, year, minRating, maxRating);
         checkReturnedPage(reviews, "No reviews found for wine with id " + wineId + " and year " + year + " in the rating range [" + minRating + ", " + maxRating + "].");
         return reviews;
     }

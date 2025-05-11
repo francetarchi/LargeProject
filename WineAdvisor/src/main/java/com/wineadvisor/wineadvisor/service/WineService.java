@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.bson.BsonNull;
 import org.bson.Document;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -65,9 +65,20 @@ public class WineService {
     private final CountryRepository countryRepository;
 
     private final IdCounterService idCounterService;
+
     private final MongoTemplate mongoTemplate;
 
+    /////////// COSTANTI ////////////
+    private static final int PAGE_SIZE = 20;
 
+
+    ////////////////////////////////
+    /////// PRIVATE METHODS ////////
+    ////////////////////////////////
+    
+    ////////////////////////////////
+    ///// Checking operations //////
+    
     // Controlla che la pagina ritornata dalla repo sia valida e che sia consistente rispetto alle opzioni di paginazione richieste dal client.
     private void checkReturnedPage(Page<Wine> page, String notFoundMessage) throws ResourceNotFoundException, BadRequestException {
         if (page.getTotalElements() == 0) {
@@ -78,12 +89,9 @@ public class WineService {
         }
     }
 
-
-
-
-    ////////////////////////////////
-    /////// PRIVATE METHODS ////////
-    ////////////////////////////////
+    /// END of checking operations //
+    /////////////////////////////////
+    
     
     /////////////////////////////////
     ///// Aggregation pipelines /////
@@ -114,7 +122,7 @@ public class WineService {
 
         Wine wine = new Wine();
         
-        wine.setId(idCounterService.generateSequence("wine"));
+        wine.setId(idCounterService.generateSequence("wines"));
         wine.setName(createWineDTO.getName());
         wine.setType(createWineDTO.getType());
         wine.setIsNatural(createWineDTO.getIsNatural());
@@ -195,15 +203,15 @@ public class WineService {
     }
 
     // Restituisce tutti i vini (con paginazione)
-    public Page<Wine> getAllWines(Pageable pageable) {
-        Page<Wine> wines = wineRepository.findAll(pageable);
+    public Page<Wine> getAllWines(Integer page) {
+        Page<Wine> wines = wineRepository.findAll(PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(wines, "No wines found.");
         return wines;
     }
 
     // Restituisce vini sulla base dei filtri di ricerca indicati 
     public Page<Wine> searchWines(
-        Pageable pageable,
+        Integer page,
         String name,
         String winery,
         String region,
@@ -214,7 +222,7 @@ public class WineService {
         Double max,
         Double minAverageRating) {
 
-        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(pageable, name, winery, region, country, type, grape, minAverageRating, min, max);
+        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(PageRequest.of(page, PAGE_SIZE), name, winery, region, country, type, grape, minAverageRating, min, max);
         checkReturnedPage(wines, "No wines found with the specified filters.");
         return wines;
     }
