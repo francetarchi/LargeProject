@@ -2,13 +2,10 @@ package com.wineadvisor.wineadvisor.model.users;
 
 import java.util.ArrayList;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wineadvisor.wineadvisor.model.users.fields.Address;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
+import com.wineadvisor.wineadvisor.model.users.fields.WineTip;
 import com.wineadvisor.wineadvisor.model.utils.Dob;
 import com.wineadvisor.wineadvisor.model.utils.Login;
 import com.wineadvisor.wineadvisor.model.utils.Name;
@@ -17,9 +14,13 @@ import com.wineadvisor.wineadvisor.model.utils.Registered;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 
 import org.bson.types.ObjectId;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 
 @Data
@@ -51,7 +52,11 @@ public class User {
     private ArrayList<Long> likes;
     private ArrayList<Long> dislikes;
 
+    @Field("wine_favorites")
     private ArrayList<WineFavorite> wineFavorites;
+
+    @Field("wine_tips")
+    private ArrayList<WineTip> wineTips;
     
 
 
@@ -110,6 +115,8 @@ public class User {
         this.setReviews(new ArrayList<>());
         this.setLikes(new ArrayList<>());
         this.setDislikes(new ArrayList<>());
+        this.setWineFavorites(new ArrayList<>());
+        this.setWineTips(new ArrayList<>());
         this.login.setPassword(encodedPassword);
 
         this.adjustFields('C');

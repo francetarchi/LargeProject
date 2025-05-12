@@ -13,6 +13,6 @@ import com.wineadvisor.wineadvisor.model.analytics.TopWinesRatingsType;
 public interface TopWinesRatingsTypeRepository extends MongoRepository<TopWinesRatingsType, ObjectId> {
     Optional<TopWinesRatingsType> findByType(String type);
 
-    @Query(value = "{ 'type' : ?0 }", fields = "{ 'type': 1, 'wines': { $slice: ?1 } }")
-    Optional<TopWinesRatingsType> findByTypeLimitN(String type, final Integer N);
+    @Query(value = "{ 'type' : ?0 }", fields = "{ 'type': 1, 'wines': { $slice: [ { $filter: { input: '$wines', as: 'wine', cond: { $lte: ['$$wine.prices_average', ?2] } } }, ?1 ] } }")
+    Optional<TopWinesRatingsType> findByTypeLimitN(String type, final Integer N, Double maxPrice);
 }
