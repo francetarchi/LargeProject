@@ -13,6 +13,6 @@ import com.wineadvisor.wineadvisor.model.analytics.TopVintagesQopType;
 public interface TopVintagesQopTypeRepository extends MongoRepository<TopVintagesQopType, ObjectId> {
     Optional<TopVintagesQopType> findByType(String type);
 
-    @Query(value = "{ 'type' : ?0 }", fields = "{ 'type': 1, 'vintages': { $slice: ?1 } }")
-    Optional<TopVintagesQopType> findByTypeLimitN(String type, final Integer N);
+    @Query(value = "{ 'type' : ?0 }", fields = "{ 'type': 1, 'vintages': { $slice: [ { $filter: { input: '$vintages', as: 'vintage', cond: { $lte: ['$$vintage.price', ?2] } } }, ?1 ] } }")
+    Optional<TopVintagesQopType> findByTypeLimitN(String type, final Integer N, Double maxPrice);
 }

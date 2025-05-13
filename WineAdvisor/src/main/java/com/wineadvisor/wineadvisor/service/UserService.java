@@ -1,7 +1,14 @@
 package com.wineadvisor.wineadvisor.service;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +47,8 @@ public class UserService {
     private final WineRepository wineRepository;
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
+
+    private final MongoTemplate mongoTemplate;
 
     /////////// COSTANTI ////////////
     private static final int PAGE_SIZE = 20;
@@ -124,6 +133,136 @@ public class UserService {
     }
 
     /// END of async. operations ///
+    ////////////////////////////////
+
+
+    ////////////////////////////////
+    //// Aggregation pipelines /////
+
+    // Aggiorna una volta a settimana la lista degli wineTips per ogni utente
+    // @Scheduled(cron = "00 32 22 12 * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 0 * * MON")
+    private void updateWineTipsPerUser() {
+        // Defining the name of the starting collection
+        final String SOURCE_COLLECTION_NAME = "users";
+
+        // Instantiating the aggregation pipeline
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for updating field \"wine_tips\" in collection \"users\".");
+        List<Document> pipeline = Arrays.asList(
+                //// Stage 1: Projecting initial fields
+                new Document("$project", 
+                new Document("username", "$login.username")
+                        .append("wine_favorites", "$wine_favorites")),
+                
+                //// Stage 2: Unwinding wine_favorites
+                new Document("$unwind",
+                        new Document("path", "$wine_favorites")),
+
+                //// Stage 3: Lookup to get wines details
+                new Document("$lookup",
+                        new Document("from", "wines")
+                                .append("localField", "wine_favorites")
+                                .append("foreignField", "_id")
+                                .append("as", "wine")),
+
+                //// Stage 4: Grouping by username and wine_style to delete wine_style duplicates
+                new Document("$group",
+                        new Document("_id",
+                                new Document("username", "$username")
+                                        .append("wine_style", "$wine_style"))
+                                .append("wine_id",
+                                        new Document("$first", "$wine_id"))),
+
+                //// Stage 5: Projecting necessary fields
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("username", "$_id.username")
+                                .append("wine_id", "$wine_id")
+                                .append("wine_style", "$_id.wine_style")),
+
+                //// Stage 6: Unwinding wine
+                new Document("$unwind",
+                        new Document("path", "$wine")),
+                        
+                //// Stage 7: Projecting necessary fields
+                new Document("$project",
+                        new Document("username", "$username")
+                                .append("wine_id", "$wine_favorites")
+                                .append("wine_style", "$wine.style.name")),
+
+                //// Stage 8: Lookup to get details about wines with a given style
+                new Document("$lookup",
+                        new Document("from", "wines")
+                                .append("localField", "wine_style")
+                                .append("foreignField", "style.name")
+                                .append("as", "tips_by_style")),
+                
+                //// Stage 9: Unwinding tips_by_style
+                new Document("$unwind",
+                        new Document("path", "$tips_by_style")),
+                        
+                //// Stage 10: Sorting on ratings_average and ratings_count
+                new Document("$sort",
+                        new Document("tips_by_style.statistics.ratings_average", -1L)
+                                .append("tips_by_style.statistics.ratings_count", -1L)),
+
+                //// Stage 11: Grouping by username to push wines for each user
+                new Document("$group",
+                        new Document("_id", "$username")
+                                .append("wine_tips",
+                                        new Document("$push",
+                                                new Document("wine_id", "$tips_by_style._id")
+                                                        .append("wine_name", "$tips_by_style.name")
+                                                        .append("wine_type", "$tips_by_style.type")
+                                                        .append("wine_style", "$tips_by_style.style.name")
+                                                        .append("wine_rating",
+                                                                "$tips_by_style.statistics.ratings_average")
+                                                        .append("wine_price_avg",
+                                                                new Document("$avg", "$tips_by_style.vintages.price"))
+                                                        .append("wine_image",
+                                                                new Document("$arrayElemAt", Arrays.asList(
+                                                                        new Document("$map",
+                                                                                new Document("input",
+                                                                                        "$tips_by_style.vintages")
+                                                                                        .append("as", "v")
+                                                                                        .append("in", "$$v.image")),
+                                                                        0L)))))),
+
+                //// Stage 12: Projecting final fields
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("login.username", "$_id")
+                                .append("wine_tips",
+                                        new Document("$slice", Arrays.asList("$wine_tips", 100L)))),
+                
+                //// Stage 13: Merging results into users collection
+                new Document("$merge",
+                        new Document("into", "users")
+                                .append("on", "login.username")
+                                .append("whenMatched", Arrays.asList(new Document("$set",
+                                        new Document("wine_tips", "$$new.wine_tips"))))
+                                .append("whenNotMatched", "discard"))
+            );
+        
+        // Ensuring existence of indexes needed for lookups
+        mongoTemplate
+            .indexOps(SOURCE_COLLECTION_NAME)
+            .ensureIndex(
+                new Index()
+                    .on("login.username", Sort.Direction.ASC)
+                    .unique()
+            );
+
+        System.out.println("--- INFO: Ensured UNIQUE index on field \"username\" for collection \"" + SOURCE_COLLECTION_NAME + "\".");
+        
+        // Executing the pipeline
+        System.out.println("--- INFO: Executing aggregation pipeline...");
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+
+        System.out.println("--- INFO: Field \"wine_tips\" in collection \"users\" updated successfully.\n\n");
+    }
+
+    //// END of aggr. pipelines ////
     ////////////////////////////////
     
 

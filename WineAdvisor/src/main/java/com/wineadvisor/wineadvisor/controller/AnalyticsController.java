@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wineadvisor.wineadvisor.service.AnalyticsService;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 
@@ -39,26 +40,30 @@ public class AnalyticsController {
     ////////////// GET //////////////
     @GetMapping("/top-vintages-our-qop-type/{type}")
     public ResponseEntity<?> getTopVintagesByOurQopPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByOurQopPerType(type));
+            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByOurQopPerType(type, maxPrice));
     }
 
     @GetMapping("/top-vintages-qop-type/{type}")
     public ResponseEntity<?> getTopVintagesByQopPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByQopPerType(type));
+            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByQopPerType(type, maxPrice));
     }
 
     @GetMapping("/top-vintages-ratings-type/{type}")
     public ResponseEntity<?> getTopVintagesByRatingsPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByRatingsPerType(type));
+            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByRatingsPerType(type, maxPrice));
     }
 
     @GetMapping("/top-wines-ratings-type/{type}")
     public ResponseEntity<?> getTopWinesByRatingsPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopWinesByRatingsPerType(type));
+            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopWinesByRatingsPerType(type, maxPrice));
     }
 
     @GetMapping("/top-wineries-ratings")

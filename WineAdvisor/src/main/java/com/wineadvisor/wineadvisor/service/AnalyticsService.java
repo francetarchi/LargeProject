@@ -299,7 +299,8 @@ public class AnalyticsService {
                 new Document("",
                         new Document("_id", 0L)
                                 .append("type", "")
-                                .append("vintages", "")),
+                                .append("vintages",
+                                        new Document("$slice", Arrays.asList("$vintages", 1000L)))),
                 
                 //// Stage 9: Merging the results into the materialized view
                 new Document("",
@@ -308,8 +309,7 @@ public class AnalyticsService {
                             // se un documento con lo stesso "type" esiste già nella materialized view, lo rimpiazzo
                             .append("whenMatched", "replace")
                             // se non esiste, lo inserisco
-                            .append("whenNotMatched", "insert")
-                            )
+                            .append("whenNotMatched", "insert"))
         );
 
         // Creating the materialized view
@@ -317,7 +317,7 @@ public class AnalyticsService {
         createTopVintagesByOurQoPPerType();
         
         // Executing the pipeline
-        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_OUR_QOP + "\".");
+        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_OUR_QOP + "\"...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_OUR_QOP + "\" updated successfully.\n\n");
@@ -401,7 +401,8 @@ public class AnalyticsService {
                 new Document("",
                         new Document("_id", 0L)
                                 .append("type", "")
-                                .append("vintages", "")),
+                                .append("vintages", 
+                                        new Document("$slice", Arrays.asList("$vintages", 1000L)))), 
                 
                 //// Stage 9: Merging the results into the materialized view
                 new Document("",
@@ -410,8 +411,7 @@ public class AnalyticsService {
                             // se un documento con lo stesso "type" esiste già nella materialized view, lo rimpiazzo
                             .append("whenMatched", "replace")
                             // se non esiste, lo inserisco
-                            .append("whenNotMatched", "insert")
-                            )
+                            .append("whenNotMatched", "insert"))
         );
 
         // Creating the materialized view
@@ -419,7 +419,7 @@ public class AnalyticsService {
         createTopVintagesByQoPPerType();
         
         // Executing the pipeline
-        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_QOP + "\".");
+        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_QOP + "\"...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_QOP + "\" updated successfully.\n\n");
@@ -474,21 +474,23 @@ public class AnalyticsService {
                 new Document("",
                         new Document("_id", 0L)
                                 .append("type", "")
-                                .append("vintages", "")),
+                                .append("vintages", 
+                                        new Document("$slice", Arrays.asList("$vintages", 1000L)))), 
                                 
                 //// Stage 6: Merging the results into the materialized view
                 new Document("",
                         new Document("into", TOP_VINTAGES_RATINGS)
                                 .append("on", "type")
                                 .append("whenMatched", "replace")
-                                .append("whenNotMatched", "insert")));
+                                .append("whenNotMatched", "insert"))
+        );
 
         // Creating the materialized view
         System.out.println("--- INFO: Creating empty materialized view \"" + TOP_VINTAGES_RATINGS + "\".");
         createTopVintagesByRatingsPerType();
         
         // Executing the pipeline
-        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_RATINGS + "\".");
+        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_RATINGS + "\"...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_RATINGS + "\" updated successfully.\n\n");
@@ -540,21 +542,23 @@ public class AnalyticsService {
                 new Document("",
                         new Document("_id", 0L)
                                 .append("type", "")
-                                .append("wines", "")),
+                                .append("wines", 
+                                        new Document("$slice", Arrays.asList("$wines", 1000L)))), 
 
                 //// Stage 5: Merging the results into the materialized view
                 new Document("",
                         new Document("into", TOP_WINES_RATINGS)
                                 .append("on", "type")
                                 .append("whenMatched", "replace")
-                                .append("whenNotMatched", "insert")));
+                                .append("whenNotMatched", "insert"))
+        );
 
         // Creating the materialized view
         System.out.println("--- INFO: Creating empty materialized view \"" + TOP_WINES_RATINGS + "\".");
         createTopWinesByRatingsPerType();
         
         // Executing the pipeline
-        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINES_RATINGS + "\".");
+        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINES_RATINGS + "\"...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_WINES_RATINGS + "\" updated successfully.\n\n");
@@ -613,14 +617,15 @@ public class AnalyticsService {
                         new Document("into", TOP_WINERIES_RATINGS)
                                 .append("on", "winery_username")
                                 .append("whenMatched", "replace")
-                                .append("whenNotMatched", "insert")));
+                                .append("whenNotMatched", "insert"))
+        );
 
         // Creating the materialized view
         System.out.println("--- INFO: Creating empty materialized view \"" + TOP_WINERIES_RATINGS + "\".");
         createTopWineriesByWineRatings();
         
         // Executing the pipeline
-        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINERIES_RATINGS + "\".");
+        System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINERIES_RATINGS + "\"...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_WINERIES_RATINGS + "\" updated successfully.\n\n");
@@ -640,8 +645,8 @@ public class AnalyticsService {
 
     /// CREATE operations ///
     // Restituisce la top TOP_LENGTH vintages per qualità/prezzo (calcolati secondo la nostra formula) per la tipologia di vino richiesta come parametro (rossi, bianchi, rosati...).
-    public TopVintagesOurQopType getTopVintagesByOurQopPerType(String type) {
-        TopVintagesOurQopType topVintagesOurQopType = topVintagesOurQopTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH).orElseThrow(
+    public TopVintagesOurQopType getTopVintagesByOurQopPerType(String type, Double maxPrice) {
+        TopVintagesOurQopType topVintagesOurQopType = topVintagesOurQopTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH, maxPrice).orElseThrow(
             () -> new ResourceNotFoundException("Top vintages by our qop for type: \"" + type + "\" not found.")
         );
 
@@ -649,8 +654,8 @@ public class AnalyticsService {
     }
 
     // Restituisce la top TOP_LENGTH vintages per qualità/prezzo (calcolati secondo la formula "base") per la tipologia di vino richiesta come parametro (rossi, bianchi, rosati...).
-    public TopVintagesQopType getTopVintagesByQopPerType(String type) {
-        TopVintagesQopType topVintagesQopType = topVintagesQopTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH).orElseThrow(
+    public TopVintagesQopType getTopVintagesByQopPerType(String type, Double maxPrice) {
+        TopVintagesQopType topVintagesQopType = topVintagesQopTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH, maxPrice).orElseThrow(
             () -> new ResourceNotFoundException("Top vintages by qop for type: \"" + type + "\" not found.")
         );
 
@@ -658,8 +663,8 @@ public class AnalyticsService {
     }
 
     // Restituisce la top TOP_LENGTH vintages per valutazione media per la tipologia di vino richiesta come parametro (rossi, bianchi, rosati...).
-    public TopVintagesRatingsType getTopVintagesByRatingsPerType(String type) {
-        TopVintagesRatingsType topVintagesRatingsType = topVintagesRatingsTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH).orElseThrow(
+    public TopVintagesRatingsType getTopVintagesByRatingsPerType(String type, Double maxPrice) {
+        TopVintagesRatingsType topVintagesRatingsType = topVintagesRatingsTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH, maxPrice).orElseThrow(
             () -> new ResourceNotFoundException("Top vintages by ratings for type: \"" + type + "\" not found.")
         );
 
@@ -667,15 +672,15 @@ public class AnalyticsService {
     }
 
     // Restituisce la top TOP_LENGTH wines per valutazione media per la tipologia di vino richiesta come parametro (rossi, bianchi, rosati...).
-    public TopWinesRatingsType getTopWinesByRatingsPerType(String type) {
-        TopWinesRatingsType topWinesRatingsType = topWinesRatingsTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH).orElseThrow(
+    public TopWinesRatingsType getTopWinesByRatingsPerType(String type, Double maxPrice) {
+        TopWinesRatingsType topWinesRatingsType = topWinesRatingsTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH, maxPrice).orElseThrow(
             () -> new ResourceNotFoundException("Top wines by ratings for type: \"" + type + "\" not found.")
         );
 
         return topWinesRatingsType;
     }
 
-    // Restituisce la top TOP_LENGTH wineries per valutazione media dei propri vini, senza tener conto della tipologia di vino.
+    // Restituisce la top 100 wineries per valutazione media dei propri vini, senza tener conto della tipologia di vino.
     public List<TopWineriesRatings> getTopWineriesByWinesRatings() {
         List<TopWineriesRatings> topWineriesRatings = topWineriesRatingsRepository.findFirst100By();
         if (topWineriesRatings.isEmpty()) {
@@ -710,7 +715,7 @@ public class AnalyticsService {
         return vintages;
     }
 
-    // Restituisce la top 100 vintages of the month del country dell'utente, (aggregation) contenuta in countries
+    // Restituisce la top 100 vintages of the month della country dell'utente, (aggregation) contenuta in countries
     public Page<VintageEmbedded> getTop100VintagesOfTheMonth(String username, Integer page) {
         Optional<User> user_to_find = userRepository.findByLogin_Username(username);
         String country_name = "";
