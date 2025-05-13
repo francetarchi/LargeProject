@@ -12,48 +12,38 @@ import com.wineadvisor.wineadvisor.model.wines.Wine;
 
 @Repository
 public interface WineRepository extends MongoRepository<Wine, Long> {
-    // Metodo per trovare un vino in base al suo id e all'annata
+
     Optional<Wine> findByIdAndVintages_Year(Long id, Integer year);
 
-    // Metodo per trovare un vino in base all'id di una recensione
     Optional<Wine> findByVintages_Reviews_ReviewId(Long id);
 
-    // Metodo per trovare un vino in base ad un range di prezzi
     Page<Wine> findByVintages_PriceBetween(Pageable pageable, Double min_price, Double max_price);
 
-    // Metodo per trovare un vino in base allo username della cantina
     Page<Wine> findByWinery_Username(Pageable pageable, String username);
 
-    // Metodi per trovare un vino in base al nome della region
     Page<Wine> findByRegion_Name(Pageable pageable, String region);
     ArrayList<Wine> findByRegion_Name(String region);
 
-    // Metodo per trovare un vino in base al rating medio delle recensioni
     Page<Wine> findByStatistics_RatingsAverageGreaterThanEqual(Pageable pageable, Double minRating);
 
-    // Metodo per trovare un vino in base ad una keyword nel nome (case insensitive)
     Page<Wine> findByNameContainingIgnoreCase(Pageable pageable, String keyword);
 
-    // Metodo per trovare un vino in base al nome del vitigno
     Page<Wine> findByStyle_Grapes_Name(Pageable pageable, String grapeName);
 
-    // Metodo per trovare un vino in base al nome del country
     Page<Wine> findByRegion_Country_Name(Pageable pageable, String country);
     ArrayList<Wine> findByRegion_Country_Name(String country);
 
-    // Metodo per trovare un vino in base al tipo
     Page<Wine> findByType(Pageable pageable, String type);
     
-    // Metodo per trovare un vino in base a id del vino e anno della vintage
     Optional<Wine> findByVintages(Long id, Integer year);
 
-    // Metodo per trovare un vino in base a username della cantina
     ArrayList<Wine> findByWinery_Username(String username);
 
-    // Metodo per trovare un vino in base a id del vino e username della cantina
     Optional<Wine> findByIdAndWinery_Username(Long wineId, String username);
 
     Page<Wine> findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(
             Pageable pageable, String name, String winery, String region, String country, String type, String grape,
             Double minAverageRating, Double min, Double max);
+
+    ArrayList<Wine> findByStyle_Name(String style_name);
 }

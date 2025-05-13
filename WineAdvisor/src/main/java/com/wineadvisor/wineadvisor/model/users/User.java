@@ -52,8 +52,6 @@ public class User {
     private ArrayList<Long> dislikes;
 
     private ArrayList<WineFavorite> wineFavorites;
-    
-
 
     ///////////// METODI PRIVATI /////////////
     // Corregge i valori delle date (data di registrazione e data di nascita)

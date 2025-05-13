@@ -2,10 +2,10 @@ package com.wineadvisor.wineadvisor.model.wines;
 
 import java.util.ArrayList;
 
+import com.wineadvisor.wineadvisor.model.utils.Taste;
 import com.wineadvisor.wineadvisor.model.wines.fields.RegionEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Statistics;
-import com.wineadvisor.wineadvisor.model.wines.fields.Style;
-import com.wineadvisor.wineadvisor.model.wines.fields.Taste;
+import com.wineadvisor.wineadvisor.model.wines.fields.StyleEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.model.wines.fields.WineryEmbedded;
 
@@ -43,7 +43,7 @@ public class Wine {
 
     private Taste taste;
 
-    private Style style;
+    private StyleEmbedded style;
     
     private ArrayList<Vintage> vintages;
 

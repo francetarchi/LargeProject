@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.wines.fields;
+package com.wineadvisor.wineadvisor.model.utils;
 
 import org.springframework.data.mongodb.core.mapping.Field;
 

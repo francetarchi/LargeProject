@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.DTO.wines;
+package com.wineadvisor.wineadvisor.DTO.styles;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -9,8 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NewGrapeDTO {
+public class FoodDTO {
     @NotBlank(message = "Name is mandatory.")
-    @Schema(description = "Grape name", example = "Sangiovese")
+    @Schema(description = "Name of the food", example = "Pasta")
     private String name;
+
+    @Schema(description = "Image URL of the food", example = "https://example.com/pasta.jpg")
+    private String image;
 }

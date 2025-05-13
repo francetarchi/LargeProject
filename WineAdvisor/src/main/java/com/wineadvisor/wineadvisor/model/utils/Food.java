@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.model.wines.fields;
+package com.wineadvisor.wineadvisor.model.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Taste {
-    private Structure structure;
+public class Food {
+    private String name;
+    private String image;
 }

@@ -3,7 +3,6 @@ package com.wineadvisor.wineadvisor.DTO.wines;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -28,11 +27,6 @@ public class CreateWineDTO {
     @Field("is_natural")
     private Boolean isNatural;
 
-    @Schema(description = "Taste info of the new wine")
-    @Valid
-    private NewTasteDTO taste;
-
-    @Schema(description = "Style info of the new wine")
-    @Valid
-    private NewStyleDTO style;
+    @Schema(description = "Style name of the new wine")
+    private String style;
 }

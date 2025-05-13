@@ -1,9 +1,10 @@
-package com.wineadvisor.wineadvisor.DTO.wines;
+package com.wineadvisor.wineadvisor.DTO.styles;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.PositiveOrZero;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NewStructureDTO {
+public class TasteDTO {
     @PositiveOrZero(message = "Acidity must be a positive number.")
     @DecimalMin(value = "0.0", inclusive = true, message = "Acidity must be at least 0.")
     @DecimalMax(value = "5.0", inclusive = true, message = "Acidity must be at most 5.")

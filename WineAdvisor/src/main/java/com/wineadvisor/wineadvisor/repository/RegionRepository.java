@@ -12,9 +12,15 @@ import com.wineadvisor.wineadvisor.model.regions.Region;
 
 @Repository
 public interface RegionRepository extends MongoRepository<Region, ObjectId> {
+
     Optional<Region> findByName(String name);
+
     Optional<Region> findByNameAndCountry(String name, String country);
+
     Page<Region> findByCountry(Pageable pageable, String country);
+
     void deleteByName(String name);
+
     void deleteAllByCountry(String country);
+    
 }

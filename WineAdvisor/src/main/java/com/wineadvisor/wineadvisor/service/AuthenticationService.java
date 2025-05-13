@@ -91,12 +91,15 @@ public class AuthenticationService implements UserDetailsService {
         UserDetails userDetails = null;
         Boolean accountFound = false;
         if (user != null) {
+
             userDetails = buildUserDetails(user);
             accountFound = true;
         } else if (winery != null) {
+
             userDetails = buildUserDetails(winery);
             accountFound = true;
         } else if (admin != null) {
+
             userDetails = buildUserDetails(admin);
             accountFound = true;
         }

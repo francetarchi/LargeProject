@@ -4,6 +4,7 @@ import org.bson.BsonNull;
 import org.bson.Document;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.time.Instant;
@@ -20,30 +21,25 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.mongodb.client.AggregateIterable;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
+import com.wineadvisor.wineadvisor.model.styles.Style;
 import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wineries.Winery;
 import com.wineadvisor.wineadvisor.model.countries.Country;
 import com.wineadvisor.wineadvisor.model.wines.Wine;
-import com.wineadvisor.wineadvisor.model.wines.fields.BaselineStructure;
 import com.wineadvisor.wineadvisor.model.wines.fields.CountryEmbedded;
-import com.wineadvisor.wineadvisor.model.wines.fields.Food;
-import com.wineadvisor.wineadvisor.model.wines.fields.Grape;
 import com.wineadvisor.wineadvisor.model.wines.fields.RegionEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Statistics;
-import com.wineadvisor.wineadvisor.model.wines.fields.Structure;
-import com.wineadvisor.wineadvisor.model.wines.fields.Style;
-import com.wineadvisor.wineadvisor.model.wines.fields.Taste;
+import com.wineadvisor.wineadvisor.model.wines.fields.StyleEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.model.wines.fields.WineryEmbedded;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
+import com.wineadvisor.wineadvisor.repository.StyleRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.repository.CountryRepository;
 import com.wineadvisor.wineadvisor.DTO.wines.CreateWineDTO;
-import com.wineadvisor.wineadvisor.DTO.wines.NewFoodDTO;
-import com.wineadvisor.wineadvisor.DTO.wines.NewGrapeDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.NewVintageDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateWineDTO;
@@ -66,6 +62,7 @@ public class WineService {
     private final UserRepository userRepository;
     private final WineryRepository wineryRepository;
     private final CountryRepository countryRepository;
+    private final StyleRepository styleRepository;
 
     private final IdCounterService idCounterService;
 
@@ -272,41 +269,22 @@ public class WineService {
         wine.setType(createWineDTO.getType());
         wine.setIsNatural(createWineDTO.getIsNatural());
 
-        wine.setTaste(new Taste());
-        wine.getTaste().setStructure(new Structure());
-        wine.getTaste().getStructure().setAcidity(createWineDTO.getTaste().getStructure().getAcidity());
-        wine.getTaste().getStructure().setFizziness(createWineDTO.getTaste().getStructure().getFizziness());
-        wine.getTaste().getStructure().setIntensity(createWineDTO.getTaste().getStructure().getIntensity());
-        wine.getTaste().getStructure().setSweetness(createWineDTO.getTaste().getStructure().getSweetness());
-        wine.getTaste().getStructure().setTannin(createWineDTO.getTaste().getStructure().getTannin());
-        
-        wine.setStyle(new Style());
-        wine.getStyle().setName(createWineDTO.getStyle().getName());
-        wine.getStyle().setDescription(createWineDTO.getStyle().getDescription());
-        wine.getStyle().setInterestingFacts(createWineDTO.getStyle().getInterestingFacts());
-        wine.getStyle().setBody(createWineDTO.getStyle().getBody());
-        wine.getStyle().setAcidity(createWineDTO.getStyle().getAcidity());
-        wine.getStyle().setFood(new ArrayList<Food>());
-        for (NewFoodDTO food : createWineDTO.getStyle().getFood()){
-            Food foodToAdd = new Food();
-            foodToAdd.setName(food.getName());
-            foodToAdd.setImage(food.getImage());
-            wine.getStyle().getFood().add(foodToAdd);
-        }
-        wine.getStyle().setGrapes(new ArrayList<Grape>());
-        for (NewGrapeDTO grape : createWineDTO.getStyle().getGrapes()){
-            Grape grapeToAdd = new Grape();
-            grapeToAdd.setName(grape.getName());
-            grapeToAdd.setWinesCount(0);
-            wine.getStyle().getGrapes().add(grapeToAdd);
-        }
+        wine.setTaste(null);
 
-        wine.getStyle().setBaselineStructure(new BaselineStructure());
-        wine.getStyle().getBaselineStructure().setAcidity(createWineDTO.getStyle().getBaselineStructure().getAcidity());
-        wine.getStyle().getBaselineStructure().setFizziness(createWineDTO.getStyle().getBaselineStructure().getFizziness());
-        wine.getStyle().getBaselineStructure().setIntensity(createWineDTO.getStyle().getBaselineStructure().getIntensity());
-        wine.getStyle().getBaselineStructure().setSweetness(createWineDTO.getStyle().getBaselineStructure().getSweetness());
-        wine.getStyle().getBaselineStructure().setTannin(createWineDTO.getStyle().getBaselineStructure().getTannin());
+        Optional<Style> style_to_find = styleRepository.findByName(createWineDTO.getStyle());
+        if(style_to_find.isEmpty()) {
+            wine.setStyle(null);
+        } else {
+            Style style = style_to_find.get();
+
+            wine.setStyle(new StyleEmbedded());
+            wine.getStyle().setName(style.getName());
+            wine.getStyle().setDescription(style.getDescription());
+            wine.getStyle().setInterestingFacts(style.getInterestingFacts());
+            wine.getStyle().setFood(style.getFood());
+            wine.getStyle().setGrapes(style.getGrapes());
+        }
+        
 
         wine.setVintages(new ArrayList<Vintage>());
         wine.setStatistics(new Statistics());
@@ -391,44 +369,19 @@ public class WineService {
                 wine.setType(updatedWine.getType());
                 wine.setIsNatural(updatedWine.getIsNatural());
 
-                wine.getTaste().getStructure().setAcidity(updatedWine.getTaste().getStructure().getAcidity());
-                wine.getTaste().getStructure().setFizziness(updatedWine.getTaste().getStructure().getFizziness());
-                wine.getTaste().getStructure().setIntensity(updatedWine.getTaste().getStructure().getIntensity());
-                wine.getTaste().getStructure().setSweetness(updatedWine.getTaste().getStructure().getSweetness());
-                wine.getTaste().getStructure().setTannin(updatedWine.getTaste().getStructure().getTannin());
+                Optional<Style> style_to_find = styleRepository.findByName(updatedWine.getStyle());
+                if(style_to_find.isEmpty()) {
+                    wine.setStyle(null);
+                } else {
+                    Style style = style_to_find.get();
 
-                wine.getStyle().setName(updatedWine.getStyle().getName());
-                wine.getStyle().setDescription(updatedWine.getStyle().getDescription());
-                wine.getStyle().setInterestingFacts(updatedWine.getStyle().getInterestingFacts());
-                wine.getStyle().setBody(updatedWine.getStyle().getBody());
-                wine.getStyle().setAcidity(updatedWine.getStyle().getAcidity());
-                
-                for (NewFoodDTO food : updatedWine.getStyle().getFood()){
-                    // Controllo che il cibo non esista già
-                    if (wine.getStyle().getFood().stream().anyMatch(f -> f.getName().equals(food.getName()))){
-                        continue;
-                    }
-                    Food foodToAdd = new Food();
-                    foodToAdd.setName(food.getName());
-                    foodToAdd.setImage(food.getImage());
-                    wine.getStyle().getFood().add(foodToAdd);
+                    wine.setStyle(new StyleEmbedded());
+                    wine.getStyle().setName(style.getName());
+                    wine.getStyle().setDescription(style.getDescription());
+                    wine.getStyle().setInterestingFacts(style.getInterestingFacts());
+                    wine.getStyle().setFood(style.getFood());
+                    wine.getStyle().setGrapes(style.getGrapes());
                 }
-                
-                for (NewGrapeDTO grape : updatedWine.getStyle().getGrapes()){
-                    // Controllo che il vitigno non esista già
-                    if (wine.getStyle().getGrapes().stream().anyMatch(g -> g.getName().equals(grape.getName()))){
-                        continue;
-                    }
-                    Grape grapeToAdd = new Grape();
-                    grapeToAdd.setName(grape.getName());
-                    grapeToAdd.setWinesCount(0);
-                    wine.getStyle().getGrapes().add(grapeToAdd);
-                }
-                wine.getStyle().getBaselineStructure().setAcidity(updatedWine.getStyle().getBaselineStructure().getAcidity());
-                wine.getStyle().getBaselineStructure().setFizziness(updatedWine.getStyle().getBaselineStructure().getFizziness());
-                wine.getStyle().getBaselineStructure().setIntensity(updatedWine.getStyle().getBaselineStructure().getIntensity());
-                wine.getStyle().getBaselineStructure().setSweetness(updatedWine.getStyle().getBaselineStructure().getSweetness());
-                wine.getStyle().getBaselineStructure().setTannin(updatedWine.getStyle().getBaselineStructure().getTannin());
 
                 // Devo aggiornare il nome anche nelle reviews embedded nella collection users
                 ArrayList<User> users = userRepository.findByReviews_WineId_Id(updatedWine.getWineId());

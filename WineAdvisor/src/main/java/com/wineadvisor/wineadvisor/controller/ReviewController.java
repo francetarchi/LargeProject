@@ -47,7 +47,7 @@ public class ReviewController {
     ////////////// POST //////////////
     @PostMapping
     @Secured({ "ROLE_USER" })
-    public ResponseEntity<?> addReview(@RequestBody @Valid CreateReviewDTO review) {        
+    public ResponseEntity<?> addReview(@RequestBody @Valid CreateReviewDTO review) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Review savedReview = reviewService.addReview(username, review);
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
