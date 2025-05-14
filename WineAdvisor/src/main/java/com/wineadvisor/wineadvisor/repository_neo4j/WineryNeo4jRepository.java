@@ -28,6 +28,32 @@ public class WineryNeo4jRepository {
         .run();
     }
 
+    public Map<String, Object> findWineryByUsername(String username) {
+        return neo4jClient.query("""
+                MATCH (w:Winery {username: $username})
+                RETURN w.username AS username, w.name AS name, w.thumbnail AS thumbnail
+            """)
+            .bind(username).to("username")
+            .fetch()
+            .one()
+            .orElse(null);
+    }
+
+    public void updateWinery(String username, String name, String thumbnail) {
+        neo4jClient.query("""
+                MATCH (w:Winery {username: $username})
+                SET w.name = $name,
+                    w.thumbnail = $thumbnail
+            """)
+            .bindAll(Map.of(
+                "username", username,
+                "name", name,
+                "thumbnail", thumbnail
+            ))
+            .run();
+    }
+
+
     public void deleteWineryByUsername(String username) {
         neo4jClient.query("""
             MATCH (w:Winery {username: $username})

@@ -20,7 +20,7 @@ import com.wineadvisor.wineadvisor.repository.WineryRepository;
 import com.wineadvisor.wineadvisor.repository_neo4j.WineryNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -219,6 +219,9 @@ public class WineryService {
         return winery;
     }
     
+    public Map<String, Object> getWineryFromGraph(String username) {
+        return wineryNeo4jRepository.findWineryByUsername(username);
+    }
 
     /// UPDATE operations ///
     // Cerca il documento di una winery con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
@@ -343,6 +346,10 @@ public class WineryService {
             );
     }
 
+    public void updateWineryInGraph(String username, String name, String thumbnail) {
+        wineryNeo4jRepository.updateWinery(username, name, thumbnail);
+    }
+
     /// DELETE operations ///
     // Elimina una winery con un determinato username
     public void deleteWinery(String targetUsername) throws ResourceNotFoundException {
@@ -356,6 +363,10 @@ public class WineryService {
         deleteWineByWineryUsername(targetUsername);
         
         wineryRepository.delete(targetWinery);
+    }
+
+    public void deleteWineryFromGraph(String username) {
+        wineryNeo4jRepository.deleteWineryByUsername(username);
     }
 
     //// END of crud operations ////
