@@ -31,7 +31,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -94,6 +94,15 @@ public class UserController {
     public ResponseEntity<?> getUserByUsername(
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserByUsername(username));
+    }
+
+    @GetMapping("/neo4j/{username}")
+    public ResponseEntity<Map<String, Object>> getUserFromGraph(@PathVariable String username) {
+        Map<String, Object> result = userService.getUserFromGraph(username);
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
     }
 
 
@@ -217,7 +226,19 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
-    
+    @PutMapping("/neo4j/{username}")
+    public ResponseEntity<Void> updateUserInGraph(
+            @PathVariable String username,
+            @RequestBody Map<String, String> body) {
+        userService.updateUserInGraph(
+            username,
+            body.get("firstName"),
+            body.get("lastName"),
+            body.get("thumbnail")
+        );
+        return ResponseEntity.ok().build();
+    }
+
     ////////////// DELETE //////////////
     @DeleteMapping
     // TODO: Uncomment the following if you want to add admin authentication
@@ -237,4 +258,11 @@ public class UserController {
         userService.deleteUser(username);
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
+
+    @DeleteMapping("/neo4j/{username}")
+    public ResponseEntity<Void> deleteUserFromGraph(@PathVariable String username) {
+        userService.deleteUserFromGraph(username);
+        return ResponseEntity.noContent().build();
+    }
 }
+

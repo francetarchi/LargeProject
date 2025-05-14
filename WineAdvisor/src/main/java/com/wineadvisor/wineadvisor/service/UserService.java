@@ -21,9 +21,10 @@ import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
+import com.wineadvisor.wineadvisor.repository_neo4j.UserNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
+    private final UserNeo4jRepository userNeo4jRepository; // inietto il repository per il neo4j
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
@@ -299,6 +301,14 @@ public class UserService {
         User newUser = createUserDTO.toUser();
         newUser.adjustFieldsForCreation(passwordEncoder.encode(createUserDTO.getPasswordDTO().getNewPass()));
 
+        userNeo4jRepository.createUser( //salvo per il neo4j
+            newUser.getLogin().getUsername(),
+            newUser.getName().getFirst(),
+            newUser.getName().getLast(),
+            newUser.getPicture().getThumbnail()
+        );
+
+
         return userRepository.save(newUser);
     }
     
@@ -342,6 +352,11 @@ public class UserService {
 
         return user;
     }
+
+    public Map<String, Object> getUserFromGraph(String username) {
+        return userNeo4jRepository.findUserByUsername(username);
+    }
+
 
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
@@ -661,6 +676,10 @@ public class UserService {
             );
     }
 
+    public void updateUserInGraph(String username, String firstName, String lastName, String thumbnail) {
+        userNeo4jRepository.updateUser(username, firstName, lastName, thumbnail);
+    }
+
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database
@@ -684,6 +703,11 @@ public class UserService {
 
         userRepository.delete(targetUser);
     }
+
+    public void deleteUserFromGraph(String username) {
+        userNeo4jRepository.deleteUserByUsername(username);
+    }
+
 
     //// END of crud operations ////
     ////////////////////////////////

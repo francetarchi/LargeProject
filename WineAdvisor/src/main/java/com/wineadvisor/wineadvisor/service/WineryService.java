@@ -17,6 +17,7 @@ import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
+import com.wineadvisor.wineadvisor.repository_neo4j.WineryNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,7 @@ public class WineryService {
     private final WineRepository wineRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final WineryNeo4jRepository wineryNeo4jRepository;
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
@@ -179,6 +181,13 @@ public class WineryService {
         
         Winery newWinery = createWineryDTO.toWinery();
         newWinery.adjustFieldsForCreation(passwordEncoder.encode(createWineryDTO.getPasswordDTO().getNewPass()));
+
+        wineryNeo4jRepository.createWinery(
+            newWinery.getLogin().getUsername(),
+            newWinery.getName(),
+            newWinery.getPicture().getThumbnail()
+        );
+
 
         return wineryRepository.save(newWinery);
 	}
