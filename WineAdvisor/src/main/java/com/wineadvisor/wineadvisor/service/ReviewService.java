@@ -25,6 +25,8 @@ import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
+import com.wineadvisor.wineadvisor.repository_neo4j.ReviewNeo4jRepository;
+
 import com.mongodb.client.AggregateIterable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,7 +38,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +52,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
+    private final ReviewNeo4jRepository reviewNeo4jRepository;
 
 
 
@@ -374,6 +378,19 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
+    public void createGraphReviewsForUser(String username, List<Map<String, Object>> reviews) {
+        for (Map<String, Object> review : reviews) {
+            reviewNeo4jRepository.createReviewForUser(
+                username,
+                (String) review.get("text"),
+                ((Number) review.get("rating")).doubleValue(),
+                (String) review.get("wineName"),
+                (Integer) review.get("wineYear"),
+                (String) review.get("wineImage"),
+                (String) review.get("userThumbnail")
+            );
+        }
+    }
 
     /// READ operations ///
     // Cerca una recensione per id nella collection "reviews" del database
@@ -499,6 +516,10 @@ public class ReviewService {
         return new ArrayList<>(popularReviews.subList(0, limit));
     }
 
+    public List<Map<String, Object>> getGraphReviewsByUser(String username) {
+        return reviewNeo4jRepository.getReviewsByUser(username);
+    }
+
     
     /// UPDATE operations ///
     // Aggiorna una recensione nella collection "reviews" del db
@@ -546,6 +567,11 @@ public class ReviewService {
                     return reviewRepository.save(review);
                 }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
     }
+
+    public void updateGraphReview(String username, String wineName, int wineYear, String newText, double newRating) {
+        reviewNeo4jRepository.updateReview(username, wineName, wineYear, newText, newRating);
+    }
+
 
     
     /// DELETE operations ///
@@ -698,6 +724,10 @@ public class ReviewService {
     // Cancella tutte le recensioni
     public void deleteAllReviews() {
         reviewRepository.deleteAll();
+    }
+
+    public void deleteGraphReviewsForUser(String username) {
+        reviewNeo4jRepository.deleteAllReviewsByUser(username);
     }
 
     //// END of crud operations ////

@@ -29,7 +29,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -52,6 +53,14 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/review/" + savedReview.getId()).body(savedReview);
     }
 
+    @PostMapping("/neo4j/{username}")
+    public ResponseEntity<Void> createUserReviewsInGraph(
+            @PathVariable String username,
+            @RequestBody List<Map<String, Object>> reviews) {
+        reviewService.createGraphReviewsForUser(username, reviews);
+        return ResponseEntity.ok().build();
+    }
+
     ////////////// PUT //////////////
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -67,6 +76,21 @@ public class ReviewController {
 
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, updatedReview));
     }
+
+    @PutMapping("/neo4j/{username}")
+    public ResponseEntity<Void> updateGraphReview(
+            @PathVariable String username,
+            @RequestBody Map<String, Object> payload) {
+
+        String wineName = (String) payload.get("wineName");
+        int wineYear = (int) payload.get("wineYear");
+        String newText = (String) payload.get("text");
+        double newRating = ((Number) payload.get("rating")).doubleValue();
+
+        reviewService.updateGraphReview(username, wineName, wineYear, newText, newRating);
+        return ResponseEntity.ok().build();
+    }
+
 
     ////////////// GET //////////////
     @GetMapping("/{id}")
@@ -213,6 +237,13 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
 
+    @GetMapping("/neo4j/{username}")
+    public ResponseEntity<List<Map<String, Object>>> getGraphReviewsByUser(@PathVariable String username) {
+        List<Map<String, Object>> reviews = reviewService.getGraphReviewsByUser(username);
+        return ResponseEntity.ok(reviews);
+    }
+
+
     ////////////// DELETE //////////////
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -266,5 +297,11 @@ public class ReviewController {
     public ResponseEntity<?> deleteAllReviews() {
         reviewService.deleteAllReviews();
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
+    }
+
+    @DeleteMapping("/neo4j/{username}")
+    public ResponseEntity<Void> deleteUserReviewsFromGraph(@PathVariable String username) {
+        reviewService.deleteGraphReviewsForUser(username);
+        return ResponseEntity.noContent().build();
     }
 }
