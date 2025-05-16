@@ -105,4 +105,19 @@ public class ReviewNeo4jRepository {
         .bind(username).to("username")
         .run();
     }
+
+    public void deleteReviewByUsernameAndWine(String username, String wineName, int wineYear) {
+    neo4jClient.query("""
+        MATCH (u:User {username: $username})-[:WROTE]->(r:Review {wineName: $wineName, wineYear: $wineYear})
+        DETACH DELETE r
+    """)
+    .bindAll(Map.of(
+        "username", username,
+        "wineName", wineName,
+        "wineYear", wineYear
+    ))
+    .run();
+}
+
+
 }

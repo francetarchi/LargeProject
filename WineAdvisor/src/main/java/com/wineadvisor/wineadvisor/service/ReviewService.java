@@ -375,7 +375,25 @@ public class ReviewService {
         user.getReviews().add(0, reviewEmbedded);
         userRepository.save(user);
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        // Sincronizzazione Neo4j (best-effort)
+        try {
+            reviewNeo4jRepository.createReviewForUser(
+                savedReview.getUserId().getUsername(),
+                savedReview.getText(),
+                savedReview.getRating(),
+                savedReview.getWineId().getName(),
+                savedReview.getWineId().getYear(),
+                savedReview.getWineId().getImage(),
+                savedReview.getUserId().getThumbnail()
+            );
+        } catch (Exception e) {
+            System.err.println("Errore durante inserimento review in Neo4j: " + e.getMessage());
+        }
+
+        return savedReview;
+
     }
 
     public void createGraphReviewsForUser(String username, List<Map<String, Object>> reviews) {
@@ -564,7 +582,21 @@ public class ReviewService {
                         }
                     }
 
-                    return reviewRepository.save(review);
+                    Review savedReview = reviewRepository.save(review);
+
+                    try {
+                        reviewNeo4jRepository.updateReview(
+                            savedReview.getUserId().getUsername(),
+                            savedReview.getWineId().getName(),
+                            savedReview.getWineId().getYear(),
+                            savedReview.getText(),
+                            savedReview.getRating()
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Errore durante update review in Neo4j: " + e.getMessage());
+                    }   
+
+                    return savedReview;
                 }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
     }
 
@@ -576,44 +608,61 @@ public class ReviewService {
     
     /// DELETE operations ///
     // Cancella una recensione specifica
-    public void deleteReviewById(Long id, String username) {
-        // Controllo se la recensione esiste
-        reviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
+    // Cancella una recensione specifica
+public void deleteReviewById(Long id, String username) {
+    // Recupera la recensione
+    Review review = reviewRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
 
-        // Controllo che sia stato username a scrivere la recensione
-        reviewRepository.findByIdAndUserId_Username(id, username).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " and username " + username + " not found."));
-
-        // Rimuovo la recensione dal vino (se presente)
-        Wine wine = wineRepository.findByVintages_Reviews_ReviewId(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Wine with review id " + id + " not found."));
-        for (Vintage vintage : wine.getVintages()) {
-            if (vintage.getReviews().removeIf(r -> r.getReviewId().equals(id))) {
-                wineRepository.save(wine);
-                break;
-            }
-        }
-
-        // Rimuovo la recensione dall'utente (se presente)
-        User user_to_find = userRepository.findByReviews_ReviewId(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User with review id " + id + " not found."));
-        for (ReviewEmbedded review : user_to_find.getReviews()) {
-            if (review.getReviewId().equals(id)) {
-                user_to_find.getReviews().remove(review);
-                userRepository.save(user_to_find);
-                break;
-            }
-        }
-
-        // Rimuovo l'id della recensione dagli array likes/dislikes di users
-        ArrayList<User> users = userRepository.findByLikesOrDislikes(id);
-        for (User user : users) {
-            user.getLikes().removeIf(l -> l.equals(id));
-            user.getDislikes().removeIf(d -> d.equals(id));
-            userRepository.save(user);
-        }
-
-        reviewRepository.deleteById(id);
+    // Verifica che sia lo user corretto
+    if (!review.getUserId().getUsername().equals(username)) {
+        throw new ResourceNotFoundException("Review with id " + id + " and username " + username + " not found.");
     }
+
+    // Rimuove la recensione dal vino (se presente)
+    Wine wine = wineRepository.findByVintages_Reviews_ReviewId(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Wine with review id " + id + " not found."));
+    for (Vintage vintage : wine.getVintages()) {
+        if (vintage.getReviews().removeIf(r -> r.getReviewId().equals(id))) {
+            wineRepository.save(wine);
+            break;
+        }
+    }
+
+    // Rimuove la recensione dall'utente (se presente)
+    User user_to_find = userRepository.findByReviews_ReviewId(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User with review id " + id + " not found."));
+    for (ReviewEmbedded embedded : user_to_find.getReviews()) {
+        if (embedded.getReviewId().equals(id)) {
+            user_to_find.getReviews().remove(embedded);
+            userRepository.save(user_to_find);
+            break;
+        }
+    }
+
+    // Rimuove dai likes/dislikes
+    ArrayList<User> users = userRepository.findByLikesOrDislikes(id);
+    for (User user : users) {
+        user.getLikes().removeIf(l -> l.equals(id));
+        user.getDislikes().removeIf(d -> d.equals(id));
+        userRepository.save(user);
+    }
+
+    // Cancella da MongoDB
+    reviewRepository.deleteById(id);
+
+    // Cancella da Neo4j
+    try {
+        reviewNeo4jRepository.deleteReviewByUsernameAndWine(
+            username,
+            wine.getName(),
+            review.getWineId().getYear()
+        );
+    } catch (Exception e) {
+        System.err.println("Errore durante delete review in Neo4j: " + e.getMessage());
+    }
+}
+
 
     // Cancella tutte le recensioni di un vino specifico
     public void deleteReviewsByWine(Long wineId) {
