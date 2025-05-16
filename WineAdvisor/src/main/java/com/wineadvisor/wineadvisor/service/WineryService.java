@@ -243,13 +243,23 @@ public class WineryService {
                     // Finalizzo gli aggiornamenti in modo da evitare incosistenze nel database
                     targetWinery.adjustFieldsForUpdate();
 
-                    return wineryRepository.save(targetWinery);
-                }
-            )
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
-            );
-    }
+                    Winery savedWinery = wineryRepository.save(targetWinery);
+
+                    // Aggiorna anche su Neo4j
+                    try {
+                        wineryNeo4jRepository.updateWinery(
+                            savedWinery.getLogin().getUsername(),
+                            savedWinery.getName(),
+                            savedWinery.getPicture().getThumbnail()
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Errore durante update su Neo4j: " + e.getMessage());
+                    }
+
+                    return savedWinery;
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist."));
+        }
 
     // Cerca il documento di una winery e ne modifica lo username
     public Winery updateWineryUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException {
@@ -363,6 +373,13 @@ public class WineryService {
         deleteWineByWineryUsername(targetUsername);
         
         wineryRepository.delete(targetWinery);
+
+        // Elimino la winery anche da Neo4j (se presente)
+        try {
+            wineryNeo4jRepository.deleteWineryByUsername(targetUsername);
+        } catch (Exception e) {
+            System.err.println("Errore durante delete su Neo4j: " + e.getMessage());
+        }
     }
 
     public void deleteWineryFromGraph(String username) {
