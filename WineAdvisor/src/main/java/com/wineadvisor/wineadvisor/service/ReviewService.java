@@ -610,11 +610,11 @@ public class ReviewService {
     // Cancella una recensione specifica
     // Cancella una recensione specifica
 public void deleteReviewById(Long id, String username) {
-    // Recupera la recensione
+    // Recupera la review
     Review review = reviewRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Review with id " + id + " not found."));
 
-    // Verifica che sia lo user corretto
+    // Verifica che l'utente sia corretto
     if (!review.getUserId().getUsername().equals(username)) {
         throw new ResourceNotFoundException("Review with id " + id + " and username " + username + " not found.");
     }
@@ -650,8 +650,9 @@ public void deleteReviewById(Long id, String username) {
 
     // Cancella da MongoDB
     reviewRepository.deleteById(id);
+    reviewNeo4jRepository.deleteByIdAndUsername(id, username); 
 
-    // Cancella da Neo4j
+    // Cancella anche da Neo4j
     try {
         reviewNeo4jRepository.deleteReviewByUsernameAndWine(
             username,
@@ -662,6 +663,7 @@ public void deleteReviewById(Long id, String username) {
         System.err.println("Errore durante delete review in Neo4j: " + e.getMessage());
     }
 }
+
 
 
     // Cancella tutte le recensioni di un vino specifico
