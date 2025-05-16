@@ -119,5 +119,18 @@ public class ReviewNeo4jRepository {
     .run();
 }
 
+public void deleteByIdAndUsername(Long id, String username) {
+    neo4jClient.query("""
+        MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
+        WHERE id(r) = $id
+        DETACH DELETE r
+    """)
+    .bindAll(Map.of(
+        "username", username,
+        "id", id
+    ))
+    .run();
+}
+
 
 }
