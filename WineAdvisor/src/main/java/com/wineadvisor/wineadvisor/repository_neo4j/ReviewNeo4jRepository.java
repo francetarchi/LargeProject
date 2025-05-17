@@ -106,7 +106,12 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-    public void deleteReviewByUsernameAndWine(String username, String wineName, int wineYear) {
+public void deleteReviewByUsernameAndWine(String username, String wineName, Integer wineYear) {
+    if (username == null || wineName == null || wineYear == null) {
+        System.err.println("Parametri nulli → username=" + username + ", wineName=" + wineName + ", wineYear=" + wineYear);
+        return;
+    }
+
     neo4jClient.query("""
         MATCH (u:User {username: $username})-[:WROTE]->(r:Review {wineName: $wineName, wineYear: $wineYear})
         DETACH DELETE r
@@ -118,6 +123,8 @@ public class ReviewNeo4jRepository {
     ))
     .run();
 }
+
+
 
 public void deleteByIdAndUsername(Long id, String username) {
     neo4jClient.query("""

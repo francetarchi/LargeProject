@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -258,6 +261,17 @@ public class ReviewController {
         reviewService.deleteReviewById(id, username);
         return ResponseEntity.status(HttpStatus.OK).body("Review successfully deleted.");
     }
+@DeleteMapping("/neo4j")
+public ResponseEntity<?> deleteReviewFromGraphAndMongoByUserWineYear(
+        @RequestParam String username,
+        @RequestParam String wineName,
+        @RequestParam Integer wineYear) {
+
+    reviewService.deleteReviewByUsernameAndWine(username, wineName, wineYear);
+    return ResponseEntity.ok("Review eliminata da Mongo e Neo4j");
+}
+
+
 
     @DeleteMapping("/wines/{wineId}")
     // @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -269,6 +283,7 @@ public class ReviewController {
         reviewService.deleteReviewsByWine(wineId);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
+
 
     @DeleteMapping("/user/{username}")
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_USER')")

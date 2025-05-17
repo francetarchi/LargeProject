@@ -607,6 +607,8 @@ public class ReviewService {
 
     
     /// DELETE operations ///
+
+
     // Cancella una recensione specifica
     // Cancella una recensione specifica
 public void deleteReviewById(Long id, String username) {
@@ -630,8 +632,9 @@ public void deleteReviewById(Long id, String username) {
     }
 
     // Rimuove la recensione dall'utente (se presente)
-    User user_to_find = userRepository.findByReviews_ReviewId(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User with review id " + id + " not found."));
+    User user_to_find = userRepository.findByLogin_Username(username)
+    .orElseThrow(() -> new ResourceNotFoundException("User with username " + username + " not found."));
+
     for (ReviewEmbedded embedded : user_to_find.getReviews()) {
         if (embedded.getReviewId().equals(id)) {
             user_to_find.getReviews().remove(embedded);
@@ -654,14 +657,35 @@ public void deleteReviewById(Long id, String username) {
 
     // Cancella anche da Neo4j
     try {
-        reviewNeo4jRepository.deleteReviewByUsernameAndWine(
-            username,
-            wine.getName(),
-            review.getWineId().getYear()
-        );
-    } catch (Exception e) {
-        System.err.println("Errore durante delete review in Neo4j: " + e.getMessage());
+    String wineName = wine != null ? wine.getName() : null;
+    Integer wineYear = review.getWineId() != null ? review.getWineId().getYear() : null;
+
+    System.out.println("DELETE Neo4j → username: " + username + ", wineName: " + wineName + ", wineYear: " + wineYear);
+
+    if (wineName != null && wineYear != null) {
+        reviewNeo4jRepository.deleteReviewByUsernameAndWine(username, wineName, wineYear);
+    } else {
+        System.err.println("Parametri nulli per cancellazione Neo4j → abort");
     }
+} catch (Exception e) {
+    System.err.println("Errore durante delete review in Neo4j: " + e.getMessage());
+}
+
+}
+public void deleteReviewByUsernameAndWine(String username, String wineName, Integer year) {
+    Review review = reviewRepository
+        .findByUserId_UsernameAndWineId_NameAndWineId_Year(username, wineName, year)
+        .orElseThrow(() -> new ResourceNotFoundException("Review non trovata per " + username + ", " + wineName + ", " + year));
+    long id = review.getId();
+    reviewRepository.deleteById(id);
+
+
+    if (wineName != null && year != null) {
+        reviewNeo4jRepository.deleteReviewByUsernameAndWine(username, wineName, year);
+    } else {
+        System.err.println("Parametri nulli per cancellazione Neo4j → abort");
+    }
+    
 }
 
 

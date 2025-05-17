@@ -48,6 +48,7 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
     
     // metodo che restituisce una recensione per nome utente e vintage
     Optional<Review> findByUserId_UsernameAndWineId_IdAndWineId_Year(String username, Long wineId, Integer year);   
+    Optional<Review> findByUserId_UsernameAndWineId_NameAndWineId_Year(String username, String wineName, Integer year);
 
     // metodo che elimina tutte le recensioni con un determinato wine id
     void deleteAllByWineId_Id(Long wineId);
