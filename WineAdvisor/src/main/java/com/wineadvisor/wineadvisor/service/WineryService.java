@@ -18,9 +18,10 @@ import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
+import com.wineadvisor.wineadvisor.repository_neo4j.WineryNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class WineryService {
     private final AdminRepository adminRepository;
     private final WineRepository wineRepository;
     private final ReviewRepository reviewRepository;
+    private final WineryNeo4jRepository wineryNeo4jRepository;
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
@@ -200,6 +202,13 @@ public class WineryService {
         Winery newWinery = createWineryDTO.toWinery();
         newWinery.adjustFieldsForCreation(passwordEncoder.encode(createWineryDTO.getPasswordDTO().getNewPass()));
 
+        wineryNeo4jRepository.createWinery(
+            newWinery.getLogin().getUsername(),
+            newWinery.getName(),
+            newWinery.getPicture().getThumbnail()
+        );
+
+
         return wineryRepository.save(newWinery);
 	}
 
@@ -230,6 +239,9 @@ public class WineryService {
         return winery;
     }
     
+    public Map<String, Object> getWineryFromGraph(String username) {
+        return wineryNeo4jRepository.findWineryByUsername(username);
+    }
 
     /// UPDATE operations ///
     // Cerca il documento di una winery con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
@@ -251,13 +263,23 @@ public class WineryService {
                     // Finalizzo gli aggiornamenti in modo da evitare incosistenze nel database
                     targetWinery.adjustFieldsForUpdate();
 
-                    return wineryRepository.save(targetWinery);
-                }
-            )
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
-            );
-    }
+                    Winery savedWinery = wineryRepository.save(targetWinery);
+
+                    // Aggiorna anche su Neo4j
+                    try {
+                        wineryNeo4jRepository.updateWinery(
+                            savedWinery.getLogin().getUsername(),
+                            savedWinery.getName(),
+                            savedWinery.getPicture().getThumbnail()
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Errore durante update su Neo4j: " + e.getMessage());
+                    }
+
+                    return savedWinery;
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist."));
+        }
 
     // Cerca il documento di una winery e ne modifica lo username
     public Winery updateWineryUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException {
@@ -354,6 +376,10 @@ public class WineryService {
             );
     }
 
+    public void updateWineryInGraph(String username, String name, String thumbnail) {
+        wineryNeo4jRepository.updateWinery(username, name, thumbnail);
+    }
+
     /// DELETE operations ///
     // Elimina tutte le wineries dalla collection "wineries"
     public void deleteAllWineries() {
@@ -372,6 +398,17 @@ public class WineryService {
         deleteWineByWineryUsername(targetUsername);
         
         wineryRepository.delete(targetWinery);
+
+        // Elimino la winery anche da Neo4j (se presente)
+        try {
+            wineryNeo4jRepository.deleteWineryByUsername(targetUsername);
+        } catch (Exception e) {
+            System.err.println("Errore durante delete su Neo4j: " + e.getMessage());
+        }
+    }
+
+    public void deleteWineryFromGraph(String username) {
+        wineryNeo4jRepository.deleteWineryByUsername(username);
     }
 
     //// END of crud operations ////

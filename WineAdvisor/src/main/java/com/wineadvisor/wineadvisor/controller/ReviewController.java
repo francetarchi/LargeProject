@@ -33,7 +33,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -51,6 +52,14 @@ public class ReviewController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Review savedReview = reviewService.addReview(username, review);
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
+    }
+
+    @PostMapping("/neo4j/{username}")
+    public ResponseEntity<Void> createUserReviewsInGraph(
+            @PathVariable String username,
+            @RequestBody List<Map<String, Object>> reviews) {
+        reviewService.createGraphReviewsForUser(username, reviews);
+        return ResponseEntity.ok().build();
     }
 
 
@@ -197,6 +206,12 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
 
+    @GetMapping("/neo4j/{username}")
+    public ResponseEntity<List<Map<String, Object>>> getGraphReviewsByUser(@PathVariable String username) {
+        List<Map<String, Object>> reviews = reviewService.getGraphReviewsByUser(username);
+        return ResponseEntity.ok(reviews);
+    }
+    
     
     ////////////// PUT //////////////
     @PutMapping("/{id}")
@@ -206,6 +221,21 @@ public class ReviewController {
                 @Valid @RequestBody UpdateReviewDTO updatedReview) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, username, updatedReview));
+    }
+
+
+    @PutMapping("/neo4j/{username}")
+    public ResponseEntity<Void> updateGraphReview(
+            @PathVariable String username,
+            @RequestBody Map<String, Object> payload) {
+
+        String wineName = (String) payload.get("wineName");
+        int wineYear = (int) payload.get("wineYear");
+        String newText = (String) payload.get("text");
+        double newRating = ((Number) payload.get("rating")).doubleValue();
+
+        reviewService.updateGraphReview(username, wineName, wineYear, newText, newRating);
+        return ResponseEntity.ok().build();
     }
 
 
@@ -254,5 +284,19 @@ public class ReviewController {
                 @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
+    @DeleteMapping("/neo4j/{username}")
+    public ResponseEntity<Void> deleteUserReviewsFromGraph(@PathVariable String username) {
+        reviewService.deleteGraphReviewsForUser(username);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/neo4j")
+    public ResponseEntity<?> deleteReviewFromGraphAndMongoByUserWineYear(
+            @RequestParam String username,
+            @RequestParam String wineName,
+            @RequestParam Integer wineYear) {
+
+        reviewService.deleteReviewByUsernameAndWine(username, wineName, wineYear);
+        return ResponseEntity.ok("Review eliminata da Mongo e Neo4j");
     }
 }

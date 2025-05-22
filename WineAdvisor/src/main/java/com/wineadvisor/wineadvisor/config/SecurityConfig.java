@@ -50,7 +50,7 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
     
-    // Imposta i vari settaggi necessari per l'autenticazione degli utenti e dei loro privilegi
+    // TEST
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

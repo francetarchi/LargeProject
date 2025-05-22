@@ -112,6 +112,8 @@ public class AuthenticationService implements UserDetailsService {
             throw new ResourceNotFoundException("Account with username \"" + username + "\" does not exist in any collection.");
         }
     }
+}
+
 
     //// END of util operations ////
     ////////////////////////////////

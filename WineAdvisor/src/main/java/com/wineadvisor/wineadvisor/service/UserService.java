@@ -30,9 +30,10 @@ import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
+import com.wineadvisor.wineadvisor.repository_neo4j.UserNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class UserService {
     private final AdminRepository adminRepository;
     private final ReviewRepository reviewRepository;
     private final WineRepository wineRepository;
+    private final UserNeo4jRepository userNeo4jRepository; // inietto il repository per il neo4j
 
     private final PasswordEncoder passwordEncoder = PasswordDTO.passwordEncoder();
 
@@ -459,8 +461,23 @@ public class UserService {
         User newUser = createUserDTO.toUser();
         newUser.adjustFieldsForCreation(passwordEncoder.encode(createUserDTO.getPasswordDTO().getNewPass()));
 
-        return userRepository.save(newUser);
-    }
+        User savedUser = userRepository.save(newUser); // 1. prima salvo su Mongo
+
+        // 2. poi aggiorno Neo4j (senza bloccare Mongo)
+        try {
+            userNeo4jRepository.createUser(
+                savedUser.getLogin().getUsername(),
+                savedUser.getName().getFirst(),
+                savedUser.getName().getLast(),
+                savedUser.getPicture().getThumbnail()
+            );
+        } catch (Exception e) {
+            System.err.println("Errore durante creazione su Neo4j: " + e.getMessage());
+        }
+
+        return savedUser;
+
+        }
     
     
     /// READ operations ///
@@ -500,6 +517,11 @@ public class UserService {
         return user;
     }
 
+    public Map<String, Object> getUserFromGraph(String username) {
+        return userNeo4jRepository.findUserByUsername(username);
+    }
+
+
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
     public User updateUser(String targetUsername, UpdateUserDTO updateUserDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
@@ -526,15 +548,29 @@ public class UserService {
                     // Finalizzo gli aggiornamenti in modo da evitare incosistenze nel database
                     targetUser.adjustFieldsForUpdate();
 
-                    return userRepository.save(targetUser);
-                }
-            )
-            .orElseThrow(
-                () -> new ResourceNotFoundException("User with username \"" + targetUsername + "\" not updatable because it does not exist.")
-            );
-    }
+                    User savedUser = userRepository.save(targetUser);  // MongoDB prima
+
+            // Neo4j dopo
+            try {
+                userNeo4jRepository.updateUser(
+                    savedUser.getLogin().getUsername(),
+                    savedUser.getName().getFirst(),
+                    savedUser.getName().getLast(),
+                    savedUser.getPicture().getThumbnail()
+                );
+            } catch (Exception e) {
+                System.err.println("Errore durante update su Neo4j: " + e.getMessage());
+            }
+
+            return savedUser;
+        })
+        .orElseThrow(() ->
+            new ResourceNotFoundException("User with username \"" + targetUsername + "\" not updatable because it does not exist.")
+        );
+}
 
     // Cerca il documento di un utente e ne modifica lo username
+    //QUI NON SI AGGIORNA IL GRAFO, EVENTUALMENTE VA IMPLEMENTATO CON DELETE E CREATE
     public User updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException{
         if (targetUsername.equals(newUsername)) {
             throw new BadRequestException("Username not updatable because it is the same as the old one.");
@@ -818,6 +854,10 @@ public class UserService {
             );
     }
 
+    public void updateUserInGraph(String username, String firstName, String lastName, String thumbnail) {
+        userNeo4jRepository.updateUser(username, firstName, lastName, thumbnail);
+    }
+
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database
@@ -840,7 +880,19 @@ public class UserService {
         }
 
         userRepository.delete(targetUser);
+
+        try {
+            userNeo4jRepository.deleteUserByUsername(targetUsername);
+        } catch (Exception e) {
+            System.err.println("Errore durante delete su Neo4j: " + e.getMessage());
+        }
+
     }
+
+    public void deleteUserFromGraph(String username) {
+        userNeo4jRepository.deleteUserByUsername(username);
+    }
+
 
     //// END of crud operations ////
     ////////////////////////////////

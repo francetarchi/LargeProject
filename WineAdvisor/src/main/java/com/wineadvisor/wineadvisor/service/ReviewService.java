@@ -25,6 +25,8 @@ import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 
+import com.wineadvisor.wineadvisor.repository_neo4j.ReviewNeo4jRepository;
+
 import com.mongodb.client.AggregateIterable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,7 +38,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +51,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final IdCounterService idCounterService;
     private final MongoTemplate mongoTemplate;
+    private final ReviewNeo4jRepository reviewNeo4jRepository;
 
     /////////// COSTANTI ////////////
     private static final int PAGE_SIZE = 20;
@@ -392,9 +395,40 @@ public class ReviewService {
         user.getReviews().add(0, reviewEmbedded);
         userRepository.save(user);
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        // Sincronizzazione Neo4j (best-effort)
+        try {
+            reviewNeo4jRepository.createReviewForUser(
+                savedReview.getUserId().getUsername(),
+                savedReview.getText(),
+                savedReview.getRating(),
+                savedReview.getWineId().getName(),
+                savedReview.getWineId().getYear(),
+                savedReview.getWineId().getImage(),
+                savedReview.getUserId().getThumbnail()
+            );
+        } catch (Exception e) {
+            System.err.println("Errore durante inserimento review in Neo4j: " + e.getMessage());
+        }
+
+        return savedReview;
+
     }
 
+    public void createGraphReviewsForUser(String username, List<Map<String, Object>> reviews) {
+        for (Map<String, Object> review : reviews) {
+            reviewNeo4jRepository.createReviewForUser(
+                username,
+                (String) review.get("text"),
+                ((Number) review.get("rating")).doubleValue(),
+                (String) review.get("wineName"),
+                (Integer) review.get("wineYear"),
+                (String) review.get("wineImage"),
+                (String) review.get("userThumbnail")
+            );
+        }
+    }
 
     /// READ operations ///
     // Restituisce tutte le recensioni dalla collection "reviews" del database
@@ -520,6 +554,10 @@ public class ReviewService {
         return new ArrayList<>(popularReviews.subList(0, limit));
     }
 
+    public List<Map<String, Object>> getGraphReviewsByUser(String username) {
+        return reviewNeo4jRepository.getReviewsByUser(username);
+    }
+
     
     /// UPDATE operations ///
     // Aggiorna una recensione nella collection "reviews" del db
@@ -569,13 +607,28 @@ public class ReviewService {
                         }
                     }
 
-                    return reviewRepository.save(review);
-                }
-            )
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Review with id " + id +  " and with username " + username + " not found.")
-            );
+                    Review savedReview = reviewRepository.save(review);
+
+                    try {
+                        reviewNeo4jRepository.updateReview(
+                            savedReview.getUserId().getUsername(),
+                            savedReview.getWineId().getName(),
+                            savedReview.getWineId().getYear(),
+                            savedReview.getText(),
+                            savedReview.getRating()
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Errore durante update review in Neo4j: " + e.getMessage());
+                    }   
+
+                    return savedReview;
+                }).orElseThrow(() -> new ResourceNotFoundException("Review with id " + id +  " and with username " + updatedReview.getUsername() + " not found."));
     }
+
+    public void updateGraphReview(String username, String wineName, int wineYear, String newText, double newRating) {
+        reviewNeo4jRepository.updateReview(username, wineName, wineYear, newText, newRating);
+    }
+
 
     
     /// DELETE operations ///
@@ -628,7 +681,40 @@ public class ReviewService {
             userRepository.save(user);
         }
 
-        reviewRepository.delete(targetReview);
+        // reviewRepository.delete(targetReview);
+        reviewRepository.deleteById(id);
+        reviewNeo4jRepository.deleteByIdAndUsername(id, username); 
+
+        // Cancella anche da Neo4j
+        try {
+            String wineName = wine != null ? wine.getName() : null;
+            Integer wineYear = targetReview.getWineId() != null ? targetReview.getWineId().getYear() : null;
+
+            System.out.println("DELETE Neo4j → username: " + username + ", wineName: " + wineName + ", wineYear: " + wineYear);
+
+            if (wineName != null && wineYear != null) {
+                reviewNeo4jRepository.deleteReviewByUsernameAndWine(username, wineName, wineYear);
+            } else {
+                System.err.println("Parametri nulli per cancellazione Neo4j → abort");
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante delete review in Neo4j: " + e.getMessage());
+        }
+    }
+    
+    public void deleteReviewByUsernameAndWine(String username, String wineName, Integer year) {
+        Review review = reviewRepository
+            .findByUserId_UsernameAndWineId_NameAndWineId_Year(username, wineName, year)
+            .orElseThrow(() -> new ResourceNotFoundException("Review non trovata per " + username + ", " + wineName + ", " + year));
+        long id = review.getId();
+        reviewRepository.deleteById(id);
+
+
+        if (wineName != null && year != null) {
+            reviewNeo4jRepository.deleteReviewByUsernameAndWine(username, wineName, year);
+        } else {
+            System.err.println("Parametri nulli per cancellazione Neo4j → abort");
+        }
     }
 
     // Cancella tutte le recensioni di un utente specifico
@@ -737,6 +823,10 @@ public class ReviewService {
         }
         
         reviewRepository.deleteAllByWineId_IdAndWineId_Year(wineId, vintageYear);
+    }
+
+    public void deleteGraphReviewsForUser(String username) {
+        reviewNeo4jRepository.deleteAllReviewsByUser(username);
     }
 
     //// END of crud operations ////

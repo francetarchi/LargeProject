@@ -112,6 +112,14 @@
 			<artifactId>json</artifactId>
 			<version>20240303</version>
 		</dependency>
+
+		<!-- Neo4jClient -->
+		<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-data-neo4j</artifactId>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

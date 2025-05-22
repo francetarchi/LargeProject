@@ -26,6 +26,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/wineries")
@@ -69,6 +70,14 @@ public class WineryController {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.getWineryByUsername(username));
     }
     
+    @GetMapping("/neo4j/{username}")
+    public ResponseEntity<Map<String, Object>> getWineryFromGraph(@PathVariable String username) {
+        Map<String, Object> result = wineryService.getWineryFromGraph(username);
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
+    }
 
     ////////////// PUT /////////////
     @PutMapping("/{username}")
@@ -119,6 +128,18 @@ public class WineryController {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.removeImage(username, image));
     }
 
+    @PutMapping("/neo4j/{username}")
+    public ResponseEntity<Void> updateWineryInGraph(
+            @PathVariable String username,
+            @RequestBody Map<String, String> body) {
+        wineryService.updateWineryInGraph(
+            username,
+            body.get("name"),
+            body.get("thumbnail")
+        );
+        return ResponseEntity.ok().build();
+    }
+
     
     //////////// DELETE ////////////
     @DeleteMapping
@@ -135,5 +156,11 @@ public class WineryController {
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         wineryService.deleteWinery(username);
         return ResponseEntity.status(HttpStatus.OK).body("Winery \"" + username + "\" deleted successfully.");
+    }
+
+    @DeleteMapping("/neo4j/{username}")
+    public ResponseEntity<Void> deleteWineryFromGraph(@PathVariable String username) {
+        wineryService.deleteWineryFromGraph(username);
+        return ResponseEntity.noContent().build();
     }
 }

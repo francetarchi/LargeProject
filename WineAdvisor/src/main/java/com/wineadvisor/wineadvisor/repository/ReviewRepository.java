@@ -38,6 +38,7 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
     Optional<Review> findByIdAndUserId_Username(Long id, String username);
     
     Optional<Review> findByUserId_UsernameAndWineId_IdAndWineId_Year(String username, Long wineId, Integer year);   
+    Optional<Review> findByUserId_UsernameAndWineId_NameAndWineId_Year(String username, String wineName, Integer year);
 
     void deleteAllByWineId_Id(Long wineId);
     
