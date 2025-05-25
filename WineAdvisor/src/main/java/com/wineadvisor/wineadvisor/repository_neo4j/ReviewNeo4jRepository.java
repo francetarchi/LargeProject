@@ -4,9 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
+import com.wineadvisor.wineadvisor.model.reviews.Review;
+
+import jakarta.transaction.Transactional;
+
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 @Repository
@@ -15,8 +20,8 @@ public class ReviewNeo4jRepository {
 
     private final Neo4jClient neo4jClient;
 
-    public void createReviewForUser(String username, String text, double rating, String wineName, int wineYear, String wineImage, String userThumbnail) {
-        // 1. Recupera tutte le review esistenti dell'utente ordinate per ID crescente
+    public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String userThumbnail) {
+        // Recupero tutte le review esistenti dell'utente ordinate per ID crescente
         List<Map<String, Object>> existingReviews = new ArrayList<>(
             neo4jClient.query("""
                 MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
@@ -28,7 +33,7 @@ public class ReviewNeo4jRepository {
             .all()
         );
 
-        // 2. Se ci sono già 3 o più recensioni, elimina la più vecchia
+        // Se ci sono già 3 o più recensioni, elimino la più vecchia
         if (existingReviews.size() >= 3) {
             Long idToDelete = (Long) existingReviews.get(0).get("id");
             neo4jClient.query("""
@@ -40,12 +45,31 @@ public class ReviewNeo4jRepository {
             .run();
         }
 
-        // 3. Crea la nuova recensione
+        // Creo la nuova recensione (se il nodo dell'utente non è già presente viene creato)
+        Map<String, Object> params = new HashMap<>();
+        params.put("username", username);
+        params.put("firstName", firstName);
+        params.put("lastName", lastName);
+        params.put("reviewId", reviewId);
+        params.put("text", text);
+        params.put("rating", rating);
+        params.put("wineId", wineId);
+        params.put("wineName", wineName);
+        params.put("wineYear", wineYear);
+        params.put("wineImage", wineImage);
+        params.put("userThumbnail", userThumbnail);
+
         neo4jClient.query("""
-            MATCH (u:User {username: $username})
+            MERGE (u:User {username: $username})
+            ON CREATE SET 
+                u.firstName = $firstName,
+                u.lastName = $lastName,
+                u.userThumbnail = $userThumbnail
             CREATE (r:Review {
                 text: $text,
                 rating: $rating,
+                reviewId: $reviewId,
+                wineId: $wineId,
                 wineName: $wineName,
                 wineYear: $wineYear,
                 wineImage: $wineImage,
@@ -53,15 +77,7 @@ public class ReviewNeo4jRepository {
             })
             CREATE (u)-[:WROTE]->(r)
         """)
-        .bindAll(Map.of(
-            "username", username,
-            "text", text,
-            "rating", rating,
-            "wineName", wineName,
-            "wineYear", wineYear,
-            "wineImage", wineImage,
-            "userThumbnail", userThumbnail
-        ))
+        .bindAll(params)
         .run();
     }
 
@@ -71,7 +87,6 @@ public class ReviewNeo4jRepository {
             RETURN r.text AS text, r.rating AS rating, r.wineName AS wineName, r.wineYear AS wineYear,
                    r.wineImage AS wineImage, r.userThumbnail AS userThumbnail
             ORDER BY id(r) DESC
-            LIMIT 3
         """)
         .bind(username).to("username")
         .fetch()
@@ -79,23 +94,82 @@ public class ReviewNeo4jRepository {
     }
 
 
-    public void updateReview(String username, String wineName, int wineYear, String newText, double newRating) {
+    public void updateReview(Long reviewId, String newText, Double newRating) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("reviewId", reviewId);
+        params.put("newText", newText);
+        params.put("newRating", newRating);
+
         neo4jClient.query("""
-            MATCH (u:User {username: $username})-[:WROTE]->(r:Review {wineName: $wineName, wineYear: $wineYear})
+            MATCH (r:Review)
+            WHERE r.reviewId = $reviewId
             SET r.text = $newText,
                 r.rating = $newRating
         """)
-        .bindAll(Map.of(
-            "username", username,
-            "wineName", wineName,
-            "wineYear", wineYear,
-            "newText", newText,
-            "newRating", newRating
-        ))
+        .bindAll(params)
         .run();
     }
 
+    @Transactional
+    public void updateRecentReviewsForUser(String username, String firstName, String lastName, String userThumbnail, ArrayList<Review> recentReviews) {
 
+        // Creo o aggiorno l'utente
+        neo4jClient.query("""
+            MERGE (u:User {username: $username})
+            ON CREATE SET 
+                u.firstName = $firstName,
+                u.lastName = $lastName,
+                u.userThumbnail = $userThumbnail
+            ON MATCH SET 
+                u.firstName = $firstName,
+                u.lastName = $lastName,
+                u.userThumbnail = $userThumbnail
+        """)
+        .bind(username).to("username")
+        .bind(firstName).to("firstName")
+        .bind(lastName).to("lastName")
+        .bind(userThumbnail).to("userThumbnail")
+        .run();
+
+        // Elimino le vecchie recensioni dell'utente
+        neo4jClient.query("""
+            MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
+            DETACH DELETE r
+        """)
+        .bind(username).to("username")
+        .run();
+
+        // Creo le nuove recensioni collegate all'utente
+        for (Review r : recentReviews) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("username", username);
+            params.put("reviewId", r.getId());
+            params.put("text", r.getText());
+            params.put("rating", r.getRating());
+            params.put("wineId", r.getWineId().getId());
+            params.put("wineName", r.getWineId().getName());
+            params.put("wineYear", r.getWineId().getYear());
+            params.put("wineImage", r.getWineId().getImage());
+            params.put("userThumbnail", userThumbnail);
+
+            neo4jClient.query("""
+                MATCH (u:User {username: $username})
+                CREATE (r:Review {
+                    text: $text,
+                    rating: $rating,
+                    reviewId: $reviewId,
+                    wineId: $wineId,
+                    wineName: $wineName,
+                    wineYear: $wineYear,
+                    wineImage: $wineImage,
+                    userThumbnail: $userThumbnail
+                })
+                CREATE (u)-[:WROTE]->(r)
+            """)
+            .bindAll(params)
+            .run();
+        }
+    }
 
     public void deleteAllReviewsByUser(String username) {
         neo4jClient.query("""
@@ -106,38 +180,55 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-public void deleteReviewByUsernameAndWine(String username, String wineName, Integer wineYear) {
-    if (username == null || wineName == null || wineYear == null) {
-        System.err.println("Parametri nulli → username=" + username + ", wineName=" + wineName + ", wineYear=" + wineYear);
-        return;
+    public void deleteReviewById(Long reviewId) {
+        neo4jClient.query("""
+            MATCH (r:Review)
+            WHERE r.reviewId = $reviewId
+            DETACH DELETE r
+        """)
+        .bind(reviewId).to("reviewId")
+        .run();
     }
 
-    neo4jClient.query("""
-        MATCH (u:User {username: $username})-[:WROTE]->(r:Review {wineName: $wineName, wineYear: $wineYear})
-        DETACH DELETE r
-    """)
-    .bindAll(Map.of(
-        "username", username,
-        "wineName", wineName,
-        "wineYear", wineYear
-    ))
-    .run();
-}
+    public void deleteAllReviewsByWine(Long wineId) {
+        neo4jClient.query("""
+            MATCH (r:Review {wineId: $wineId})
+            DETACH DELETE r
+        """)
+        .bind(wineId).to("wineId")
+        .run();
+    }
 
+    public void deleteAllReviewsByVintage(Long wineId, Integer vintage) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("wineId", wineId);
+        params.put("vintage", vintage);
 
+        if(vintage != null) {
+            neo4jClient.query("""
+                MATCH (r:Review {wineId: $wineId})
+                WHERE r.wineYear = $vintage
+                DETACH DELETE r
+            """)
+            .bindAll(params)
+            .run();
+        } else {
+            neo4jClient.query("""
+                MATCH (r:Review {wineId: $wineId})
+                WHERE r.wineYear IS NULL
+                DETACH DELETE r
+            """)
+            .bind(wineId).to("wineId")
+            .run();
+        }        
+    }
 
-public void deleteByIdAndUsername(Long id, String username) {
-    neo4jClient.query("""
-        MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
-        WHERE id(r) = $id
-        DETACH DELETE r
-    """)
-    .bindAll(Map.of(
-        "username", username,
-        "id", id
-    ))
-    .run();
-}
-
+    public void deleteAllReviews() {
+        neo4jClient.query("""
+            MATCH (r:Review)
+            DETACH DELETE r
+        """)
+        .run();
+    }
 
 }

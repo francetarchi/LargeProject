@@ -33,8 +33,6 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -54,13 +52,13 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
     }
 
-    @PostMapping("/neo4j/{username}")
-    public ResponseEntity<Void> createUserReviewsInGraph(
-            @PathVariable String username,
-            @RequestBody List<Map<String, Object>> reviews) {
-        reviewService.createGraphReviewsForUser(username, reviews);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/neo4j/{username}")
+    // public ResponseEntity<Void> createUserReviewsInGraph(
+    //         @PathVariable String username,
+    //         @RequestBody List<Map<String, Object>> reviews) {
+    //     reviewService.createGraphReviewsForUser(username, reviews);
+    //     return ResponseEntity.ok().build();
+    // }
 
 
     ////////////// GET //////////////
@@ -80,14 +78,13 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
     }
 
-    @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
+    @GetMapping("/wines/{wineId}/vintages")
     public ResponseEntity<?> getReviewsByVintage(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-            @PathVariable
-                @NotNull(message = "Vintage year cannot be null.")
+            @RequestParam(required = false)
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
             @RequestParam(required = false, name = "page number", defaultValue = "0") 
@@ -134,7 +131,6 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             @PathVariable
-                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer year) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
@@ -162,21 +158,20 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(page, wineId, minRating, maxRating));
     }
 
-    @GetMapping("/wines/{wineId}/vintages/{vintageYear}/ratings/{minRating}/{maxRating}")
+    @GetMapping("/wines/{wineId}/vintages/ratings/")
     public ResponseEntity<?> getReviewsByVintageAndRating(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-            @PathVariable
-                @NotNull(message = "Vintage year cannot be null.")
+            @RequestParam(required = false)
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
-            @PathVariable 
+            @RequestParam
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double minRating,
-            @PathVariable
+            @RequestParam
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
@@ -196,7 +191,6 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             @PathVariable
-                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer year,
             @PathVariable
@@ -204,12 +198,6 @@ public class ReviewController {
                 @Positive(message = "Number of reviews must be positive.")
                 int num) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
-    }
-
-    @GetMapping("/neo4j/{username}")
-    public ResponseEntity<List<Map<String, Object>>> getGraphReviewsByUser(@PathVariable String username) {
-        List<Map<String, Object>> reviews = reviewService.getGraphReviewsByUser(username);
-        return ResponseEntity.ok(reviews);
     }
     
     
@@ -221,21 +209,6 @@ public class ReviewController {
                 @Valid @RequestBody UpdateReviewDTO updatedReview) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, username, updatedReview));
-    }
-
-
-    @PutMapping("/neo4j/{username}")
-    public ResponseEntity<Void> updateGraphReview(
-            @PathVariable String username,
-            @RequestBody Map<String, Object> payload) {
-
-        String wineName = (String) payload.get("wineName");
-        int wineYear = (int) payload.get("wineYear");
-        String newText = (String) payload.get("text");
-        double newRating = ((Number) payload.get("rating")).doubleValue();
-
-        reviewService.updateGraphReview(username, wineName, wineYear, newText, newRating);
-        return ResponseEntity.ok().build();
     }
 
 
@@ -277,26 +250,12 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
-    @DeleteMapping("/wines/{wineId}/vintages/{vintageYear}")
+    @DeleteMapping("/wines/{wineId}/vintages")
     @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteReviewsByVintage(
-                @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId,
-                @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
+                @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
+                @RequestParam(required = false) @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
-    @DeleteMapping("/neo4j/{username}")
-    public ResponseEntity<Void> deleteUserReviewsFromGraph(@PathVariable String username) {
-        reviewService.deleteGraphReviewsForUser(username);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/neo4j")
-    public ResponseEntity<?> deleteReviewFromGraphAndMongoByUserWineYear(
-            @RequestParam String username,
-            @RequestParam String wineName,
-            @RequestParam Integer wineYear) {
-
-        reviewService.deleteReviewByUsernameAndWine(username, wineName, wineYear);
-        return ResponseEntity.ok("Review eliminata da Mongo e Neo4j");
     }
 }

@@ -201,15 +201,13 @@ public class WineryService {
         
         Winery newWinery = createWineryDTO.toWinery();
         newWinery.adjustFieldsForCreation(passwordEncoder.encode(createWineryDTO.getPasswordDTO().getNewPass()));
+        
+        Winery savedWinery = wineryRepository.save(newWinery);
 
-        wineryNeo4jRepository.createWinery(
-            newWinery.getLogin().getUsername(),
-            newWinery.getName(),
-            newWinery.getPicture().getThumbnail()
-        );
+        // Sincronizzazione con Neo4j
+        wineryNeo4jRepository.createWinery(newWinery.getLogin().getUsername(), newWinery.getName(), newWinery.getPicture().getThumbnail());
 
-
-        return wineryRepository.save(newWinery);
+        return savedWinery;
 	}
 
 
@@ -265,16 +263,8 @@ public class WineryService {
 
                     Winery savedWinery = wineryRepository.save(targetWinery);
 
-                    // Aggiorna anche su Neo4j
-                    try {
-                        wineryNeo4jRepository.updateWinery(
-                            savedWinery.getLogin().getUsername(),
-                            savedWinery.getName(),
-                            savedWinery.getPicture().getThumbnail()
-                        );
-                    } catch (Exception e) {
-                        System.err.println("Errore durante update su Neo4j: " + e.getMessage());
-                    }
+                    // Sincronizzazione con Neo4j
+                    wineryNeo4jRepository.updateWinery(targetWinery.getLogin().getUsername(), targetWinery.getName(), targetWinery.getPicture().getThumbnail());
 
                     return savedWinery;
                 })
@@ -299,7 +289,12 @@ public class WineryService {
                     // Aggiorno tutti i vini della winery nella collection "wines"
                     updateWine_Winery_UsernameByWineryUsername(targetWinery.getLogin().getUsername(), newUsername.trim());
 
-                    return wineryRepository.save(targetWinery);
+                    Winery savedWinery = wineryRepository.save(targetWinery);
+
+                    // Sincronizzazione con Neo4j
+                    wineryNeo4jRepository.updateWineryUsername(targetUsername, newUsername.trim());
+
+                    return savedWinery;
                 }
             )
             .orElseThrow(
@@ -376,14 +371,13 @@ public class WineryService {
             );
     }
 
-    public void updateWineryInGraph(String username, String name, String thumbnail) {
-        wineryNeo4jRepository.updateWinery(username, name, thumbnail);
-    }
-
     /// DELETE operations ///
     // Elimina tutte le wineries dalla collection "wineries"
     public void deleteAllWineries() {
         wineryRepository.deleteAll();
+
+        // Cancellazione da Neo4j
+        wineryNeo4jRepository.deleteAllWineries();
     }
 
     // Elimina una winery con un determinato username
@@ -399,16 +393,8 @@ public class WineryService {
         
         wineryRepository.delete(targetWinery);
 
-        // Elimino la winery anche da Neo4j (se presente)
-        try {
-            wineryNeo4jRepository.deleteWineryByUsername(targetUsername);
-        } catch (Exception e) {
-            System.err.println("Errore durante delete su Neo4j: " + e.getMessage());
-        }
-    }
-
-    public void deleteWineryFromGraph(String username) {
-        wineryNeo4jRepository.deleteWineryByUsername(username);
+        // Cancellazione da Neo4j
+        wineryNeo4jRepository.deleteWineryByUsername(targetUsername);
     }
 
     //// END of crud operations ////
