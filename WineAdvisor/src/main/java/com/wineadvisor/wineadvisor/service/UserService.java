@@ -22,6 +22,7 @@ import com.wineadvisor.wineadvisor.DTO.users.CreateUserDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.repository.AdminRepository;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
+import com.wineadvisor.wineadvisor.repository.UserNeo4jRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
@@ -30,7 +31,6 @@ import com.wineadvisor.wineadvisor.model.users.User;
 import com.wineadvisor.wineadvisor.model.users.fields.WineFavorite;
 import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
-import com.wineadvisor.wineadvisor.repository_neo4j.UserNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
 import java.util.Map;

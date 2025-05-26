@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.time.Instant;
 
+import com.wineadvisor.wineadvisor.repository.ReviewNeo4jRepository;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
@@ -24,9 +25,6 @@ import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-
-import com.wineadvisor.wineadvisor.repository_neo4j.ReviewNeo4jRepository;
-
 import com.mongodb.client.AggregateIterable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

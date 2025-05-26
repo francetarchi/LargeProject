@@ -1,4 +1,4 @@
-package com.wineadvisor.wineadvisor.repository_neo4j;
+package com.wineadvisor.wineadvisor.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.neo4j.core.Neo4jClient;

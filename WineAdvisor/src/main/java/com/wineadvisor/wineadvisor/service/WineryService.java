@@ -17,8 +17,8 @@ import com.wineadvisor.wineadvisor.repository.AdminRepository;
 import com.wineadvisor.wineadvisor.repository.ReviewRepository;
 import com.wineadvisor.wineadvisor.repository.UserRepository;
 import com.wineadvisor.wineadvisor.repository.WineRepository;
+import com.wineadvisor.wineadvisor.repository.WineryNeo4jRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
-import com.wineadvisor.wineadvisor.repository_neo4j.WineryNeo4jRepository;
 
 import lombok.RequiredArgsConstructor;
 import java.util.Map;
