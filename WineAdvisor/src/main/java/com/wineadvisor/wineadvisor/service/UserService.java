@@ -110,7 +110,7 @@ public class UserService {
     //// Asynchronous operations ////
     
     // Per ogni utente, scorre l'array dei likes e l'array dei dislikes: per ogni reviewId, controlla che la review esista ancora (se NON esiste più, elimina il reviewId dall'array)
-    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    @Scheduled(cron = "0 0 1 * * ?")    // Ogni giorno all'una di notte
     private void cleanLikesAndDislikes() {
         System.out.println("--- INFO: Cleaning likes and dislikes from users...");
         userRepository.findAll().forEach(
@@ -145,7 +145,7 @@ public class UserService {
 
     // Aggiorna una volta a settimana la lista degli wineTips per ogni utente
     // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    @Scheduled(cron = "0 0 3 * * MON")      // Ogni lunedì alle 3 di notte
     private void updateWineTipsPerUser() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "users";
@@ -340,7 +340,7 @@ public class UserService {
 
     // Aggiorna una volta a settimana la lista dei newWineTips per ogni utente
     // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "0 0 0 * * MON")     // Ogni lunedì a mezzanotte
+    @Scheduled(cron = "0 0 3 * * MON")     // Ogni lunedì alle 3 di notte
     private void updateNewWineTipsPerUser() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "users";

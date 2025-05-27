@@ -175,7 +175,7 @@ public class ReviewService {
     /////// Async. operations ///////
     
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
-    @Scheduled(cron = "0 0 0 * * ?")   // Ogni giorno a mezzanotte
+    @Scheduled(cron = "0 0 1 * * ?")   // Ogni giorno all'una di notte
     private void updateReviewsEmbeddedWinesAndUsers() {
         System.out.println("--- INFO: Updating reviews embedded in wines...");
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
@@ -204,7 +204,7 @@ public class ReviewService {
 
     // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
     // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
-    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTop10VintagesPerRegion() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"regions\".");
         List<Document> pipeline = Arrays.asList(
@@ -281,7 +281,7 @@ public class ReviewService {
 
     // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
     // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
-    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTop100VintagesPerCountry() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"countries\".");
         List<Document> pipeline = Arrays.asList(

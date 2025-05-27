@@ -1,5 +1,7 @@
 package com.wineadvisor.wineadvisor.controller;
 
+import java.time.Year;
+
 import com.wineadvisor.wineadvisor.model.wines.Wine;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 import com.wineadvisor.wineadvisor.service.WineService;
@@ -154,6 +156,10 @@ public class WineController {
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> addVintage(
                 @RequestBody @Valid NewVintageDTO newVintage) {
+        if (newVintage.getYear() != 0 && (newVintage.getYear() < 1500 || newVintage.getYear() > Year.now().getValue())) {
+            throw new BadRequestException("Vintage year must be 0 or between 1500 and current year.");
+        }
+
         // Prendo username della winery che vuole aggiungere la vintage
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine savedWine = wineService.addVintage(newVintage, username);

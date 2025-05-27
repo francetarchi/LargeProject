@@ -237,8 +237,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la nostra formula.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_our_qop_per_type"
-    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    // @Scheduled(cron = "45 31 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTopVintagesByOurQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -343,8 +343,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la formula "base" (ratings_average/price).
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_qop_per_type"
-    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    // @Scheduled(cron = "45 31 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTopVintagesByQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -445,8 +445,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_ratings_per_type"
-    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    // @Scheduled(cron = "45 31 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTopVintagesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -516,8 +516,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wines per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wines_by_ratings_per_type"
-    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    // @Scheduled(cron = "45 31 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTopWinesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -584,8 +584,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wineries per valutazione media dei propri vini.
     // Viene calcolata una classifica unica, senza tener conto (come avviene invece per le altre classifiche) della suddivisione per tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wineries_by_wines_ratings"
-    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
+    // @Scheduled(cron = "45 31 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     private void updateTopWineriesByWineRatings() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
