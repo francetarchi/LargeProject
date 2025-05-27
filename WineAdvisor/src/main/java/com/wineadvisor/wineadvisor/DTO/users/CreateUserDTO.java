@@ -94,7 +94,8 @@ public class CreateUserDTO {
                 new ArrayList<>(), // likes
                 new ArrayList<>(), // dislikes
                 new ArrayList<>(), // wineFavorites
-                new ArrayList<>() // wineTips
+                new ArrayList<>(), // wineTips
+                new ArrayList<>() // newWineTips
         );
         user.getDob().setDateTime(this.dob);
         

@@ -57,6 +57,9 @@ public class User {
 
     @Field("wine_tips")
     private ArrayList<WineTip> wineTips;
+
+    @Field("new_wine_tips")
+    private ArrayList<WineTip> newWineTips;
     
 
 
@@ -117,6 +120,7 @@ public class User {
         this.setDislikes(new ArrayList<>());
         this.setWineFavorites(new ArrayList<>());
         this.setWineTips(new ArrayList<>());
+        this.setNewWineTips(new ArrayList<>());
         this.login.setPassword(encodedPassword);
 
         this.adjustFields('C');

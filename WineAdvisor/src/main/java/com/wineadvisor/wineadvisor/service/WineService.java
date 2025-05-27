@@ -12,7 +12,9 @@ import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -97,46 +99,68 @@ public class WineService {
     /////// Async. operations ///////
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
-    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    @Scheduled(cron = "30 11 21 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void updateStatisticsPerVintage() {
-        List<Document> pipeline = Arrays.asList(new Document("$unwind", "$vintages"), 
-            new Document("$lookup", 
-            new Document("from", "reviews")
-                    .append("let", 
-            new Document("wineId", "$_id")
-                        .append("vintageYear", "$vintages.year"))
-                    .append("pipeline", Arrays.asList(new Document("$match", 
-                        new Document("$expr", 
-                        new Document("$and", Arrays.asList(new Document("$eq", Arrays.asList("$wine_id.id", "$$wineId")), 
-                                        new Document("$eq", Arrays.asList("$wine_id.year", "$$vintageYear")))))), 
-                        new Document("$project", 
-                        new Document("rating", 1L))))
-                    .append("as", "matched_reviews")), 
-            new Document("$project", 
-            new Document("_id", 1L)
-                    .append("year", "$vintages.year")
-                    .append("statistics", 
-            new Document("ratings_count", 
-            new Document("$size", "$matched_reviews"))
-                        .append("ratings_average", 
-            new Document("$cond", Arrays.asList(new Document("$gt", Arrays.asList(new Document("$size", "$matched_reviews"), 0L)), 
-                                new Document("$avg", "$matched_reviews.rating"), 
-                                new BsonNull()))))));
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for vintage statistics update.");
+        List<Document> pipeline = Arrays.asList(
+                new Document("$unwind", "$vintages"),
+                new Document("$lookup",
+                        new Document("from", "reviews")
+                                .append("let",
+                                        new Document("wineId", "$_id")
+                                                .append("vintageYear", "$vintages.year"))
+                                .append("pipeline", Arrays.asList(new Document("$match",
+                                        new Document("$expr",
+                                                new Document("$and", Arrays.asList(
+                                                        new Document("$eq", Arrays.asList("$wine_id.id", "$$wineId")),
+                                                        new Document("$eq",
+                                                                Arrays.asList("$wine_id.year", "$$vintageYear")))))),
+                                        new Document("$project",
+                                                new Document("rating", 1L))))
+                                .append("as", "matched_reviews")),
+                new Document("$project",
+                        new Document("_id", 1L)
+                                .append("year", "$vintages.year")
+                                .append("statistics",
+                                        new Document("ratings_count",
+                                                new Document("$size", "$matched_reviews"))
+                                                .append("ratings_average",
+                                                        new Document("$cond", Arrays.asList(
+                                                                new Document("$gt",
+                                                                        Arrays.asList(new Document("$size",
+                                                                                "$matched_reviews"), 0L)),
+                                                                new Document("$avg", "$matched_reviews.rating"),
+                                                                new BsonNull()))))));
 
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("wines")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
 
+        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
+        mongoTemplate
+            .indexOps("reviews")
+            .ensureIndex(
+                new Index()
+                    .on("wine_id.id", Sort.Direction.ASC)
+                    .on("wine_id.year", Sort.Direction.ASC)
+                    .named("index_for_vintage_statistics_update")
+            );
+        System.out.println("--- INFO: Ensured index on fields \"wine_id.id\" and \"wine_id.year\" for collection \"reviews\".");
+
+
+        System.out.println("--- INFO: Executing aggregation pipeline for vintage statistics update...");
+        AggregateIterable<Document> results = mongoTemplate.getCollection("wines").aggregate(pipeline).allowDiskUse(true);
+        System.out.println("--- INFO: Aggregation pipeline executed successfully.");
+
+
+        System.out.println("--- INFO: Processing results from aggregation pipeline...");
         for (Document doc : results) {
             Object idObj = doc.get("_id");
             Object yearObj = doc.get("year");
             Document stats = (Document) doc.get("statistics");
 
-            // Verifico che tutti i campi siano presenti
-            if (idObj == null || yearObj == null || stats == null) {
-                continue;
-            }
+            // // Verifico che tutti i campi siano presenti
+            // if (idObj == null || yearObj == null || stats == null) {
+            //     continue;
+            // }
 
             Long wineId = ((Number) idObj).longValue();
             int year = ((Number) yearObj).intValue();
@@ -150,63 +174,81 @@ public class WineService {
 
             mongoTemplate.updateFirst(query, update, "wines");
         }
+
+        System.out.println("--- INFO: Vintage statistics updated successfully.\n\n");
     }
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni wine
-    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    @Scheduled(cron = "30 11 21 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void updateStatisticsPerWine() {
-        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
-            new Document("from", "reviews")
-                    .append("localField", "_id")
-                    .append("foreignField", "wine_id.id")
-                    .append("as", "matched_reviews")), 
-            new Document("$project", 
-            new Document("_id", 1L)
-                    .append("statistics", 
-            new Document("ratings_count", 
-            new Document("$size", "$matched_reviews"))
-                        .append("ratings_average", 
-            new Document("$cond", Arrays.asList(new Document("$gt", Arrays.asList(new Document("$size", "$matched_reviews"), 0L)), 
-                                new Document("$avg", "$matched_reviews.rating"), 
-                                new BsonNull()))))));
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for wine statistics update.");
+        List<Document> pipeline = Arrays.asList(
+                new Document("$project",
+                        new Document("_id", 1L)),
+                new Document("$lookup",
+                        new Document("from", "reviews")
+                                .append("localField", "_id")
+                                .append("foreignField", "wine_id.id")
+                                .append("as", "matched_reviews")),
+                new Document("$project",
+                        new Document("_id", 1L)
+                                .append("statistics",
+                                        new Document("ratings_count",
+                                                new Document("$size", "$matched_reviews"))
+                                                .append("ratings_average",
+                                                        new Document("$cond",
+                                                                Arrays.asList(
+                                                                        new Document("$gt",
+                                                                                Arrays.asList(new Document("$size",
+                                                                                        "$matched_reviews"), 0L)),
+                                                                        new Document("$avg", "$matched_reviews.rating"),
+                                                                        new BsonNull()))))),
+                new Document("$merge",
+                        new Document("into", "wines")
+                                .append("on", "_id")
+                                .append("whenMatched", Arrays.asList(new Document("$set",
+                                        new Document("statistics", "$$new.statistics"))))
+                                .append("whenNotMatched", "discard")));
 
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("wines")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
 
-        for (Document doc : results) {
-            Object idObj = doc.get("_id");
-            Document stats = (Document) doc.get("statistics");
+        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
+        mongoTemplate
+            .indexOps("reviews")
+            .ensureIndex(
+                new Index()
+                    .on("wine_id.id", Sort.Direction.ASC)
+                    .named("index_for_wine_statistics_update")
+            );
+        System.out.println("--- INFO: Ensured index on field \"wine_id.id\" for collection \"reviews\".");
 
-            // Verifico che tutti i campi siano presenti
-            if (idObj == null || stats == null) {
-                continue;
-            }
 
-            Long wineId = ((Number) idObj).longValue();
-
-            Query query = new Query(Criteria.where("_id").is(wineId));
-            Update update = new Update().set("statistics", stats);
-            mongoTemplate.updateFirst(query, update, "wines");
-        }
+        System.out.println("--- INFO: Executing aggregation pipeline for wine statistics update...");
+        mongoTemplate.getCollection("wines").aggregate(pipeline).allowDiskUse(true).toCollection();
+        System.out.println("--- INFO: Wine statistics updated successfully.\n\n");
     }
 
-    // Aggiorna una volta al giorno il campo wines_count contenuto in grapes, in style, nella collection wines
+    // Aggiorna una volta al giorno il campo wines_count contenuto in grapes, in style, nella collection "wines"
+    // Aggiorna anche il campo wines_count contenuto in grapes nella collection "styles"
+    // @Scheduled(cron = "00 31 18 * * ?")    // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void updateWinesCountInGrapesPerWine() {
-        List<Document> pipeline = Arrays.asList(new Document("$unwind", 
-            new Document("path", "$style.grapes")), 
-            new Document("$group", 
-            new Document("_id", "$style.grapes.name")
-                    .append("wines_count",
-            new Document("$sum", 1L))));
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for grapes count update.");
+        List<Document> pipeline = Arrays.asList(
+                new Document("$unwind",
+                        new Document("path", "$style.grapes")),
+                new Document("$group",
+                        new Document("_id", "$style.grapes.name")
+                                .append("wines_count",
+                                        new Document("$sum", 1L))));
 
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("wines")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
 
+        System.out.println("--- INFO: Executing aggregation pipeline for grapes count update...");
+        AggregateIterable<Document> results = mongoTemplate.getCollection("wines").aggregate(pipeline).allowDiskUse(true);
+        System.out.println("--- INFO: Aggregation pipeline executed successfully.");
+
+
+        System.out.println("--- INFO: Processing results from aggregation pipeline...");
         for (Document doc : results) {
             String grapeName = doc.getString("_id");
             Long winesCount = doc.getLong("wines_count");
@@ -216,17 +258,23 @@ public class WineService {
             }
         
             // Seleziona tutti i vini che contengono questa grape
-            Query query = new Query(Criteria.where("style.grapes.name").is(grapeName));
+            Query query_on_wines = new Query(Criteria.where("style.grapes.name").is(grapeName));
+            Query query_on_styles = new Query(Criteria.where("grapes.name").is(grapeName));
         
             // Aggiorna ogni entry dentro style.grapes con quel nome
-            Update update = new Update().set("style.grapes.$[g].wines_count", winesCount);
+            Update update_on_wines = new Update().set("style.grapes.$[g].wines_count", winesCount);
+            Update update_on_styles = new Update().set("grapes.$[g].wines_count", winesCount);
         
             // Definisce il filtro per gli array ("arrayFilters")
-            update.filterArray("g.name", grapeName);
+            update_on_wines.filterArray("g.name", grapeName);
+            update_on_styles.filterArray("g.name", grapeName);
         
             // Applica l'update su tutti i documenti che contengono quella grape
-            mongoTemplate.updateMulti(query, update, "wines");
-        }            
+            mongoTemplate.updateMulti(query_on_wines, update_on_wines, "wines");
+            mongoTemplate.updateMulti(query_on_styles, update_on_styles, "styles");
+        }
+
+        System.out.println("--- INFO: Grapes count updated successfully.\n\n");
     }
 
     /// END of async. operations ///
@@ -293,6 +341,8 @@ public class WineService {
         wine.getRegion().setCountry(new CountryEmbedded());
         wine.getRegion().getCountry().setName(country.getName());
         wine.getRegion().getCountry().setCurrency(country.getCurrency());
+
+        wine.setCreatedAt(Instant.now());
 
         return wineRepository.save(wine);
     }

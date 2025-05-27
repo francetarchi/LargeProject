@@ -106,108 +106,125 @@ public class AnalyticsService {
     ///// Creation of mat. views ///// (functions called by the respective scheduled methods which update the materialized views)
     
     // Crea la meterialized view "top_vintages_by_our_qop_per_type" che contiene le migliori annate per rapporto qualità/prezzo (calcolati secondo la nostra formula), se non esiste già.
-    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage finale della pipeline: se manca, l'aggiornamento fallisce).
     private void createTopVintagesByOurQoPPerType() {
         if (!mongoTemplate.collectionExists(TOP_VINTAGES_OUR_QOP)) {
             mongoTemplate.createCollection(TOP_VINTAGES_OUR_QOP);
+            System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_OUR_QOP + "\" created successfully.");
         } else {
             System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_OUR_QOP + "\" already exists.");
         }
 
-        // Assicuro che esista l'indice.
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
         mongoTemplate
             .indexOps(TOP_VINTAGES_OUR_QOP)
             .ensureIndex(
                 new Index()
                     .on("type", Sort.Direction.ASC)
+                    .named("on_type_UNIQUE")
                     .unique()
             );
-
         System.out.println("--- INFO: Ensured UNIQUE index on field \"type\" for materialized view \"" + TOP_VINTAGES_OUR_QOP + "\".");
     }
 
     // Crea la meterialized view "top_vintages_by_qop_per_type" che contiene le migliori annate per rapporto qualità/prezzo (calcolati secondo la formula "base"), se non esiste già.
-    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage finale della pipeline: se manca, l'aggiornamento fallisce).
     private void createTopVintagesByQoPPerType() {
         if (!mongoTemplate.collectionExists(TOP_VINTAGES_QOP)) {
             mongoTemplate.createCollection(TOP_VINTAGES_QOP);
+            System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_QOP + "\" created successfully.");
         } else {
             System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_QOP + "\" already exists.");
         }
 
-        // Assicuro che esista l'indice.
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
         mongoTemplate
             .indexOps(TOP_VINTAGES_QOP)
             .ensureIndex(
                 new Index()
                     .on("type", Sort.Direction.ASC)
+                    .named("on_type_UNIQUE")
                     .unique()
             );
-
         System.out.println("--- INFO: Ensured UNIQUE index on field \"type\" for materialized view \"" + TOP_VINTAGES_QOP + "\".");
     }
 
     // Crea la meterialized view "top_vintages_by_ratings_per_type" che contiene le migliori annate per valutazione media, se non esiste già.
-    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage finale della pipeline: se manca, l'aggiornamento fallisce).
     private void createTopVintagesByRatingsPerType() {
         if (!mongoTemplate.collectionExists(TOP_VINTAGES_RATINGS)) {
             mongoTemplate.createCollection(TOP_VINTAGES_RATINGS);
+            System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_RATINGS + "\" created successfully.");
         } else {
             System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_RATINGS + "\" already exists.");
         }
 
-        // Assicuro che esista l'indice.
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
         mongoTemplate
             .indexOps(TOP_VINTAGES_RATINGS)
             .ensureIndex(
                 new Index()
                     .on("type", Sort.Direction.ASC)
+                    .named("on_type_UNIQUE")
                     .unique()
             );
-
         System.out.println("--- INFO: Ensured UNIQUE index on field \"type\" for materialized view \"" + TOP_VINTAGES_RATINGS + "\".");
     }
 
     // Crea la meterialized view "top_wines_by_ratings_per_type" che contiene i migliori vini per valutazione media, se non esiste già.
-    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "type" (è il campo utilizzato per lo stage finale della pipeline: se manca, l'aggiornamento fallisce).
     private void createTopWinesByRatingsPerType() {
         if (!mongoTemplate.collectionExists(TOP_WINES_RATINGS)) {
             mongoTemplate.createCollection(TOP_WINES_RATINGS);
+            System.out.println("--- INFO: Materialized view \"" + TOP_WINES_RATINGS + "\" created successfully.");
         } else {
             System.out.println("--- INFO: Materialized view \"" + TOP_WINES_RATINGS + "\" already exists.");
         }
 
-        // Assicuro che esista l'indice.
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
         mongoTemplate
             .indexOps(TOP_WINES_RATINGS)
             .ensureIndex(
                 new Index()
                     .on("type", Sort.Direction.ASC)
+                    .named("on_type_UNIQUE")
                     .unique()
             );
-
         System.out.println("--- INFO: Ensured UNIQUE index on field \"type\" for materialized view \"" + TOP_WINES_RATINGS + "\".");
     }
 
     // Crea la meterialized view "top_wineries_by_wines_ratings" che contiene le migliori cantine per valutazione media dei propri vini, se non esiste già.
-    // Assicura l'esistenza di un indice UNIQUE sul campo "winery_username" (è il campo utilizzato per lo stage  finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "winery_username" (è il campo utilizzato per lo stage finale della pipeline: se manca, l'aggiornamento fallisce).
+    // Assicura l'esistenza di un indice UNIQUE sul campo "login.username" della collezione "wineries" (è il campo utilizzato per il join con la collezione "wineries": se manca, la pipeline è molto più pesante e lenta).
     private void createTopWineriesByWineRatings() {
         if (!mongoTemplate.collectionExists(TOP_WINERIES_RATINGS)) {
             mongoTemplate.createCollection(TOP_WINERIES_RATINGS);
+            System.out.println("--- INFO: Materialized view \"" + TOP_WINERIES_RATINGS + "\" created successfully.");
         } else {
             System.out.println("--- INFO: Materialized view \"" + TOP_WINERIES_RATINGS + "\" already exists.");
         }
 
-        // Assicuro che esista l'indice.
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
         mongoTemplate
             .indexOps(TOP_WINERIES_RATINGS)
             .ensureIndex(
                 new Index()
                     .on("winery_username", Sort.Direction.ASC)
+                    .named("on_winery_username_UNIQUE")
                     .unique()
             );
-
         System.out.println("--- INFO: Ensured UNIQUE index on field \"winery_username\" for materialized view \"" + TOP_WINERIES_RATINGS + "\".");
+
+        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
+        mongoTemplate
+            .indexOps("wineries")
+            .ensureIndex(
+                new Index()
+                    .on("login.username", Sort.Direction.ASC)
+                    .named("on_username_UNIQUE")
+                    .unique()
+            );
+        System.out.println("--- INFO: Ensured UNIQUE index on field \"login.username\" for collection \"wineries\".");
     }
     
     /// END of creation of mat. views ///
@@ -220,8 +237,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la nostra formula.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_our_qop_per_type"
-    // @Scheduled(cron = "00 16 17 05 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTopVintagesByOurQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -230,80 +247,80 @@ public class AnalyticsService {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for materialized view \"" + TOP_VINTAGES_OUR_QOP + "\".");
         List<Document> pipeline = Arrays.asList(
                 //// Stage 1: Unwinding vintages
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$vintages")),
                 
                 //// Stage 2: Projecting only necessary fields
-                new Document("",
+                new Document("$project",
                         new Document("name", 1L)
                                 .append("type", 1L)
-                                .append("winery", ".name")
-                                .append("year", ".year")
-                                .append("image", ".image")
-                                .append("ratings_count", ".statistics.ratings_count")
-                                .append("quality", ".statistics.ratings_average")
-                                .append("price", ".price")
+                                .append("winery", "$winery.name")
+                                .append("year", "$vintages.year")
+                                .append("image", "$vintages.image")
+                                .append("ratings_count", "$vintages.statistics.ratings_count")
+                                .append("quality", "$vintages.statistics.ratings_average")
+                                .append("price", "$vintages.price")
                                 .append("qop",
-                                        new Document("",
-                                                Arrays.asList(new Document("", Arrays.asList(
-                                                        new Document("", ".statistics.ratings_average"),
-                                                        new Document("", ".statistics.ratings_count"))),
-                                                        new Document("", ".price"))))),
+                                        new Document("$divide",
+                                                Arrays.asList(new Document("$multiply", Arrays.asList(
+                                                        new Document("$exp", "$vintages.statistics.ratings_average"),
+                                                        new Document("$sqrt", "$vintages.statistics.ratings_count"))),
+                                                        new Document("$ln", "$vintages.price"))))),
                 
                 //// Stage 3: Sorting by qop (quality/price, computed with our formula) and ratings_count
-                new Document("",
+                new Document("$sort",
                         new Document("qop", -1L)
                                 .append("ratings_count", -1L)),
 
                 //// Stage 4: Grouping by type to calculate max_qop for each type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$type")
                                 .append("max_qop",
-                                        new Document("", ""))
+                                        new Document("$max", "$qop"))
                                 .append("vintages",
-                                        new Document("",
-                                                new Document("wine", "")
-                                                        .append("winery", "")
-                                                        .append("year", "")
-                                                        .append("image", "")
-                                                        .append("ratings_count", "")
-                                                        .append("quality", "")
-                                                        .append("price", "")
-                                                        .append("qop", "")))),
+                                        new Document("$push",
+                                                new Document("wine", "$name")
+                                                        .append("winery", "$winery")
+                                                        .append("year", "$year")
+                                                        .append("image", "$image")
+                                                        .append("ratings_count", "$ratings_count")
+                                                        .append("quality", "$quality")
+                                                        .append("price", "$price")
+                                                        .append("qop", "$qop")))),
 
                 //// Stage 5: Unwinding vintages again to assign max_qop to each vintage (for further computations)
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$vintages")),
 
                 //// Stage 6: Adding "points" field (calculated as percentage of max_qop for each type)
-                new Document("",
+                new Document("$addFields",
                         new Document("vintages.points",
-                                new Document("", Arrays.asList(new Document("", Arrays.asList(100L,
-                                        new Document("", Arrays.asList(".qop", "")))), 1L)))),
+                                new Document("$round", Arrays.asList(new Document("$multiply", Arrays.asList(100L,
+                                        new Document("$divide", Arrays.asList("$vintages.qop", "$max_qop")))), 1L)))),
 
                 //// Stage 7: Grouping by _id (it's the actual type of the wine) and pushing vintages into an array, to separate them again by type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$_id")
                                 .append("vintages",
-                                        new Document("",
-                                                new Document("wine", ".wine")
-                                                        .append("winery", ".winery")
-                                                        .append("year", ".year")
-                                                        .append("image", ".image")
-                                                        .append("ratings_count", ".ratings_count")
-                                                        .append("quality", ".quality")
-                                                        .append("price", ".price")
-                                                        .append("points", ".points")))),
+                                        new Document("$push",
+                                                new Document("wine", "$vintages.wine")
+                                                        .append("winery", "$vintages.winery")
+                                                        .append("year", "$vintages.year")
+                                                        .append("image", "$vintages.image")
+                                                        .append("ratings_count", "$vintages.ratings_count")
+                                                        .append("quality", "$vintages.quality")
+                                                        .append("price", "$vintages.price")
+                                                        .append("points", "$vintages.points")))),
                 
                 //// Stage 8: Projecting final fields
-                new Document("",
+                new Document("$project",
                         new Document("_id", 0L)
-                                .append("type", "")
+                                .append("type", "$_id")
                                 .append("vintages",
                                         new Document("$slice", Arrays.asList("$vintages", 1000L)))),
                 
                 //// Stage 9: Merging the results into the materialized view
-                new Document("",
+                new Document("$merge",
                     new Document("into", TOP_VINTAGES_OUR_QOP)
                             .append("on", "type")
                             // se un documento con lo stesso "type" esiste già nella materialized view, lo rimpiazzo
@@ -318,7 +335,7 @@ public class AnalyticsService {
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_OUR_QOP + "\"...");
-        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).allowDiskUse(true).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_OUR_QOP + "\" updated successfully.\n\n");
     }
@@ -326,8 +343,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la formula "base" (ratings_average/price).
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_qop_per_type"
-    // @Scheduled(cron = "00 16 17 05 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTopVintagesByQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -336,76 +353,76 @@ public class AnalyticsService {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for materialized view \"" + TOP_VINTAGES_QOP + "\".");
         List<Document> pipeline = Arrays.asList(
                 //// Stage 1: Unwinding vintages
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$vintages")),
                 
                 //// Stage 2: Projecting only necessary fields
-                new Document("",
+                new Document("$project",
                         new Document("name", 1L)
                                 .append("type", 1L)
-                                .append("winery", ".name")
-                                .append("year", ".year")
-                                .append("image", ".image")
-                                .append("ratings_count", ".statistics.ratings_count")
-                                .append("quality", ".statistics.ratings_average")
-                                .append("price", ".price")
+                                .append("winery", "$winery.name")
+                                .append("year", "$vintages.year")
+                                .append("image", "$vintages.image")
+                                .append("ratings_count", "$vintages.statistics.ratings_count")
+                                .append("quality", "$vintages.statistics.ratings_average")
+                                .append("price", "$vintages.price")
                                 .append("qop",
-                                        new Document("", Arrays.asList(".statistics.ratings_average", ".price")))),
+                                        new Document("$divide", Arrays.asList("$vintages.statistics.ratings_average", "$vintages.price")))),
                 
                 //// Stage 3: Sorting by qop (quality/price, computed with our formula) and ratings_count
-                new Document("",
+                new Document("$sort",
                         new Document("qop", -1L)
                                 .append("ratings_count", -1L)),
 
                 //// Stage 4: Grouping by type to calculate max_qop for each type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$type")
                                 .append("max_qop",
-                                        new Document("", ""))
+                                        new Document("$max", "$qop"))
                                 .append("vintages",
-                                        new Document("",
-                                                new Document("wine", "")
-                                                        .append("winery", "")
-                                                        .append("year", "")
-                                                        .append("image", "")
-                                                        .append("ratings_count", "")
-                                                        .append("quality", "")
-                                                        .append("price", "")
-                                                        .append("qop", "")))),
+                                        new Document("$push",
+                                                new Document("wine", "$name")
+                                                        .append("winery", "$winery")
+                                                        .append("year", "$year")
+                                                        .append("image", "$image")
+                                                        .append("ratings_count", "$ratings_count")
+                                                        .append("quality", "$quality")
+                                                        .append("price", "$price")
+                                                        .append("qop", "$qop")))),
 
                 //// Stage 5: Unwinding vintages again to assign max_qop to each vintage (for further computations)
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$vintages")),
 
                 //// Stage 6: Adding "points" field (calculated as percentage of max_qop for each type)
-                new Document("",
+                new Document("$addFields",
                         new Document("vintages.points",
-                                new Document("", Arrays.asList(new Document("", Arrays.asList(100L,
-                                        new Document("", Arrays.asList(".qop", "")))), 1L)))),
+                                new Document("$round", Arrays.asList(new Document("$multiply", Arrays.asList(100L,
+                                        new Document("$divide", Arrays.asList("$vintages.qop", "$max_qop")))), 1L)))),
 
                 //// Stage 7: Grouping by _id (it's the actual type of the wine) and pushing vintages into an array, to separate them again by type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$_id")
                                 .append("vintages",
-                                        new Document("",
-                                                new Document("wine", ".wine")
-                                                        .append("winery", ".winery")
-                                                        .append("year", ".year")
-                                                        .append("image", ".image")
-                                                        .append("ratings_count", ".ratings_count")
-                                                        .append("quality", ".quality")
-                                                        .append("price", ".price")
-                                                        .append("points", ".points")))),
+                                        new Document("$push",
+                                                new Document("wine", "$vintages.wine")
+                                                        .append("winery", "$vintages.winery")
+                                                        .append("year", "$vintages.year")
+                                                        .append("image", "$vintages.image")
+                                                        .append("ratings_count", "$vintages.ratings_count")
+                                                        .append("quality", "$vintages.quality")
+                                                        .append("price", "$vintages.price")
+                                                        .append("points", "$vintages.points")))),
                 
                 //// Stage 8: Projecting final fields
-                new Document("",
+                new Document("$project",
                         new Document("_id", 0L)
-                                .append("type", "")
-                                .append("vintages", 
-                                        new Document("$slice", Arrays.asList("$vintages", 1000L)))), 
+                                .append("type", "$_id")
+                                .append("vintages",
+                                        new Document("$slice", Arrays.asList("$vintages", 1000L)))),
                 
                 //// Stage 9: Merging the results into the materialized view
-                new Document("",
+                new Document("$merge",
                     new Document("into", TOP_VINTAGES_QOP)
                             .append("on", "type")
                             // se un documento con lo stesso "type" esiste già nella materialized view, lo rimpiazzo
@@ -420,7 +437,7 @@ public class AnalyticsService {
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_QOP + "\"...");
-        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).allowDiskUse(true).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_QOP + "\" updated successfully.\n\n");
     }
@@ -428,8 +445,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_ratings_per_type"
-    // @Scheduled(cron = "00 16 17 05 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTopVintagesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -438,47 +455,47 @@ public class AnalyticsService {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for materialized view \"" + TOP_VINTAGES_RATINGS + "\".");
         List<Document> pipeline = Arrays.asList(
                 //// Stage 1: Unwinding vintages
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$vintages")),
 
                 //// Stage 2: Projecting only necessary fields
-                new Document("",
+                new Document("$project",
                         new Document("name", 1L)
                                 .append("type", 1L)
-                                .append("winery", ".name")
-                                .append("year", ".year")
-                                .append("price", ".price")
-                                .append("image", ".image")
-                                .append("ratings_average", ".statistics.ratings_average")
-                                .append("ratings_count", ".statistics.ratings_count")),
+                                .append("winery", "$winery.name")
+                                .append("year", "$vintages.year")
+                                .append("price", "$vintages.price")
+                                .append("image", "$vintages.image")
+                                .append("ratings_average", "$vintages.statistics.ratings_average")
+                                .append("ratings_count", "$vintages.statistics.ratings_count")),
 
                 //// Stage 3: Sorting by ratings_average and ratings_count
-                new Document("",
+                new Document("$sort",
                         new Document("ratings_average", -1L)
                                 .append("ratings_count", -1L)),
                                 
                 //// Stage 4: Grouping by type to create top vintages for each type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$type")
                                 .append("vintages",
-                                        new Document("",
-                                                new Document("wine", "")
-                                                        .append("winery", "")
-                                                        .append("year", "")
-                                                        .append("price", "")
-                                                        .append("image", "")
-                                                        .append("ratings_average", "")
-                                                        .append("ratings_count", "")))),
+                                        new Document("$push",
+                                                new Document("wine", "$name")
+                                                        .append("winery", "$winery")
+                                                        .append("year", "$year")
+                                                        .append("price", "$price")
+                                                        .append("image", "$image")
+                                                        .append("ratings_average", "$ratings_average")
+                                                        .append("ratings_count", "$ratings_count")))),
                                                         
                 //// Stage 5: Projecting final fields
-                new Document("",
+                new Document("$project",
                         new Document("_id", 0L)
-                                .append("type", "")
+                                .append("type", "$_id")
                                 .append("vintages", 
                                         new Document("$slice", Arrays.asList("$vintages", 1000L)))), 
                                 
                 //// Stage 6: Merging the results into the materialized view
-                new Document("",
+                new Document("$merge",
                         new Document("into", TOP_VINTAGES_RATINGS)
                                 .append("on", "type")
                                 .append("whenMatched", "replace")
@@ -491,7 +508,7 @@ public class AnalyticsService {
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_VINTAGES_RATINGS + "\"...");
-        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).allowDiskUse(true).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_VINTAGES_RATINGS + "\" updated successfully.\n\n");
     }
@@ -499,8 +516,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wines per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wines_by_ratings_per_type"
-    // @Scheduled(cron = "00 16 17 05 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTopWinesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -509,44 +526,44 @@ public class AnalyticsService {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for materialized view \"" + TOP_WINES_RATINGS + "\".");
         List<Document> pipeline = Arrays.asList(
                 //// Stage 1: Projecting only necessary fields
-                new Document("",
+                new Document("$project",
                         new Document("name", 1L)
                                 .append("type", 1L)
-                                .append("winery", ".name")
+                                .append("winery", "$winery.name")
                                 .append("prices_average",   // dato che i prezzi sono diversi per ogni vintage, calcolo la media dei prezzi delle annate
-                                        new Document("",
-                                                Arrays.asList(new Document("", ".price"), 2L)))
+                                        new Document("$round",
+                                                Arrays.asList(new Document("$avg", "$vintages.price"), 2L)))
                                 .append("image",
-                                        new Document("", Arrays.asList(".image", 0L)))
-                                .append("ratings_average", ".ratings_average")
-                                .append("ratings_count", ".ratings_count")),
+                                        new Document("$arrayElemAt", Arrays.asList("$vintages.image", 0L)))
+                                .append("ratings_average", "$statistics.ratings_average")
+                                .append("ratings_count", "$statistics.ratings_count")),
 
                 //// Stage 2: Sorting by ratings_average and ratings_count
-                new Document("",
+                new Document("$sort",
                         new Document("ratings_average", -1L)
                                 .append("ratings_count", -1L)),
 
                 //// Stage 3: Grouping by type to create top wines for each type
-                new Document("",
-                        new Document("_id", "")
+                new Document("$group",
+                        new Document("_id", "$type")
                                 .append("wines",
-                                        new Document("",
-                                                new Document("wine", "")
-                                                        .append("winery", "")
-                                                        .append("image", "")
-                                                        .append("prices_average", "")
-                                                        .append("ratings_average", "")
-                                                        .append("ratings_count", "")))),
+                                        new Document("$push",
+                                                new Document("wine", "$name")
+                                                        .append("winery", "$winery")
+                                                        .append("image", "$image")
+                                                        .append("prices_average", "$prices_average")
+                                                        .append("ratings_average", "$ratings_average")
+                                                        .append("ratings_count", "$ratings_count")))),
 
                 //// Stage 4: Projecting final fields
-                new Document("",
+                new Document("$project",
                         new Document("_id", 0L)
-                                .append("type", "")
+                                .append("type", "$_id")
                                 .append("wines", 
                                         new Document("$slice", Arrays.asList("$wines", 1000L)))), 
 
                 //// Stage 5: Merging the results into the materialized view
-                new Document("",
+                new Document("$merge",
                         new Document("into", TOP_WINES_RATINGS)
                                 .append("on", "type")
                                 .append("whenMatched", "replace")
@@ -554,12 +571,12 @@ public class AnalyticsService {
         );
 
         // Creating the materialized view
-        System.out.println("--- INFO: Creating empty materialized view \"" + TOP_WINES_RATINGS + "\".");
+        System.out.println("--- INFO: Creating empty materialized view \"" + TOP_WINES_RATINGS + "\"...");
         createTopWinesByRatingsPerType();
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINES_RATINGS + "\"...");
-        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).allowDiskUse(true).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_WINES_RATINGS + "\" updated successfully.\n\n");
     }
@@ -567,8 +584,8 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wineries per valutazione media dei propri vini.
     // Viene calcolata una classifica unica, senza tener conto (come avviene invece per le altre classifiche) della suddivisione per tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wineries_by_wines_ratings"
-    // @Scheduled(cron = "30 29 18 05 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "00 00 00 01 * ?")   // Ogni primo giorno del mese a mezzanotte
+    @Scheduled(cron = "45 11 21 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTopWineriesByWineRatings() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
@@ -577,43 +594,43 @@ public class AnalyticsService {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for materialized view \"" + TOP_WINERIES_RATINGS + "\".");
         List<Document> pipeline = Arrays.asList(
                 //// Stage 1: Grouping by winery to calculate ratings average and total ratings count
-                new Document("",
-                        new Document("_id", ".username")
+                new Document("$group",
+                        new Document("_id", "$winery.username")
                                 .append("ratings_average",
-                                        new Document("", ".ratings_average"))
+                                        new Document("$avg", "$statistics.ratings_average"))
                                 .append("ratings_count",
-                                        new Document("", ".ratings_count"))),
+                                        new Document("$sum", "$statistics.ratings_count"))),
 
                 //// Stage 2: Joining with wineries collection to get winery details
-                new Document("",
+                new Document("$lookup",
                         new Document("from", "wineries")
                                 .append("localField", "_id")
                                 .append("foreignField", "login.username")
                                 .append("as", "winery")),
 
                 //// Stage 3: Unwinding the winery array to transform the array (of a single element) returned by the lookup into a single document
-                new Document("",
-                        new Document("path", "")),
+                new Document("$unwind",
+                        new Document("path", "$winery")),
 
                 //// Stage 4: Sorting by ratings_average and ratings_count
-                new Document("",
+                new Document("$sort",
                         new Document("ratings_average", -1L)
                                 .append("ratings_count", -1L)),
 
                 //// Stage 5: Projecting final fields
-                new Document("",
+                new Document("$project",
                         new Document("_id", 0L)
-                                .append("winery_username", ".login.username")
-                                .append("thumbnail", ".picture.thumbnail")
-                                .append("winery", ".name")
-                                .append("region", ".region")
-                                .append("country", ".country")
+                                .append("winery_username", "$winery.login.username")
+                                .append("thumbnail", "$winery.picture.thumbnail")
+                                .append("winery", "$winery.name")
+                                .append("region", "$winery.region")
+                                .append("country", "$winery.country")
                                 .append("ratings_average",
-                                        new Document("", Arrays.asList("", 1L)))
-                                .append("ratings_count", "")),
+                                        new Document("$round", Arrays.asList("$ratings_average", 1L)))
+                                .append("ratings_count", "$ratings_count")),
 
                 //// Stage 6: Merging the results into the materialized view
-                new Document("",
+                new Document("$merge",
                         new Document("into", TOP_WINERIES_RATINGS)
                                 .append("on", "winery_username")
                                 .append("whenMatched", "replace")
@@ -626,7 +643,7 @@ public class AnalyticsService {
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline for materialized view \"" + TOP_WINERIES_RATINGS + "\"...");
-        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).allowDiskUse(true).toCollection();
 
         System.out.println("--- INFO: Materialized view \"" + TOP_WINERIES_RATINGS + "\" updated successfully.\n\n");
     }
@@ -641,9 +658,9 @@ public class AnalyticsService {
     /////////////////////////////////
     
     /////////////////////////////////
-    /////// CRUD operations ///////// (just reading and deleting for materialized views)
+    /////// CRUD operations ///////// (just reading and deleting on materialized views)
 
-    /// CREATE operations ///
+    /// READ operations ///
     // Restituisce la top TOP_LENGTH vintages per qualità/prezzo (calcolati secondo la nostra formula) per la tipologia di vino richiesta come parametro (rossi, bianchi, rosati...).
     public TopVintagesOurQopType getTopVintagesByOurQopPerType(String type, Double maxPrice) {
         TopVintagesOurQopType topVintagesOurQopType = topVintagesOurQopTypeRepository.findByTypeLimitN(checkType(type), TOP_LENGTH, maxPrice).orElseThrow(
@@ -691,7 +708,7 @@ public class AnalyticsService {
     }
 
     // Restituisce la top 10 vintages of the month della region dell'utente, (aggregation) contenuta in regions
-    public ArrayList<VintageEmbedded> getTop10VintagesOfTheMonth(String username) {
+    public ArrayList<VintageEmbedded> getTop10VintagesOfTheWeek(String username) {
         Optional<User> user_to_find = userRepository.findByLogin_Username(username);
         String region_name = "";
         
@@ -710,13 +727,13 @@ public class AnalyticsService {
         Region region  = regionRepository.findByName(region_name)
                 .orElseThrow(() -> new ResourceNotFoundException("Region not found."));
 
-        ArrayList<VintageEmbedded> vintages = region.getTop10VintagesOfTheMonth();
+        ArrayList<VintageEmbedded> vintages = region.getTop10VintagesOfTheWeek();
 
         return vintages;
     }
 
     // Restituisce la top 100 vintages of the month della country dell'utente, (aggregation) contenuta in countries
-    public Page<VintageEmbedded> getTop100VintagesOfTheMonth(String username, Integer page) {
+    public Page<VintageEmbedded> getTop100VintagesOfTheWeek(String username, Integer page) {
         Optional<User> user_to_find = userRepository.findByLogin_Username(username);
         String country_name = "";
         
@@ -735,7 +752,7 @@ public class AnalyticsService {
         Country country = countryRepository.findByName(country_name)
                 .orElseThrow(() -> new ResourceNotFoundException("Country not found."));
 
-        ArrayList<VintageEmbedded> vintages = country.getTop100VintagesOfTheMonth();
+        ArrayList<VintageEmbedded> vintages = country.getTop100VintagesOfTheWeek();
 
         Pageable pageable = PageRequest.of(page, PAGE_SIZE);
 

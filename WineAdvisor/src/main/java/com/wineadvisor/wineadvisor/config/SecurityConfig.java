@@ -59,7 +59,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))   // Nessuna sessione
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/authentication/login").anonymous()       // Permetto l'accesso a /api/authentication/** solamente ad utenti non autenticati (endpoint di login)
-                .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
+                // .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
                 .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()  // Permetto l'accesso a /api/wineries solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un'azienda vinicola)
                 .requestMatchers("/api/admins/**").hasRole("ADMIN")     // Permetto l'accesso a /api/admins solamente ad utenti con ruolo ADMIN (endpoint di gestione degli admin)
                 .requestMatchers("/api/regions/**").hasRole("ADMIN")    // Permetto l'accesso a /api/countries solamente ad utenti con ruolo ADMIN (endpoint di gestione delle regioni)

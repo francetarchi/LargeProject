@@ -23,10 +23,10 @@ public class CreateWineDTO {
     private String type;
 
     @NotNull(message = "IsNatural info cannot be blank.")
-    @Schema(description = "IsNatural info of the new wine", example = "true")
+    @Schema(description = "IsNatural info of the new wine", example = "false")
     @Field("is_natural")
     private Boolean isNatural;
 
-    @Schema(description = "Style name of the new wine")
+    @Schema(description = "Style name of the new wine", example = "Bianco Italia Settentrionale")
     private String style;
 }

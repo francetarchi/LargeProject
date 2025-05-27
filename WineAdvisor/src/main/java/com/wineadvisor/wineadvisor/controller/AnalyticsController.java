@@ -74,14 +74,14 @@ public class AnalyticsController {
     @GetMapping("/top-10-vintages")
     public ResponseEntity<?> getTop10VintagesOfTheMonth() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop10VintagesOfTheMonth(username));
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop10VintagesOfTheWeek(username));
     }
 
     @GetMapping("/top-100-vintages")
     public ResponseEntity<?> getTop100VintagesOfTheMonth(
         @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop100VintagesOfTheMonth(username, page));
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop100VintagesOfTheWeek(username, page));
     }
     
     ///////////// DELETE ////////////

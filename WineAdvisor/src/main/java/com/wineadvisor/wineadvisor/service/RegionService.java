@@ -79,7 +79,7 @@ public class RegionService {
         Region region = new Region();
         region.setName(name);
         region.setCountry(country);
-        region.setTop10VintagesOfTheMonth(null);
+        region.setTop10VintagesOfTheWeek(null);
         
         return regionRepository.save(region);
     }

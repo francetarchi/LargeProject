@@ -50,7 +50,7 @@ public class WineController {
 
     ////////////// POST //////////////
     @PostMapping
-    @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
+    @Secured( "ROLE_WINERY" )
     public ResponseEntity<?> createWine(
             @NotNull(message = "New wine info cannot be null.") @Valid @RequestBody CreateWineDTO wine) {
         String wineryUsername = (String) SecurityContextHolder.getContext().getAuthentication().getName();

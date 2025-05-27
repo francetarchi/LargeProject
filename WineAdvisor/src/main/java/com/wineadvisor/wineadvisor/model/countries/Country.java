@@ -27,6 +27,6 @@ public class Country {
     
     private Currency currency;
 
-    @Field("top_100_vintages_of_the_month")
-    private ArrayList<VintageEmbedded> top100VintagesOfTheMonth;
+    @Field("top_100_vintages_of_the_week")
+    private ArrayList<VintageEmbedded> top100VintagesOfTheWeek;
 }

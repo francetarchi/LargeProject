@@ -24,6 +24,6 @@ public class Region {
     private String name;
     private String country;
 
-    @Field("top_10_vintages_of_the_month")
-    private ArrayList<VintageEmbedded> top10VintagesOfTheMonth;
+    @Field("top_10_vintages_of_the_week")
+    private ArrayList<VintageEmbedded> top10VintagesOfTheWeek;
 }

@@ -1,5 +1,6 @@
 package com.wineadvisor.wineadvisor.model.wines;
 
+import java.time.Instant;
 import java.util.ArrayList;
 
 import com.wineadvisor.wineadvisor.model.utils.Taste;
@@ -48,4 +49,7 @@ public class Wine {
     private ArrayList<Vintage> vintages;
 
     private Statistics statistics;
+
+    @Field("created_at")
+    private Instant createdAt;
 }

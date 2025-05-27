@@ -110,8 +110,9 @@ public class UserService {
     //// Asynchronous operations ////
     
     // Per ogni utente, scorre l'array dei likes e l'array dei dislikes: per ogni reviewId, controlla che la review esista ancora (se NON esiste più, elimina il reviewId dall'array)
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void cleanLikesAndDislikes() {
+        System.out.println("--- INFO: Cleaning likes and dislikes from users...");
         userRepository.findAll().forEach(
             user -> {
                 Boolean isUserUpdated = false;
@@ -132,6 +133,7 @@ public class UserService {
                 }
             }
         );
+        System.out.println("--- INFO: Likes and dislikes cleaned successfully.\n\n");
     }
 
     /// END of async. operations ///
@@ -142,8 +144,8 @@ public class UserService {
     //// Aggregation pipelines /////
 
     // Aggiorna una volta a settimana la lista degli wineTips per ogni utente
-    // @Scheduled(cron = "00 32 22 12 * ?")    // Scheduling for debugging purposes
-    @Scheduled(cron = "0 0 0 * * MON")
+    // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateWineTipsPerUser() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "users";
@@ -151,23 +153,72 @@ public class UserService {
         // Instantiating the aggregation pipeline
         System.out.println("--- INFO: Declaring aggregation pipeline stages for updating field \"wine_tips\" in collection \"users\".");
         List<Document> pipeline = Arrays.asList(
-                //// Stage 1: Projecting initial fields
-                new Document("$project", 
-                new Document("username", "$login.username")
-                        .append("wine_favorites", "$wine_favorites")),
-                
-                //// Stage 2: Unwinding wine_favorites
-                new Document("$unwind",
-                        new Document("path", "$wine_favorites")),
+                //// Stage 1: Project initial fields
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("username", "$login.username")
+                                .append("favorite_wines", "$wine_favorites.id")),
 
-                //// Stage 3: Lookup to get wines details
+                //// Stage 2: Lookup for user's top rated wines
+                new Document("$lookup",
+                        new Document("from", "reviews")
+                                .append("let",
+                                        new Document("userUsername", "$username"))
+                                .append("pipeline", Arrays.asList(new Document("$match",
+                                        new Document("$expr",
+                                                new Document("$eq",
+                                                        Arrays.asList("$user_id.username", "$$userUsername")))),
+                                        new Document("$sort",
+                                                new Document("rating", -1L)
+                                                        .append("created_at", -1L)),
+                                        new Document("$limit", 3L),
+                                        new Document("$project",
+                                                new Document("_id", 0L)
+                                                        .append("wine_id", "$wine_id.id"))))
+                                .append("as", "top_rated_wines")),
+
+                //// Stage 3: Add fields and process top rated wines
+                new Document("$addFields",
+                        new Document("top_rated_wines",
+                                new Document("$map",
+                                        new Document("input", "$top_rated_wines")
+                                                .append("as", "review")
+                                                .append("in", "$$review.wine_id")))),
+
+                //// Stage 4: Add fields to unify favorite wines and top rated wines
+                new Document("$addFields",
+                        new Document("wines",
+                                new Document("$setUnion", Arrays.asList(
+                                        new Document("$ifNull", Arrays.asList("$favorite_wines", Arrays.asList())),
+                                        new Document("$ifNull", Arrays.asList("$top_rated_wines", Arrays.asList())))))),
+                
+                //// Stage 5: Project only necessary fields
+                new Document("$project",
+                        new Document("favorite_wines", 0L)
+                                .append("top_rated_wines", 0L)),
+
+                //// Stage 6: Unwind wines to get individual wine IDs
+                new Document("$unwind",
+                        new Document("path", "$wines")),
+
+                //// Stage 7: Lookup to get wine details
                 new Document("$lookup",
                         new Document("from", "wines")
-                                .append("localField", "wine_favorites")
+                                .append("localField", "wines")
                                 .append("foreignField", "_id")
                                 .append("as", "wine")),
 
-                //// Stage 4: Grouping by username and wine_style to delete wine_style duplicates
+                //// Stage 8: Unwind wine to get individual wine details
+                new Document("$unwind",
+                        new Document("path", "$wine")),
+
+                //// Stage 9: Project only necessary fields
+                new Document("$project",
+                        new Document("username", "$username")
+                                .append("wine_id", "$wines")
+                                .append("wine_style", "$wine.style.name")),
+
+                //// Stage 10: Group by username and wine style to get unique wine tips per style for each user
                 new Document("$group",
                         new Document("_id",
                                 new Document("username", "$username")
@@ -175,93 +226,316 @@ public class UserService {
                                 .append("wine_id",
                                         new Document("$first", "$wine_id"))),
 
-                //// Stage 5: Projecting necessary fields
+                //// Stage 11: Project only necessary fields
                 new Document("$project",
                         new Document("_id", 0L)
                                 .append("username", "$_id.username")
                                 .append("wine_id", "$wine_id")
                                 .append("wine_style", "$_id.wine_style")),
-
-                //// Stage 6: Unwinding wine
-                new Document("$unwind",
-                        new Document("path", "$wine")),
-                        
-                //// Stage 7: Projecting necessary fields
-                new Document("$project",
-                        new Document("username", "$username")
-                                .append("wine_id", "$wine_favorites")
-                                .append("wine_style", "$wine.style.name")),
-
-                //// Stage 8: Lookup to get details about wines with a given style
+                                
+                //// Stage 12: Lookup to get style details
                 new Document("$lookup",
                         new Document("from", "wines")
-                                .append("localField", "wine_style")
-                                .append("foreignField", "style.name")
+                                .append("let",
+                                        new Document("current_style_name", "$wine_style"))
+                                .append("pipeline", Arrays.asList(new Document("$match",
+                                        new Document("$expr",
+                                                new Document("$eq",
+                                                        Arrays.asList("$style.name", "$$current_style_name")))),
+                                        new Document("$sort",
+                                                new Document("statistics.ratings_average", -1L)
+                                                        .append("statistics.ratings_count", -1L)),
+                                        new Document("$limit", 25L),
+                                        new Document("$project",
+                                                new Document("_id", 0L)
+                                                        .append("wine_id", "$_id")
+                                                        .append("wine_name", "$name")
+                                                        .append("wine_type", "$type")
+                                                        .append("wine_style", "$style.name")
+                                                        .append("wine_rating", "$statistics.ratings_average")
+                                                        .append("wine_ratings_count", "$statistics.ratings_count")
+                                                        .append("wine_price_avg",
+                                                                new Document("$avg", "$vintages.price"))
+                                                        .append("wine_image",
+                                                                new Document(
+                                                                        "$arrayElemAt", Arrays.asList(
+                                                                                new Document("$map",
+                                                                                        new Document("input",
+                                                                                                "$vintages")
+                                                                                                .append("as", "v")
+                                                                                                .append("in",
+                                                                                                        "$$v.image")),
+                                                                                0L)))
+                                                        .append("wine_created_at", "$created_at"))))
                                 .append("as", "tips_by_style")),
-                
-                //// Stage 9: Unwinding tips_by_style
-                new Document("$unwind",
-                        new Document("path", "$tips_by_style")),
-                        
-                //// Stage 10: Sorting on ratings_average and ratings_count
-                new Document("$sort",
-                        new Document("tips_by_style.statistics.ratings_average", -1L)
-                                .append("tips_by_style.statistics.ratings_count", -1L)),
 
-                //// Stage 11: Grouping by username to push wines for each user
+                //// Stage 13: Unwind tips_by_style to get individual wine tips
+                new Document("$unwind",
+                        new Document("path", "$tips_by_style")
+                                .append("preserveNullAndEmptyArrays", false)),
+
+                //// Stage 14: Group by username to collect all wine tips for each user
                 new Document("$group",
                         new Document("_id", "$username")
                                 .append("wine_tips",
-                                        new Document("$push",
-                                                new Document("wine_id", "$tips_by_style._id")
-                                                        .append("wine_name", "$tips_by_style.name")
-                                                        .append("wine_type", "$tips_by_style.type")
-                                                        .append("wine_style", "$tips_by_style.style.name")
-                                                        .append("wine_rating",
-                                                                "$tips_by_style.statistics.ratings_average")
-                                                        .append("wine_price_avg",
-                                                                new Document("$avg", "$tips_by_style.vintages.price"))
-                                                        .append("wine_image",
-                                                                new Document("$arrayElemAt", Arrays.asList(
-                                                                        new Document("$map",
-                                                                                new Document("input",
-                                                                                        "$tips_by_style.vintages")
-                                                                                        .append("as", "v")
-                                                                                        .append("in", "$$v.image")),
-                                                                        0L)))))),
+                                        new Document("$push", "$tips_by_style"))),
 
-                //// Stage 12: Projecting final fields
+                //// Stage 15: Project final structure for each user
                 new Document("$project",
                         new Document("_id", 0L)
                                 .append("login.username", "$_id")
                                 .append("wine_tips",
                                         new Document("$slice", Arrays.asList("$wine_tips", 100L)))),
-                
-                //// Stage 13: Merging results into users collection
+
+                //// Stage 16: Merge results back into the users collection
                 new Document("$merge",
                         new Document("into", "users")
                                 .append("on", "login.username")
                                 .append("whenMatched", Arrays.asList(new Document("$set",
                                         new Document("wine_tips", "$$new.wine_tips"))))
-                                .append("whenNotMatched", "discard"))
-            );
-        
+                                .append("whenNotMatched", "discard")));
+
+
         // Ensuring existence of indexes needed for lookups
         mongoTemplate
-            .indexOps(SOURCE_COLLECTION_NAME)
+            .indexOps("users")
             .ensureIndex(
                 new Index()
                     .on("login.username", Sort.Direction.ASC)
+                    .named("on_username_UNIQUE")
                     .unique()
-            );
-
+                    );
         System.out.println("--- INFO: Ensured UNIQUE index on field \"username\" for collection \"" + SOURCE_COLLECTION_NAME + "\".");
+
+        mongoTemplate
+            .indexOps("reviews")
+            .ensureIndex(
+                new Index()
+                    .on("user_id.username", Sort.Direction.ASC)
+                    .on("rating", Sort.Direction.DESC)
+                    .on("created_at", Sort.Direction.DESC)
+                    .named("index_for_wine_tips_and_new_wine_tips")
+            );
+        System.out.println("--- INFO: Ensured index on fields \"user_id.username\", \"rating\" and \"created_at\" for collection \"reviews\".");
+
+        mongoTemplate
+            .indexOps("wines")
+            .ensureIndex(
+                new Index()
+                    .on("style.name", Sort.Direction.ASC)
+                    .on("statistics.ratings_average", Sort.Direction.DESC)
+                    .on("statistics.ratings_count", Sort.Direction.DESC)
+                    .named("index_for_wine_tips")
+            );
+        System.out.println("--- INFO: Ensured index on fields \"style.name\", \"statistics.ratings_average\" and \"statistics.ratings_count\" for collection \"wines\".");
+
         
         // Executing the pipeline
         System.out.println("--- INFO: Executing aggregation pipeline...");
         mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
 
         System.out.println("--- INFO: Field \"wine_tips\" in collection \"users\" updated successfully.\n\n");
+    }
+
+
+    // Aggiorna una volta a settimana la lista dei newWineTips per ogni utente
+    // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 0 * * MON")     // Ogni lunedì a mezzanotte
+    private void updateNewWineTipsPerUser() {
+        // Defining the name of the starting collection
+        final String SOURCE_COLLECTION_NAME = "users";
+
+        // Instantiating the aggregation pipeline
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for updating field \"new_wine_tips\" in collection \"users\".");
+        List<Document> pipeline = Arrays.asList(
+                //// Stage 1: Project initial fields
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("username", "$login.username")
+                                .append("favorite_wines", "$wine_favorites.id")),
+
+                //// Stage 2: Lookup for user's favorite wines
+                new Document("$lookup",
+                        new Document("from", "reviews")
+                                .append("let",
+                                        new Document("userUsername", "$username"))
+                                .append("pipeline", Arrays.asList(new Document("$match",
+                                        new Document("$expr",
+                                                new Document("$eq",
+                                                        Arrays.asList("$user_id.username", "$$userUsername")))),
+                                        new Document("$sort",
+                                                new Document("rating", -1L)
+                                                        .append("created_at", -1L)),
+                                        new Document("$limit", 3L),
+                                        new Document("$project",
+                                                new Document("_id", 0L)
+                                                        .append("wine_id", "$wine_id.id"))))
+                                .append("as", "top_rated_wines")),
+
+                //// Stage 3: Add fields and process top rated wines
+                new Document("$addFields",
+                        new Document("top_rated_wines",
+                                new Document("$map",
+                                        new Document("input", "$top_rated_wines")
+                                                .append("as", "review")
+                                                .append("in", "$$review.wine_id")))),
+
+                //// Stage 4: Add fields to unify favorite wines and top rated wines
+                new Document("$addFields",
+                        new Document("wines",
+                                new Document("$setUnion", Arrays.asList(
+                                        new Document("$ifNull", Arrays.asList("$favorite_wines", Arrays.asList())),
+                                        new Document("$ifNull", Arrays.asList("$top_rated_wines", Arrays.asList())))))),
+
+                //// Stage 5: Project only necessary fields
+                new Document("$project",
+                        new Document("favorite_wines", 0L)
+                                .append("top_rated_wines", 0L)),
+
+                //// Stage 6: Unwind wines to get individual wine IDs
+                new Document("$unwind",
+                        new Document("path", "$wines")),
+
+                //// Stage 7: Lookup to get wine details
+                new Document("$lookup",
+                        new Document("from", "wines")
+                                .append("localField", "wines")
+                                .append("foreignField", "_id")
+                                .append("as", "wine")),
+
+                //// Stage 8: Unwind wine to get individual wine details
+                new Document("$unwind",
+                        new Document("path", "$wine")),
+
+                //// Stage 9: Project only necessary fields
+                new Document("$project",
+                        new Document("username", "$username")
+                                .append("wine_id", "$wines")
+                                .append("wine_style", "$wine.style.name")),
+
+                //// Stage 10: Group by username and wine style to get unique wine tips per style for each user
+                new Document("$group",
+                        new Document("_id",
+                                new Document("username", "$username")
+                                        .append("wine_style", "$wine_style"))
+                                .append("wine_id",
+                                        new Document("$first", "$wine_id"))),
+
+                //// Stage 11: Project only necessary fields
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("username", "$_id.username")
+                                .append("wine_id", "$wine_id")
+                                .append("wine_style", "$_id.wine_style")),
+
+                //// Stage 12: Lookup to get style details of wines created in the last 6 months
+                new Document("$lookup",
+                        new Document("from", "wines")
+                                .append("let",
+                                        new Document("current_style_name", "$wine_style"))
+                                .append("pipeline", Arrays.asList(new Document("$match",
+                                        new Document("$expr",
+                                                new Document("$and",
+                                                        Arrays.asList(
+                                                                new Document("$eq",
+                                                                        Arrays.asList("$style.name",
+                                                                                "$$current_style_name")),
+                                                                new Document("$gte", Arrays.asList("$created_at",
+                                                                        new Document("$dateSubtract",
+                                                                                new Document("startDate", "$$NOW")
+                                                                                        .append("unit", "month")
+                                                                                        .append("amount", 6L)))))))),
+                                        new Document("$sort",
+                                                new Document("created_at", -1L)),
+                                        new Document("$limit", 25L),
+                                        new Document("$project",
+                                                new Document("_id", 0L)
+                                                        .append("wine_id", "$_id")
+                                                        .append("wine_name", "$name")
+                                                        .append("wine_type", "$type")
+                                                        .append("wine_style", "$style.name")
+                                                        .append("wine_rating", "$statistics.ratings_average")
+                                                        .append("wine_ratings_count", "$statistics.ratings_count")
+                                                        .append("wine_price_avg",
+                                                                new Document("$avg", "$vintages.price"))
+                                                        .append("wine_image",
+                                                                new Document(
+                                                                        "$arrayElemAt", Arrays.asList(
+                                                                                new Document("$map",
+                                                                                        new Document("input",
+                                                                                                "$vintages")
+                                                                                                .append("as", "v")
+                                                                                                .append("in",
+                                                                                                        "$$v.image")),
+                                                                                0L)))
+                                                        .append("wine_created_at", "$created_at"))))
+                                .append("as", "tips_by_style")),
+
+                //// Stage 13: Unwind tips_by_style to get individual wine tips
+                new Document("$unwind",
+                        new Document("path", "$tips_by_style")
+                                .append("preserveNullAndEmptyArrays", false)),
+
+                //// Stage 14: Group by username to collect all new wine tips for each user
+                new Document("$group",
+                        new Document("_id", "$username")
+                                .append("new_wine_tips",
+                                        new Document("$push", "$tips_by_style"))),
+
+                //// Stage 15: Project final structure for each user
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("login.username", "$_id")
+                                .append("new_wine_tips",
+                                        new Document("$slice", Arrays.asList("$new_wine_tips", 100L)))),
+
+                //// Stage 16: Merge results back into the users collection
+                new Document("$merge",
+                        new Document("into", "users")
+                                .append("on", "login.username")
+                                .append("whenMatched", Arrays.asList(new Document("$set",
+                                        new Document("new_wine_tips", "$$new.new_wine_tips"))))
+                                .append("whenNotMatched", "discard")));
+
+
+        // Ensuring existence of indexes needed for lookups
+        mongoTemplate
+            .indexOps("users")
+            .ensureIndex(
+                new Index()
+                    .on("login.username", Sort.Direction.ASC)
+                    .named("on_username_UNIQUE")
+                    .unique()
+                    );
+        System.out.println("--- INFO: Ensured UNIQUE index on field \"username\" for collection \"" + SOURCE_COLLECTION_NAME + "\".");
+
+        mongoTemplate
+            .indexOps("reviews")
+            .ensureIndex(
+                new Index()
+                    .on("user_id.username", Sort.Direction.ASC)
+                    .on("rating", Sort.Direction.DESC)
+                    .on("created_at", Sort.Direction.DESC)
+                    .named("index_for_wine_tips_and_new_wine_tips")
+            );
+        System.out.println("--- INFO: Ensured index on fields \"user_id.username\", \"rating\" and \"created_at\" for collection \"reviews\".");
+
+        mongoTemplate
+            .indexOps("wines")
+            .ensureIndex(
+                new Index()
+                    .on("style.name", Sort.Direction.ASC)
+                    .on("created_at", Sort.Direction.DESC)
+                    .named("index_for_new_wine_tips")
+            );
+        System.out.println("--- INFO: Ensured index on fields \"style.name\", \"statistics.ratings_average\" and \"statistics.ratings_count\" for collection \"wines\".");
+
+
+        // Executing the pipeline
+        System.out.println("--- INFO: Executing aggregation pipeline...");
+        mongoTemplate.getCollection(SOURCE_COLLECTION_NAME).aggregate(pipeline).toCollection();
+
+        System.out.println("--- INFO: Field \"new_wine_tips\" in collection \"users\" updated successfully.\n\n");
     }
 
     //// END of aggr. pipelines ////

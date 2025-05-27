@@ -25,13 +25,11 @@ import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
-import com.mongodb.client.AggregateIterable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -179,6 +177,7 @@ public class ReviewService {
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
     @Scheduled(cron = "0 0 0 * * ?")   // Ogni giorno a mezzanotte
     private void updateReviewsEmbeddedWinesAndUsers() {
+        System.out.println("--- INFO: Updating reviews embedded in wines...");
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++){
             ArrayList<Vintage> vintages = wines.get(i).getVintages();
@@ -186,11 +185,14 @@ public class ReviewService {
                 updateWinesReviews(wines.get(i).getId(), vintages.get(j).getYear());
             }
         }
+        System.out.println("--- INFO: Reviews embedded in wines successfully updated.");
 
+        System.out.println("--- INFO: Updating reviews embedded in users...");
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (int i = 0; i < users.size(); i++){
             updateUsersReviews(users.get(i).getLogin().getUsername());
         }
+        System.out.println("--- INFO: Reviews embedded in users successfully updated.\n\n");
     }
 
     //// END of async operations ////
@@ -201,141 +203,172 @@ public class ReviewService {
     ///// Aggregation pipelines /////
 
     // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
-    @Scheduled(cron = "0 0 0 25 * ?")   // Ogni 25 del mese a mezzanotte
+    // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
+    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTop10VintagesPerRegion() {
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"regions\".");
         List<Document> pipeline = Arrays.asList(
-            new Document("$lookup", new Document("from", "users")
-                .append("localField", "user_id.username")
-                .append("foreignField", "login.username")
-                .append("as", "result")),
-            
-            new Document("$unwind", new Document("path", "$result")),
+                new Document("$lookup", new Document("from", "users")
+                        .append("localField", "user_id.username")
+                        .append("foreignField", "login.username")
+                        .append("as", "result")),
 
-            new Document("$project", new Document("_id", 0)
-                .append("wine_id", "$wine_id.id")
-                .append("wine_name", "$wine_id.name")
-                .append("wine_image", "$wine_id.image")
-                .append("year", "$wine_id.year")
-                .append("region", "$result.address.region")),
+                new Document("$unwind", new Document("path", "$result")),
 
-            new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
-                                                        .append("year", "$year")
-                                                        .append("region", "$region"))
-                .append("wine_name", new Document("$first", "$wine_name"))
-                .append("wine_image", new Document("$first", "$wine_image"))
-                .append("count", new Document("$sum", 1))),
+                new Document("$project", new Document("_id", 0)
+                        .append("wine_id", "$wine_id.id")
+                        .append("wine_name", "$wine_id.name")
+                        .append("wine_image", "$wine_id.image")
+                        .append("year", "$wine_id.year")
+                        .append("region", "$result.address.region")),
 
-            new Document("$sort", new Document("count", -1)),
+                new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
+                        .append("year", "$year")
+                        .append("region", "$region"))
+                        .append("wine_name", new Document("$first", "$wine_name"))
+                        .append("wine_image", new Document("$first", "$wine_image"))
+                        .append("count", new Document("$sum", 1))),
 
-            new Document("$group", new Document("_id", "$_id.region")
-                .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
-                                                            .append("wine_name", "$wine_name")
-                                                            .append("year", "$_id.year")
-                                                            .append("bottle", "$wine_image")
-                                                            .append("count", "$count")))),
+                new Document("$sort", new Document("count", -1)),
 
-            new Document("$project", new Document("name", "$_id")
-                .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
+                new Document("$group", new Document("_id", "$_id.region")
+                        .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
+                                .append("wine_name", "$wine_name")
+                                .append("year", "$_id.year")
+                                .append("bottle", "$wine_image")
+                                .append("count", "$count")))),
 
-            new Document("$project", new Document("_id", 0)
-            .append("name", 1)
-            .append("top_10_vintages_of_the_month", "$vintages")),
-            
-            new Document("$merge", new Document("into", "regions")
-                .append("on", "name")
-                .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))            
-        );
+                new Document("$project", new Document("name", "$_id")
+                        .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
 
-        AggregateIterable<Document> results = mongoTemplate
-        .getCollection("reviews")
-        .aggregate(pipeline)
-        .allowDiskUse(true);
+                new Document("$project", new Document("_id", 0)
+                        .append("name", 1)
+                        .append("top_10_vintages_of_the_week", "$vintages")),
 
-        for (Document doc : results) {
-            String regionName = doc.getString("region");
+                new Document("$merge", new Document("into", "regions")
+                        .append("on", "name")
+                        .append("whenMatched", "merge")
+                        .append("whenNotMatched", "discard")));
+        
+        
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
+        mongoTemplate
+            .indexOps("regions")
+            .ensureIndex(
+                new Index()
+                    .on("name", Sort.Direction.ASC)
+                    .named("on_name_UNIQUE")
+                    .unique()
+            );
+        System.out.println("--- INFO: Ensured UNIQUE index on field \"name\" for collection \"regions\".");
 
-            @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("top_10_vintages_of_the_month");
+        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
+        mongoTemplate
+            .indexOps("users")
+            .ensureIndex(
+                new Index()
+                    .on("login.username", Sort.Direction.ASC)
+                    .named("on_username_UNIQUE")
+                    .unique()
+            );
+        System.out.println("--- INFO: Ensured INDEX on field \"login.username\" for collection \"users\".");
 
-            // Aggiorno la regione corrispondente con il campo "top_10_vintages_of_the_month"
-            Query query = new Query(Criteria.where("name").is(regionName));
-            Update update = new Update().set("top_10_vintages_of_the_month", vintages);
-            mongoTemplate.updateFirst(query, update, "regions");
-        }
+        System.out.println("--- INFO: Executing aggregation pipeline for collection \"regions\"...");
+        mongoTemplate.getCollection("reviews").aggregate(pipeline).allowDiskUse(true).toCollection();
+
+        System.out.println("--- INFO: Collection \"regions\" updated successfully.\n\n");
     }
 
     // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
-    @Scheduled(cron = "0 0 0 25 * ?") // Ogni 25 del mese a mezzanotte
+    // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
+    @Scheduled(cron = "0 0 0 * * MON")      // Ogni lunedì a mezzanotte
     private void updateTop100VintagesPerCountry() {
-        List<Document> pipeline = Arrays.asList(new Document("$lookup", 
-            new Document("from", "users")
-                    .append("localField", "user_id.username")
-                    .append("foreignField", "login.username")
-                    .append("as", "result")), 
-            new Document("$unwind", 
-            new Document("path", "$result")), 
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("wine_id", "$wine_id.id")
-                    .append("wine_name", "$wine_id.name")
-                    .append("wine_image", "$wine_id.image")
-                    .append("year", "$wine_id.year")
-                    .append("country", "$result.address.country")), 
-            new Document("$group", 
-            new Document("_id", 
-            new Document("wine_id", "$wine_id")
-                        .append("year", "$year")
-                        .append("country", "$country"))
-                    .append("wine_name", 
-            new Document("$first", "$wine_name"))
-                    .append("wine_image", 
-            new Document("$first", "$wine_image"))
-                    .append("count", 
-            new Document("$sum", 1L))), 
-            new Document("$sort", 
-            new Document("count", -1L)), 
-            new Document("$group", 
-            new Document("_id", "$_id.country")
-                    .append("vintages", 
-            new Document("$push", 
-            new Document("wine_id", "$_id.wine_id")
-                            .append("wine_name", "$wine_name")
-                            .append("year", "$_id.year")
-                            .append("bottle", "$wine_image")
-                            .append("count", "$count")))), 
-            new Document("$project", 
-            new Document("_id", 0L)
-                    .append("name", "$_id")
-                    .append("vintages", 
-            new Document("$slice", Arrays.asList("$vintages", 100L)))),
+        System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"countries\".");
+        List<Document> pipeline = Arrays.asList(
+                new Document("$lookup",
+                        new Document("from", "users")
+                                .append("localField", "user_id.username")
+                                .append("foreignField", "login.username")
+                                .append("as", "result")),
 
-            new Document("$project", new Document("_id", 0)
-            .append("name", 1)
-            .append("top_100_vintages_of_the_month", "$vintages")),
+                new Document("$unwind",
+                        new Document("path", "$result")),
 
-            new Document("$merge", new Document("into", "countries")
-                .append("on", "name")
-                .append("whenMatched", "merge")
-                .append("whenNotMatched", "discard"))
-        );
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("wine_id", "$wine_id.id")
+                                .append("wine_name", "$wine_id.name")
+                                .append("wine_image", "$wine_id.image")
+                                .append("year", "$wine_id.year")
+                                .append("country", "$result.address.country")),
 
-        AggregateIterable<Document> results = mongoTemplate
-            .getCollection("reviews")
-            .aggregate(pipeline)
-            .allowDiskUse(true);
+                new Document("$group",
+                        new Document("_id",
+                                new Document("wine_id", "$wine_id")
+                                        .append("year", "$year")
+                                        .append("country", "$country"))
+                                .append("wine_name",
+                                        new Document("$first", "$wine_name"))
+                                .append("wine_image",
+                                        new Document("$first", "$wine_image"))
+                                .append("count",
+                                        new Document("$sum", 1L))),
 
-        for (Document doc : results) {
-            String countryName = doc.getString("country");
+                new Document("$sort",
+                        new Document("count", -1L)),
 
-            @SuppressWarnings("unchecked")
-            List<Document> vintages = (List<Document>) doc.get("top_100_vintages_of_the_month");
+                new Document("$group",
+                        new Document("_id", "$_id.country")
+                                .append("vintages",
+                                        new Document("$push",
+                                                new Document("wine_id", "$_id.wine_id")
+                                                        .append("wine_name", "$wine_name")
+                                                        .append("year", "$_id.year")
+                                                        .append("bottle", "$wine_image")
+                                                        .append("count", "$count")))),
 
-            // Aggiorno il country corrispondente con il campo "top_100_vintages_of_the_month"
-            Query query = new Query(Criteria.where("name").is(countryName));
-            Update update = new Update().set("top_100_vintages_of_the_month", vintages);
-            mongoTemplate.updateFirst(query, update, "countries");
-        }
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("name", "$_id")
+                                .append("vintages",
+                                        new Document("$slice", Arrays.asList("$vintages", 100L)))),
+
+                new Document("$project", new Document("_id", 0)
+                        .append("name", 1)
+                        .append("top_100_vintages_of_the_week", "$vintages")),
+
+                new Document("$merge", new Document("into", "countries")
+                        .append("on", "name")
+                        .append("whenMatched", "merge")
+                        .append("whenNotMatched", "discard")));
+
+        
+        // Assicuro che esistano gli indici NECESSARI alla pipeline.
+        mongoTemplate
+            .indexOps("countries")
+            .ensureIndex(
+                new Index()
+                    .on("name", Sort.Direction.ASC)
+                    .named("on_name_UNIQUE")
+                    .unique()
+            );
+        System.out.println("--- INFO: Ensured UNIQUE index on field \"name\" for collection \"countries\".");
+
+        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
+        mongoTemplate
+            .indexOps("users")
+            .ensureIndex(
+                new Index()
+                    .on("login.username", Sort.Direction.ASC)
+                    .named("on_username_UNIQUE")
+                    .unique()
+            );
+        System.out.println("--- INFO: Ensured INDEX on field \"login.username\" for collection \"users\".");
+
+        System.out.println("--- INFO: Executing aggregation pipeline for collection \"countries\"...");
+        mongoTemplate.getCollection("reviews").aggregate(pipeline).allowDiskUse(true).toCollection();
+
+        System.out.println("--- INFO: Collection \"countries\" updated successfully.\n\n");
     }
 
     /// END of aggregation pipelines ///
