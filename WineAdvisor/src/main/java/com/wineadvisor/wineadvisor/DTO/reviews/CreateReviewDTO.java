@@ -20,6 +20,7 @@ public class CreateReviewDTO {
     private Long wineId;
 
     @PositiveOrZero(message = "Year must be a positive number.")
+    @NotNull(message = "Year info cannot be null.")
     @Schema(description = "Year info of the new vintage", example = "2000")
     private Integer year;
 

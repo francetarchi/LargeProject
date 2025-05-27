@@ -78,13 +78,14 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewById(id));
     }
 
-    @GetMapping("/wines/{wineId}/vintages")
+    @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
     public ResponseEntity<?> getReviewsByVintage(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-            @RequestParam(required = false)
+            @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
             @RequestParam(required = false, name = "page number", defaultValue = "0") 
@@ -131,6 +132,7 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer year) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
@@ -158,13 +160,14 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByWineAndRatingRange(page, wineId, minRating, maxRating));
     }
 
-    @GetMapping("/wines/{wineId}/vintages/ratings/")
+    @GetMapping("/wines/{wineId}/vintages/{vintageYear}/ratings/")
     public ResponseEntity<?> getReviewsByVintageAndRating(
             @PathVariable
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             @RequestParam(required = false)
+                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer vintageYear,
             @RequestParam
@@ -191,6 +194,7 @@ public class ReviewController {
                 @Positive(message = "ID must be positive.")
                 Long wineId,
             @PathVariable
+                @NotNull(message = "Vintage year cannot be null.")
                 @PositiveOrZero(message = "Vintage year must be positive.")
                 Integer year,
             @PathVariable
@@ -250,11 +254,17 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
-    @DeleteMapping("/wines/{wineId}/vintages")
+    @DeleteMapping("/wines/{wineId}/vintages{vintageYear}")
     @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteReviewsByVintage(
-                @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
-                @RequestParam(required = false) @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
+                @PathVariable 
+                    @NotNull(message = "ID cannot be null.")
+                    @Positive(message = "ID must be positive.")
+                    Long wineId,
+                @PathVariable 
+                    @NotNull(message = "Vintage year cannot be null.")
+                    @PositiveOrZero(message = "Vintage year must be positive.")
+                    Integer vintageYear) {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }

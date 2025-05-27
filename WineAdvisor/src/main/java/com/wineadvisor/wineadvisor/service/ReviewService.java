@@ -760,11 +760,7 @@ public class ReviewService {
 
         // Rimuovo le recensioni dalla vintage nella collection wines
         for (Vintage vintage : wine.getVintages()) {
-            if ((vintage.getYear() == null && vintageYear == null)) {
-                vintage.getReviews().clear();
-                break;
-            }
-            else if(vintage.getYear().equals(vintageYear)) {
+            if(vintage.getYear().equals(vintageYear)) {
                 vintage.getReviews().clear();
                 break;
             }
@@ -774,7 +770,7 @@ public class ReviewService {
         // Devo rimuoverle anche dalla collection users
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (User user : users) {
-            user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId) && ((vintageYear == null && r.getWineId().getYear() == null) || r.getWineId().getYear().equals(vintageYear)));
+            user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId) && r.getWineId().getYear().equals(vintageYear));
             for (Review review : reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear)) {
                 user.getLikes().removeIf(l -> l.equals(review.getId()));
                 user.getDislikes().removeIf(d -> d.equals(review.getId()));
