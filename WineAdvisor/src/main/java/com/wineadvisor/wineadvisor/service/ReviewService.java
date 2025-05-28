@@ -847,6 +847,12 @@ public class ReviewService {
         return reviews;
     }
 
+    public List<Map<String, Object>> getPersonalizedFeed(String username, int page, int pageSize) {
+        int skip = (page - 1) * pageSize;
+        return reviewNeo4jRepository.getPaginatedFeed(username, skip, pageSize);
+    }
+
+
     /// END of util. pub. funct. ///
     ////////////////////////////////
 }
