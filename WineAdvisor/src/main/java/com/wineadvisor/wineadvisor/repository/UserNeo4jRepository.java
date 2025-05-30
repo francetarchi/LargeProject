@@ -6,6 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+
+import java.util.stream.Collectors;
+import java.util.HashMap;
 
 
 @Repository
@@ -87,4 +91,40 @@ public class UserNeo4jRepository {
         """)
         .run();
     }
+
+    public List<Map<String, Object>> getSuggestedFollows(String username) {
+    String query = """
+        MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
+        MATCH (friend)-[:FOLLOWS]->(suggested)
+        WHERE NOT (me)-[:FOLLOWS]->(suggested) AND suggested <> me
+              AND (suggested:User OR suggested:Winery)
+        RETURN suggested.username AS username,
+               suggested.name AS name,
+               suggested.thumbnail AS thumbnail,
+               COUNT(*) AS mutualFollows
+        ORDER BY mutualFollows DESC
+        LIMIT 10
+    """;
+
+
+    List<Map<String, Object>> result = neo4jClient.query(query)
+    .bind(username).to("username")
+    .fetch()
+    .all()
+    .stream()
+    .map(record -> {
+        Map<String, Object> r = new HashMap<>();
+        r.put("username", (String) record.get("username"));
+        r.put("name", (String) record.get("name"));
+        r.put("thumbnail", (String) record.get("thumbnail"));
+        r.put("mutualFollows", ((Number) record.get("mutualFollows")).intValue());
+        return r;
+    })
+    .collect(Collectors.toList());
+
+System.out.println(">>> SUGGESTED: " + result);
+return result;
+
+}
+
 }

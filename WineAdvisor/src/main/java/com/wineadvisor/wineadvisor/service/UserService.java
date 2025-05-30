@@ -1148,4 +1148,9 @@ public class UserService {
 
     //// END of crud operations ////
     ////////////////////////////////
+
+    public List<Map<String, Object>> getSuggestedFollows(String username) {
+        return userNeo4jRepository.getSuggestedFollows(username);
+    }
+
 }

@@ -32,6 +32,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -191,5 +194,11 @@ public class UserController {
         userService.deleteUser(username);
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
+
+    @GetMapping("/suggestions")
+    public List<Map<String, Object>> getSuggestedFollows(@RequestParam String username) {
+        return userService.getSuggestedFollows(username);
+    }
+
 }
 
