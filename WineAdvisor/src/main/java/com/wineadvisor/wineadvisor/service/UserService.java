@@ -1115,6 +1115,18 @@ public class UserService {
             );
     }
 
+    /// Follow operations ///
+    public void follow(String followerUsername, String targetUsername) throws ResourceNotFoundException {
+        if (userRepository.existsByLogin_Username(targetUsername)) {
+            userNeo4jRepository.follow(followerUsername, targetUsername, false);
+        } else if (wineryRepository.existsByLogin_Username(targetUsername)) {
+            userNeo4jRepository.follow(followerUsername, targetUsername, true);
+        } else {
+            throw new ResourceNotFoundException("No user or winery found with username: " + targetUsername);
+        }
+    }
+
+
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database

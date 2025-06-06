@@ -11,13 +11,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
+// This repository handles user-related operations in Neo4j
 
 @Repository
 @RequiredArgsConstructor
 public class UserNeo4jRepository {
-
     private final Neo4jClient neo4jClient;
 
+    // Create a user with the given details
     public void createUser(String username, String firstName, String lastName, String thumbnail) {
         Map<String, Object> params = new HashMap<>();
         params.put("username", username);
@@ -37,6 +38,7 @@ public class UserNeo4jRepository {
         .run();
     }
 
+    // Find a user by their username
     public Map<String, Object> findUserByUsername(String username) {
         return neo4jClient.query("""
                 MATCH (u:User {username: $username})
@@ -48,6 +50,7 @@ public class UserNeo4jRepository {
             .orElse(null);
     }
 
+    // Update user details by username
     public void updateUser(String username, String firstName, String lastName, String thumbnail) {
         Map<String, Object> params = new HashMap<>();
         params.put("username", username);
@@ -65,6 +68,7 @@ public class UserNeo4jRepository {
             .run();
     }
 
+    // Update only the username of a user
     public void updateUserUsername(String oldUsername, String newUsername) {
         neo4jClient.query("""
             MATCH (u:User {username: $oldUsername})
@@ -75,6 +79,7 @@ public class UserNeo4jRepository {
         .run();
     }
 
+    // Delete a user by their username
     public void deleteUserByUsername(String username) {
         neo4jClient.query("""
             MATCH (u:User {username: $username})
@@ -84,6 +89,7 @@ public class UserNeo4jRepository {
         .run();
     }
 
+    // Delete all users in the database
     public void deleteAllUsers() {
         neo4jClient.query("""
             MATCH (u:User)
@@ -92,6 +98,27 @@ public class UserNeo4jRepository {
         .run();
     }
 
+    // Follow another user or winery
+    public void follow(String followerUsername, String targetUsername, boolean isWinery) {
+        String query = isWinery
+            ? """
+                MATCH (f:User {username: $follower})
+                MATCH (w:Winery {username: $target})
+                MERGE (f)-[:FOLLOWS]->(w)
+            """
+            : """
+                MATCH (f:User {username: $follower})
+                MATCH (t:User {username: $target})
+                MERGE (f)-[:FOLLOWS]->(t)
+            """;
+
+        neo4jClient.query(query)
+            .bind(followerUsername).to("follower")
+            .bind(targetUsername).to("target")
+            .run();
+    }
+
+    // Get recommended users to follow based on mutual follows
     public List<Map<String, Object>> getSuggestedFollows(String username) {
     String query = """
         MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)

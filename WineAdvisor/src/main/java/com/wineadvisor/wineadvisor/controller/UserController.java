@@ -178,6 +178,17 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
+    ////////////// Follow //////////////
+    @PutMapping("/{username}/follow/{targetUsername}")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
+    public ResponseEntity<?> follow(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Target username cannot be blank.") @PathVariable String targetUsername) {
+        userService.follow(username, targetUsername);
+        return ResponseEntity.ok("Now following " + targetUsername);
+    }
+
+
     ////////////// DELETE //////////////
     @DeleteMapping
     @Secured({ "ROLE_ADMIN" })
