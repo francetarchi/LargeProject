@@ -188,6 +188,16 @@ public class UserController {
         return ResponseEntity.ok("Now following " + targetUsername);
     }
 
+    /////////////// Unfollow //////////////
+    @PutMapping("/{username}/unfollow/{targetUsername}")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
+    public ResponseEntity<?> unfollow(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Target username cannot be blank.") @PathVariable String targetUsername) {
+        userService.unfollow(username, targetUsername);
+        return ResponseEntity.ok("Unfollowed " + targetUsername);
+    }
+
 
     ////////////// DELETE //////////////
     @DeleteMapping

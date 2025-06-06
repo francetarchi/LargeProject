@@ -1126,6 +1126,15 @@ public class UserService {
         }
     }
 
+    /// Unfollow operations ///
+    public void unfollow(String followerUsername, String targetUsername) throws ResourceNotFoundException {
+        if (!userRepository.existsByLogin_Username(targetUsername) &&
+            !wineryRepository.existsByLogin_Username(targetUsername)) {
+            throw new ResourceNotFoundException("No user or winery found with username: " + targetUsername);
+        }
+
+        userNeo4jRepository.unfollow(followerUsername, targetUsername);
+    }
 
 
     /// DELETE operations ///

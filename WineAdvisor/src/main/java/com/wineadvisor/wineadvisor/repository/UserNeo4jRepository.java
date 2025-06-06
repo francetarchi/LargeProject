@@ -118,6 +118,18 @@ public class UserNeo4jRepository {
             .run();
     }
 
+    // Unfollow a user or winery
+    public void unfollow(String followerUsername, String targetUsername) {
+        neo4jClient.query("""
+            MATCH (f:User {username: $follower})-[rel:FOLLOWS]->(t)
+            WHERE t.username = $target
+            DELETE rel
+        """)
+        .bind(followerUsername).to("follower")
+        .bind(targetUsername).to("target")
+        .run();
+    }
+
     // Get recommended users to follow based on mutual follows
     public List<Map<String, Object>> getSuggestedFollows(String username) {
     String query = """
