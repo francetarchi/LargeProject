@@ -1149,6 +1149,16 @@ public class UserService {
         return suggestions;
     }
 
+    // Get all users that follow a specific user
+    public List<Map<String, Object>> getFollowers(String username) {
+        return userNeo4jRepository.getFollowers(username);
+    }
+
+    // Get all users that a specific user follows
+    public List<Map<String, Object>> getFollowedByUser(String username) {
+        return userNeo4jRepository.getFollowedByUser(username);
+    }
+
 
 
     /// DELETE operations ///

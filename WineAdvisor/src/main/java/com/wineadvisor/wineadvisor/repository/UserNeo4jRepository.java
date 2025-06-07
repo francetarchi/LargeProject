@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.ArrayList;
 
 import java.util.stream.Collectors;
 import java.util.HashMap;
@@ -138,7 +139,6 @@ public class UserNeo4jRepository {
         WHERE NOT (me)-[:FOLLOWS]->(suggested) AND suggested <> me
               AND (suggested:User OR suggested:Winery)
         RETURN suggested.username AS username,
-               suggested.name AS name,
                suggested.thumbnail AS thumbnail,
                COUNT(*) AS mutualFollows
         ORDER BY mutualFollows DESC
@@ -154,7 +154,6 @@ public class UserNeo4jRepository {
     .map(record -> {
         Map<String, Object> r = new HashMap<>();
         r.put("username", (String) record.get("username"));
-        r.put("name", (String) record.get("name"));
         r.put("thumbnail", (String) record.get("thumbnail"));
         r.put("mutualFollows", ((Number) record.get("mutualFollows")).intValue());
         return r;
@@ -174,7 +173,6 @@ public List<Map<String, Object>> getRandomFollows(String username, int limit) {
           WHERE NOT (me)-[:FOLLOWS]->(s) AND s.username <> $username
           AND s.username <> $username
         RETURN s.username AS username,
-               s.name AS name,
                s.thumbnail AS thumbnail
         ORDER BY rand()
         LIMIT $limit
@@ -189,12 +187,47 @@ public List<Map<String, Object>> getRandomFollows(String username, int limit) {
         .map(record -> {
             Map<String, Object> r = new HashMap<>();
             r.put("username", (String) record.get("username"));
-            r.put("name", (String) record.get("name"));
             r.put("thumbnail", (String) record.get("thumbnail"));
             return r;
         })
         .collect(Collectors.toList());
 }
 
+// Get a list of users that follow a specific user
+public List<Map<String, Object>> getFollowers(String username) {
+    String query = """
+        MATCH (follower:User)-[:FOLLOWS]->(u:User {username: $username})
+        RETURN follower.username AS username, follower.thumbnail AS thumbnail
+    """;
+
+    return new ArrayList<>(
+        neo4jClient.query(query)
+            .bind(username).to("username")
+            .fetch()
+            .all()
+    );
+}
+
+// Get a list of users that a specific user follows
+    public List<Map<String, Object>> getFollowedByUser(String username) {
+        String query = """
+            MATCH (u:User {username: $username})-[:FOLLOWS]->(followed)
+            RETURN followed.username AS username,
+                followed.thumbnail AS thumbnail,
+        """;
+
+        return neo4jClient.query(query)
+                .bind(username).to("username")
+                .fetch()
+                .all()
+                .stream()
+                .map(record -> {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("username", record.get("username"));
+                    r.put("thumbnail", record.get("thumbnail"));
+                    return r;
+                })
+                .collect(Collectors.toList());
+    }
 
 }

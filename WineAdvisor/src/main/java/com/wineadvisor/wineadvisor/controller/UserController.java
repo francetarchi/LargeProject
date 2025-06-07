@@ -96,6 +96,22 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserByUsername(username));
     }
 
+    @GetMapping("/suggestions")
+    public List<Map<String, Object>> getSuggestedFollows(@RequestParam String username) {
+        return userService.getSuggestedFollows(username);
+    }
+
+    @GetMapping("/{username}/followers")
+    public ResponseEntity<List<Map<String, Object>>> getFollowers(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getFollowers(username));
+    }
+
+    @GetMapping("/followed")
+    public List<Map<String, Object>> getFollowedByUser(@RequestParam String username) {
+        return userService.getFollowedByUser(username);
+    }
+
+
 
     ////////////// PUT //////////////
     @PutMapping("/{username}")
@@ -216,10 +232,8 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
 
-    @GetMapping("/suggestions")
-    public List<Map<String, Object>> getSuggestedFollows(@RequestParam String username) {
-        return userService.getSuggestedFollows(username);
-    }
+    
+
 
 }
 
