@@ -175,7 +175,7 @@ public class ReviewService {
     /////// Async. operations ///////
     
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
-    @Scheduled(cron = "0 0 1 * * ?")   // Ogni giorno all'una di notte
+    @Scheduled(cron = "0 31 19 * * ?")   // Ogni giorno all'una di notte
     private void updateReviewsEmbeddedWinesAndUsers() {
         System.out.println("--- INFO: Updating reviews embedded in wines...");
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();

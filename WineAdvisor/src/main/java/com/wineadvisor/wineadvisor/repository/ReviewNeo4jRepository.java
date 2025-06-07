@@ -23,7 +23,7 @@ public class ReviewNeo4jRepository {
 
     private final Neo4jClient neo4jClient;
 
-    public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String userThumbnail, Instant createdAtInstant) {
+    public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String thumbnail, Instant createdAtInstant) {
         OffsetDateTime createdAt = createdAtInstant.atOffset(ZoneOffset.UTC);
         
         // Recupero tutte le review esistenti dell'utente ordinate per ID crescente
@@ -62,7 +62,7 @@ public class ReviewNeo4jRepository {
         params.put("wineName", wineName);
         params.put("wineYear", wineYear);
         params.put("wineImage", wineImage);
-        params.put("userThumbnail", userThumbnail);
+        params.put("thumbnail", thumbnail);
         params.put("createdAt", createdAt);
         
 
@@ -71,7 +71,7 @@ public class ReviewNeo4jRepository {
             ON CREATE SET 
                 u.firstName = $firstName,
                 u.lastName = $lastName,
-                u.userThumbnail = $userThumbnail
+                u.thumbnail = $thumbnail
             CREATE (r:Review {
                 text: $text,
                 rating: $rating,
@@ -92,7 +92,7 @@ public class ReviewNeo4jRepository {
         return new ArrayList<>(neo4jClient.query("""
             MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
             RETURN r.text AS text, r.rating AS rating, r.wineName AS wineName, r.wineYear AS wineYear,
-                   r.wineImage AS wineImage, r.userThumbnail AS userThumbnail, r.createdAt AS createdAt
+                   r.wineImage AS wineImage, r.thumbnail AS thumbnail, r.createdAt AS createdAt
             ORDER BY id(r) DESC
         """)
         .bind(username).to("username")
@@ -118,7 +118,7 @@ public class ReviewNeo4jRepository {
     }
 
     @Transactional
-    public void updateRecentReviewsForUser(String username, String firstName, String lastName, String userThumbnail, ArrayList<Review> recentReviews) {
+    public void updateRecentReviewsForUser(String username, String firstName, String lastName, String thumbnail, ArrayList<Review> recentReviews) {
 
         // Creo o aggiorno l'utente
         neo4jClient.query("""
@@ -126,16 +126,16 @@ public class ReviewNeo4jRepository {
             ON CREATE SET 
                 u.firstName = $firstName,
                 u.lastName = $lastName,
-                u.userThumbnail = $userThumbnail
+                u.thumbnail = $thumbnail
             ON MATCH SET 
                 u.firstName = $firstName,
                 u.lastName = $lastName,
-                u.userThumbnail = $userThumbnail
+                u.thumbnail = $thumbnail
         """)
         .bind(username).to("username")
         .bind(firstName).to("firstName")
         .bind(lastName).to("lastName")
-        .bind(userThumbnail).to("userThumbnail")
+        .bind(thumbnail).to("thumbnail")
         .run();
 
         // Elimino le vecchie recensioni dell'utente
