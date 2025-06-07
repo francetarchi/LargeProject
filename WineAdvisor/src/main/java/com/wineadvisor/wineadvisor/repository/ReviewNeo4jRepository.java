@@ -251,6 +251,7 @@ public class ReviewNeo4jRepository {
                 wineYear: review.wineYear,
                 wineId: review.wineId,
                 reviewText: review.text,
+                reviewId: review.reviewId,
                 rating: review.rating,
                 wineImage: review.image,
                 date: review.created_at
