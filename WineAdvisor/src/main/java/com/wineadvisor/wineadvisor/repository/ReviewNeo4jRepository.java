@@ -247,8 +247,9 @@ public class ReviewNeo4jRepository {
             RETURN {
                 authorUsername: friend.username,
                 authorThumbnail: friend.thumbnail,
-                wineName: review.wine_name,
-                wineYear: review.wine_year,
+                wineName: review.wineName,
+                wineYear: review.wineYear,
+                wineId: review.wineId,
                 reviewText: review.text,
                 rating: review.rating,
                 wineImage: review.image,
