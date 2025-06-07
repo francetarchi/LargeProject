@@ -209,6 +209,15 @@ public class ReviewController {
                 int num) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
+
+        @GetMapping("/feed")
+    public List<Map<String, Object>> getPersonalizedFeed(
+            @RequestParam String username,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return reviewService.getPersonalizedFeed(username, page, size);
+    }
+
     
     
     ////////////// PUT //////////////
@@ -275,13 +284,6 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
 
-    @GetMapping("/feed")
-    public List<Map<String, Object>> getPersonalizedFeed(
-            @RequestParam String username,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return reviewService.getPersonalizedFeed(username, page, size);
-    }
 
 
 }
