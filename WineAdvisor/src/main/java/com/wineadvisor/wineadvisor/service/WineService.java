@@ -99,8 +99,8 @@ public class WineService {
     /////// Async. operations ///////
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
-    // @Scheduled(cron = "30 31 23 * * ?")    // Scheduling for debugging purposes.
-    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void updateStatisticsPerVintage() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for vintage statistics update.");
         List<Document> pipeline = Arrays.asList(
@@ -179,8 +179,8 @@ public class WineService {
     }
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni wine
-    // @Scheduled(cron = "30 31 23 * * ?")    // Scheduling for debugging purposes.
-    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     private void updateStatisticsPerWine() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for wine statistics update.");
         List<Document> pipeline = Arrays.asList(

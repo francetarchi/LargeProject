@@ -431,7 +431,7 @@ public class ReviewService {
 
         Review savedReview = reviewRepository.save(review);
 
-        // Sincronizzazione Neo4j (best-effort)
+        // Sincronizzazione Neo4j
         reviewNeo4jRepository.createReviewForUser(
                 username,
                 user.getName().getFirst(),
@@ -443,7 +443,8 @@ public class ReviewService {
                 savedReview.getWineId().getName(),
                 savedReview.getWineId().getYear(),
                 savedReview.getWineId().getImage(),
-                savedReview.getUserId().getThumbnail()
+                savedReview.getUserId().getThumbnail(),
+                savedReview.getCreatedAt()
             );
 
         return savedReview;

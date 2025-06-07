@@ -10,6 +10,9 @@ import jakarta.transaction.Transactional;
 
 import java.util.Map;
 import java.util.List;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -20,7 +23,9 @@ public class ReviewNeo4jRepository {
 
     private final Neo4jClient neo4jClient;
 
-    public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String userThumbnail) {
+    public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String userThumbnail, Instant createdAtInstant) {
+        OffsetDateTime createdAt = createdAtInstant.atOffset(ZoneOffset.UTC);
+        
         // Recupero tutte le review esistenti dell'utente ordinate per ID crescente
         List<Map<String, Object>> existingReviews = new ArrayList<>(
             neo4jClient.query("""
@@ -58,6 +63,8 @@ public class ReviewNeo4jRepository {
         params.put("wineYear", wineYear);
         params.put("wineImage", wineImage);
         params.put("userThumbnail", userThumbnail);
+        params.put("createdAt", createdAt);
+        
 
         neo4jClient.query("""
             MERGE (u:User {username: $username})
@@ -73,7 +80,7 @@ public class ReviewNeo4jRepository {
                 wineName: $wineName,
                 wineYear: $wineYear,
                 wineImage: $wineImage,
-                userThumbnail: $userThumbnail
+                createdAt: $createdAt
             })
             CREATE (u)-[:WROTE]->(r)
         """)
@@ -85,7 +92,7 @@ public class ReviewNeo4jRepository {
         return new ArrayList<>(neo4jClient.query("""
             MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
             RETURN r.text AS text, r.rating AS rating, r.wineName AS wineName, r.wineYear AS wineYear,
-                   r.wineImage AS wineImage, r.userThumbnail AS userThumbnail
+                   r.wineImage AS wineImage, r.userThumbnail AS userThumbnail, r.createdAt AS createdAt
             ORDER BY id(r) DESC
         """)
         .bind(username).to("username")
@@ -150,7 +157,12 @@ public class ReviewNeo4jRepository {
             params.put("wineName", r.getWineId().getName());
             params.put("wineYear", r.getWineId().getYear());
             params.put("wineImage", r.getWineId().getImage());
-            params.put("userThumbnail", userThumbnail);
+
+            Instant createdAtInstant = r.getCreatedAt();
+
+            OffsetDateTime createdAt = createdAtInstant.atOffset(ZoneOffset.UTC);
+
+            params.put("createdAt", createdAt);
 
             neo4jClient.query("""
                 MATCH (u:User {username: $username})
@@ -162,7 +174,7 @@ public class ReviewNeo4jRepository {
                     wineName: $wineName,
                     wineYear: $wineYear,
                     wineImage: $wineImage,
-                    userThumbnail: $userThumbnail
+                    createdAt: $createdAt
                 })
                 CREATE (u)-[:WROTE]->(r)
             """)
