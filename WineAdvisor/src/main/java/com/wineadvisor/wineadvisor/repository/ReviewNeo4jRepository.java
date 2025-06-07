@@ -241,7 +241,7 @@ public class ReviewNeo4jRepository {
             MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
             MATCH (friend)-[:WROTE]->(review:Review)
             WITH friend, review
-            ORDER BY review.date DESC
+            ORDER BY review.created_at DESC
             WITH friend, collect(review)[0..3] AS recentReviews
             UNWIND recentReviews AS review
             RETURN {
@@ -252,7 +252,7 @@ public class ReviewNeo4jRepository {
                 reviewText: review.text,
                 rating: review.rating,
                 wineImage: review.image,
-                date: review.date
+                date: review.created_at
             } AS result
             ORDER BY result.date DESC
             SKIP $skip
