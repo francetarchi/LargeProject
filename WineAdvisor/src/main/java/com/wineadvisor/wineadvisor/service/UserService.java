@@ -1136,6 +1136,20 @@ public class UserService {
         userNeo4jRepository.unfollow(followerUsername, targetUsername);
     }
 
+    
+    public List<Map<String, Object>> getSuggestedFollows(String username) {
+        List<Map<String, Object>> suggestions = userNeo4jRepository.getSuggestedFollows(username);
+
+        if (suggestions.size() < 10) {
+            int remaining = 10 - suggestions.size();
+            List<Map<String, Object>> randoms = userNeo4jRepository.getRandomFollows(username, remaining);
+            suggestions.addAll(randoms);
+        }
+
+        return suggestions;
+    }
+
+
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database
@@ -1170,8 +1184,5 @@ public class UserService {
     //// END of crud operations ////
     ////////////////////////////////
 
-    public List<Map<String, Object>> getSuggestedFollows(String username) {
-        return userNeo4jRepository.getSuggestedFollows(username);
-    }
 
 }

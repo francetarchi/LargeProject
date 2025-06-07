@@ -166,4 +166,35 @@ return result;
 
 }
 
+public List<Map<String, Object>> getRandomFollows(String username, int limit) {
+    String query = """
+        MATCH (s)
+        WHERE (s:User OR s:Winery)
+          MATCH (me:User {username: $username})
+          WHERE NOT (me)-[:FOLLOWS]->(s) AND s.username <> $username
+          AND s.username <> $username
+        RETURN s.username AS username,
+               s.name AS name,
+               s.thumbnail AS thumbnail
+        ORDER BY rand()
+        LIMIT $limit
+    """;
+
+    return neo4jClient.query(query)
+        .bind(username).to("username")
+        .bind(limit).to("limit")
+        .fetch()
+        .all()
+        .stream()
+        .map(record -> {
+            Map<String, Object> r = new HashMap<>();
+            r.put("username", (String) record.get("username"));
+            r.put("name", (String) record.get("name"));
+            r.put("thumbnail", (String) record.get("thumbnail"));
+            return r;
+        })
+        .collect(Collectors.toList());
+}
+
+
 }
