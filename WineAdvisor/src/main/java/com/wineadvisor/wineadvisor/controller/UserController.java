@@ -32,6 +32,9 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -92,6 +95,24 @@ public class UserController {
             @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserByUsername(username));
     }
+
+    @GetMapping("/suggestions")
+    @Secured({"ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    public List<Map<String, Object>> getSuggestedFollows(@RequestParam String username) {
+        return userService.getSuggestedFollows(username);
+    }
+
+    @GetMapping("/{username}/followers")
+    public ResponseEntity<List<Map<String, Object>>> getFollowers(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getFollowers(username));
+    }
+
+    @GetMapping("/followed")
+    public List<Map<String, Object>> getFollowedByUser(@RequestParam String username) {
+        return userService.getFollowedByUser(username);
+    }
+
 
 
     ////////////// PUT //////////////
@@ -175,6 +196,27 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
+    ////////////// Follow //////////////
+    @PutMapping("/{username}/follow/{targetUsername}")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
+    public ResponseEntity<?> follow(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Target username cannot be blank.") @PathVariable String targetUsername) {
+        userService.follow(username, targetUsername);
+        return ResponseEntity.ok("Now following " + targetUsername);
+    }
+
+    /////////////// Unfollow //////////////
+    @PutMapping("/{username}/unfollow/{targetUsername}")
+    @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
+    public ResponseEntity<?> unfollow(
+            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Target username cannot be blank.") @PathVariable String targetUsername) {
+        userService.unfollow(username, targetUsername);
+        return ResponseEntity.ok("Unfollowed " + targetUsername);
+    }
+
+
     ////////////// DELETE //////////////
     @DeleteMapping
     @Secured({ "ROLE_ADMIN" })
@@ -191,5 +233,9 @@ public class UserController {
         userService.deleteUser(username);
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
+
+    
+
+
 }
 

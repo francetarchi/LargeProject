@@ -46,4 +46,5 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
             Double minAverageRating, Double min, Double max);
 
     ArrayList<Wine> findByStyle_Name(String style_name);
+
 }

@@ -22,4 +22,6 @@ public interface WineryRepository extends MongoRepository<Winery, ObjectId> {
     ArrayList<Winery> findByRegion(String region);
     
     ArrayList<Winery> findByCountry(String name);
+    
+    boolean existsByLogin_Username(String username);
 }

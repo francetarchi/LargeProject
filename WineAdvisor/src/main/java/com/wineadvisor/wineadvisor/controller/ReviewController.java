@@ -7,6 +7,12 @@ import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 
+import java.util.List;
+import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -51,14 +57,6 @@ public class ReviewController {
         Review savedReview = reviewService.addReview(username, review);
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
     }
-
-    // @PostMapping("/neo4j/{username}")
-    // public ResponseEntity<Void> createUserReviewsInGraph(
-    //         @PathVariable String username,
-    //         @RequestBody List<Map<String, Object>> reviews) {
-    //     reviewService.createGraphReviewsForUser(username, reviews);
-    //     return ResponseEntity.ok().build();
-    // }
 
 
     ////////////// GET //////////////
@@ -203,6 +201,17 @@ public class ReviewController {
                 int num) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
+
+    @GetMapping("/feed")
+    @Secured({ "ROLE_USER", "ROLE_ADMIN" })
+    @PreAuthorize("username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    public List<Map<String, Object>> getPersonalizedFeed(
+            @RequestParam String username,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return reviewService.getPersonalizedFeed(username, page, size);
+    }
+
     
     
     ////////////// PUT //////////////
@@ -268,4 +277,7 @@ public class ReviewController {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
+
+
+
 }

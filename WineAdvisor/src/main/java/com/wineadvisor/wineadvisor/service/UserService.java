@@ -1121,6 +1121,51 @@ public class UserService {
             );
     }
 
+    /// Follow operations ///
+    public void follow(String followerUsername, String targetUsername) throws ResourceNotFoundException {
+        if (userRepository.existsByLogin_Username(targetUsername)) {
+            userNeo4jRepository.follow(followerUsername, targetUsername, false);
+        } else if (wineryRepository.existsByLogin_Username(targetUsername)) {
+            userNeo4jRepository.follow(followerUsername, targetUsername, true);
+        } else {
+            throw new ResourceNotFoundException("No user or winery found with username: " + targetUsername);
+        }
+    }
+
+    /// Unfollow operations ///
+    public void unfollow(String followerUsername, String targetUsername) throws ResourceNotFoundException {
+        if (!userRepository.existsByLogin_Username(targetUsername) &&
+            !wineryRepository.existsByLogin_Username(targetUsername)) {
+            throw new ResourceNotFoundException("No user or winery found with username: " + targetUsername);
+        }
+
+        userNeo4jRepository.unfollow(followerUsername, targetUsername);
+    }
+
+    
+    public List<Map<String, Object>> getSuggestedFollows(String username) {
+        List<Map<String, Object>> suggestions = userNeo4jRepository.getSuggestedFollows(username);
+
+        if (suggestions.size() < 10) {
+            int remaining = 10 - suggestions.size();
+            List<Map<String, Object>> randoms = userNeo4jRepository.getRandomFollows(username, remaining);
+            suggestions.addAll(randoms);
+        }
+
+        return suggestions;
+    }
+
+    // Get all users that follow a specific user
+    public List<Map<String, Object>> getFollowers(String username) {
+        return userNeo4jRepository.getFollowers(username);
+    }
+
+    // Get all users that a specific user follows
+    public List<Map<String, Object>> getFollowedByUser(String username) {
+        return userNeo4jRepository.getFollowedByUser(username);
+    }
+
+
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database
@@ -1155,4 +1200,6 @@ public class UserService {
 
     //// END of crud operations ////
     ////////////////////////////////
+
+
 }

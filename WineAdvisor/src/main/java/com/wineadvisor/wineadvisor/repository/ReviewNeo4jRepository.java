@@ -3,6 +3,10 @@ package com.wineadvisor.wineadvisor.repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.neo4j.repository.query.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
+import java.util.Map;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 
@@ -241,6 +245,43 @@ public class ReviewNeo4jRepository {
             DETACH DELETE r
         """)
         .run();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getPaginatedFeed(String username, int skip, int limit) {
+        String query = """
+            MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
+            MATCH (friend)-[:WROTE]->(review:Review)
+            WITH friend, review
+            ORDER BY review.created_at DESC
+            WITH friend, collect(review)[0..3] AS recentReviews
+            UNWIND recentReviews AS review
+            RETURN {
+                authorUsername: friend.username,
+                authorThumbnail: friend.thumbnail,
+                wineName: review.wineName,
+                wineYear: review.wineYear,
+                wineId: review.wineId,
+                reviewText: review.text,
+                reviewId: review.reviewId,
+                rating: review.rating,
+                wineImage: review.image,
+                date: review.created_at
+            } AS result
+            ORDER BY result.date DESC
+            SKIP $skip
+            LIMIT $limit
+        """;
+
+        return (List<Map<String, Object>>) (List<?>) neo4jClient.query(query)
+                .bindAll(Map.of(
+                        "username", username,
+                        "skip", skip,
+                        "limit", limit
+                ))
+                .fetchAs(Map.class)
+                .mappedBy((typeSystem, record) -> record.get("result").asMap())
+                .all();
     }
 
 }
