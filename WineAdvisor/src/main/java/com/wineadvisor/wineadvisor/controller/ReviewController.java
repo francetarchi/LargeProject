@@ -58,14 +58,6 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/reviews/" + savedReview.getId()).body(savedReview);
     }
 
-    // @PostMapping("/neo4j/{username}")
-    // public ResponseEntity<Void> createUserReviewsInGraph(
-    //         @PathVariable String username,
-    //         @RequestBody List<Map<String, Object>> reviews) {
-    //     reviewService.createGraphReviewsForUser(username, reviews);
-    //     return ResponseEntity.ok().build();
-    // }
-
 
     ////////////// GET //////////////
     @GetMapping
@@ -210,7 +202,9 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getPopularReviewsByVintage(wineId, year, num));
     }
 
-        @GetMapping("/feed")
+    @GetMapping("/feed")
+    @Secured({ "ROLE_USER", "ROLE_ADMIN" })
+    @PreAuthorize("username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public List<Map<String, Object>> getPersonalizedFeed(
             @RequestParam String username,
             @RequestParam(defaultValue = "1") int page,

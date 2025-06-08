@@ -97,6 +97,8 @@ public class UserController {
     }
 
     @GetMapping("/suggestions")
+    @Secured({"ROLE_ADMIN", "ROLE_USER" })
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public List<Map<String, Object>> getSuggestedFollows(@RequestParam String username) {
         return userService.getSuggestedFollows(username);
     }
