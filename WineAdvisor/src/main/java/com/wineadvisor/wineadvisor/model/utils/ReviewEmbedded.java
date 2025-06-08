@@ -1,0 +1,40 @@
+package com.wineadvisor.wineadvisor.model.utils;
+
+import java.time.Instant;
+
+import com.wineadvisor.wineadvisor.model.reviews.fields.UserId;
+import com.wineadvisor.wineadvisor.model.reviews.fields.WineId;
+
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReviewEmbedded {
+    @Field("review_id")
+    private Long reviewId;
+
+    @Field("user_id")
+    private UserId userId;
+
+    @Field("wine_id")
+    private WineId wineId;
+    
+    private Double rating;
+
+    private String text;
+
+    @Field("created_at")
+    private Instant createdAt;
+
+    @Field("likes_count")
+    private Long likesCount;
+
+    @Field("dislikes_count")
+    private Long dislikesCount;
+}

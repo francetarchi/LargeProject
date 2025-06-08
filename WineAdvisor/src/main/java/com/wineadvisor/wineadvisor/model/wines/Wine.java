@@ -1,0 +1,55 @@
+package com.wineadvisor.wineadvisor.model.wines;
+
+import java.time.Instant;
+import java.util.ArrayList;
+
+import com.wineadvisor.wineadvisor.model.utils.Taste;
+import com.wineadvisor.wineadvisor.model.wines.fields.RegionEmbedded;
+import com.wineadvisor.wineadvisor.model.wines.fields.Statistics;
+import com.wineadvisor.wineadvisor.model.wines.fields.StyleEmbedded;
+import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
+import com.wineadvisor.wineadvisor.model.wines.fields.WineryEmbedded;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "wines")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Wine {
+    @Id
+    @Field("_id")
+    private Long id;
+
+    private String name;
+
+    private String type;
+
+    @Field("is_natural")
+    private Boolean isNatural;
+
+    private RegionEmbedded region;
+
+    private WineryEmbedded winery;
+
+    private Taste taste;
+
+    private StyleEmbedded style;
+    
+    private ArrayList<Vintage> vintages;
+
+    private Statistics statistics;
+
+    @Field("created_at")
+    private Instant createdAt;
+}

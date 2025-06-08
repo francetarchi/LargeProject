@@ -1,0 +1,76 @@
+package com.wineadvisor.wineadvisor.DTO.users;
+
+import java.time.Instant;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.wineadvisor.wineadvisor.DTO.users.fields.AddressDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.NameDTO;
+import com.wineadvisor.wineadvisor.DTO.utils.PictureDTO;
+import com.wineadvisor.wineadvisor.model.users.User;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
+import lombok.Data;
+
+
+@Data
+@JsonPropertyOrder({ "gender", "name", "address", "email", "telephone", "date of birth", "profile picture" })
+public class UpdateUserDTO {
+    @Pattern(regexp = "^(male|female|other)$", message = "Gender must be one among \"male\", \"female\" and \"other\" (or blank).")
+    @Schema(description = "Gender of the updated user", example = "male")
+    private String gender;
+
+    @NotNull(message = "Name info cannot be null.")
+    @Valid
+    @Schema(name = "name", description = "Name info of the updated user")
+    @JsonProperty("name")
+    private NameDTO nameDTO;
+
+    @NotNull(message = "Address info cannot be null.")
+    @Valid
+    @Schema(name = "address", description = "Home address of the updated user")
+    @JsonProperty("address")
+    private AddressDTO addressDTO;
+
+    @NotBlank(message = "Email cannot be blank.")
+    @Email(message = "Email must be a valid email address.")
+    @Schema(description = "Email of the updated user", example = "mariorossi@example.com")
+    private String email;
+
+    @Pattern(regexp = "^\\+?[0-9\\s\\-()]+$", message = "Telephone must be a valid telephone number.")
+    @Schema(description = "Telephone of the updated user", example = "+39 3331234567")
+    private String telephone;
+
+    @PastOrPresent(message = "Date must be in the past.")
+    @Schema(name = "date of birth", description = "Date of birth of the updated user", example = "1970-01-01T00:00:00.000Z")
+    @JsonProperty("date of birth")
+    private Instant dob;
+
+    @Schema(name = "profile picture", description = "Picture info of the updated user")
+    @JsonProperty("profile picture")
+    private PictureDTO pictureDTO;
+
+
+
+    ///////////// METODI PUBBLICI /////////////
+    // Modifica l'oggetto di classe User passato come argomento sostituendo i campi aggiornabili con i valori aggiornati (quelli dell'istanza attuale (this.)).
+    // Ritorna l'utente aggiornato.
+    public User toUser(User targetUser) {
+        targetUser.setGender(this.getGender());
+        targetUser.setName(this.getNameDTO().toName());
+        targetUser.setAddress(this.getAddressDTO().toAddress());
+        targetUser.setEmail(this.getEmail());
+        targetUser.setTelephone(this.getTelephone());
+        targetUser.getDob().setDateTime(this.getDob());
+        targetUser.setPicture(this.getPictureDTO().toPicture());
+
+        return targetUser;
+    }
+}
