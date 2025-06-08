@@ -2,11 +2,11 @@ package com.wineadvisor.wineadvisor.service;
 
 import org.bson.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Optional;
 import java.time.Instant;
 
 import com.wineadvisor.wineadvisor.repository.ReviewNeo4jRepository;
@@ -26,6 +26,7 @@ import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
+
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +54,7 @@ public class ReviewService {
 
     /////////// COSTANTI ////////////
     private static final int PAGE_SIZE = 20;
+
 
 
     ////////////////////////////////
@@ -176,6 +179,7 @@ public class ReviewService {
     /////// Async. operations ///////
     
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
+    @Transactional
     @Scheduled(cron = "0 0 1 * * ?")   // Ogni giorno all'una di notte
     protected void updateReviewsEmbeddedWinesAndUsers() {
         System.out.println("--- INFO: Updating reviews embedded in wines...");

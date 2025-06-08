@@ -1,23 +1,22 @@
 package com.wineadvisor.wineadvisor.repository;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import lombok.RequiredArgsConstructor;
 
-import java.util.stream.Collectors;
-import java.util.HashMap;
-
-// This repository handles user-related operations in Neo4j
 
 @Repository
 @RequiredArgsConstructor
 public class UserNeo4jRepository {
     private final Neo4jClient neo4jClient;
+
 
     // Create a user with the given details
     public void createUser(String username, String firstName, String lastName, String thumbnail) {
@@ -133,54 +132,20 @@ public class UserNeo4jRepository {
 
     // Get recommended users to follow based on mutual follows
     public List<Map<String, Object>> getSuggestedFollows(String username) {
-    String query = """
-        MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
-        MATCH (friend)-[:FOLLOWS]->(suggested)
-        WHERE NOT (me)-[:FOLLOWS]->(suggested) AND suggested <> me
-              AND (suggested:User OR suggested:Winery)
-        RETURN suggested.username AS username,
-               suggested.thumbnail AS thumbnail,
-               COUNT(*) AS mutualFollows
-        ORDER BY mutualFollows DESC
-        LIMIT 10
-    """;
+        String query = """
+            MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
+            MATCH (friend)-[:FOLLOWS]->(suggested)
+            WHERE NOT (me)-[:FOLLOWS]->(suggested) AND suggested <> me
+                AND (suggested:User OR suggested:Winery)
+            RETURN suggested.username AS username,
+                suggested.thumbnail AS thumbnail,
+                COUNT(*) AS mutualFollows
+            ORDER BY mutualFollows DESC
+            LIMIT 10
+        """;
 
-
-    List<Map<String, Object>> result = neo4jClient.query(query)
-    .bind(username).to("username")
-    .fetch()
-    .all()
-    .stream()
-    .map(record -> {
-        Map<String, Object> r = new HashMap<>();
-        r.put("username", (String) record.get("username"));
-        r.put("thumbnail", (String) record.get("thumbnail"));
-        r.put("mutualFollows", ((Number) record.get("mutualFollows")).intValue());
-        return r;
-    })
-    .collect(Collectors.toList());
-
-System.out.println(">>> SUGGESTED: " + result);
-return result;
-
-}
-
-public List<Map<String, Object>> getRandomFollows(String username, int limit) {
-    String query = """
-        MATCH (s)
-        WHERE (s:User OR s:Winery)
-          MATCH (me:User {username: $username})
-          WHERE NOT (me)-[:FOLLOWS]->(s) AND s.username <> $username
-          AND s.username <> $username
-        RETURN s.username AS username,
-               s.thumbnail AS thumbnail
-        ORDER BY rand()
-        LIMIT $limit
-    """;
-
-    return neo4jClient.query(query)
+        List<Map<String, Object>> result = neo4jClient.query(query)
         .bind(username).to("username")
-        .bind(limit).to("limit")
         .fetch()
         .all()
         .stream()
@@ -188,27 +153,60 @@ public List<Map<String, Object>> getRandomFollows(String username, int limit) {
             Map<String, Object> r = new HashMap<>();
             r.put("username", (String) record.get("username"));
             r.put("thumbnail", (String) record.get("thumbnail"));
+            r.put("mutualFollows", ((Number) record.get("mutualFollows")).intValue());
             return r;
         })
         .collect(Collectors.toList());
-}
 
-// Get a list of users that follow a specific user
-public List<Map<String, Object>> getFollowers(String username) {
-    String query = """
-        MATCH (follower:User)-[:FOLLOWS]->(u:User {username: $username})
-        RETURN follower.username AS username, follower.thumbnail AS thumbnail
-    """;
+        System.out.println(">>> SUGGESTED: " + result);
+        return result;
+    }
 
-    return new ArrayList<>(
-        neo4jClient.query(query)
+    // Get a random list of users or wineries that the user does not follow
+    public List<Map<String, Object>> getRandomFollows(String username, int limit) {
+        String query = """
+            MATCH (s)
+            WHERE (s:User OR s:Winery)
+            MATCH (me:User {username: $username})
+            WHERE NOT (me)-[:FOLLOWS]->(s) AND s.username <> $username
+            AND s.username <> $username
+            RETURN s.username AS username,
+                s.thumbnail AS thumbnail
+            ORDER BY rand()
+            LIMIT $limit
+        """;
+
+        return neo4jClient.query(query)
             .bind(username).to("username")
+            .bind(limit).to("limit")
             .fetch()
             .all()
-    );
-}
+            .stream()
+            .map(record -> {
+                Map<String, Object> r = new HashMap<>();
+                r.put("username", (String) record.get("username"));
+                r.put("thumbnail", (String) record.get("thumbnail"));
+                return r;
+            })
+            .collect(Collectors.toList());
+    }
 
-// Get a list of users that a specific user follows
+    // Get a list of users that follow a specific user
+    public List<Map<String, Object>> getFollowers(String username) {
+        String query = """
+            MATCH (follower:User)-[:FOLLOWS]->(u:User {username: $username})
+            RETURN follower.username AS username, follower.thumbnail AS thumbnail
+        """;
+
+        return new ArrayList<>(
+            neo4jClient.query(query)
+                .bind(username).to("username")
+                .fetch()
+                .all()
+        );
+    }
+
+    // Get a list of users that a specific user follows
     public List<Map<String, Object>> getFollowedByUser(String username) {
         String query = """
             MATCH (u:User {username: $username})-[:FOLLOWS]->(followed)
@@ -229,5 +227,4 @@ public List<Map<String, Object>> getFollowers(String username) {
                 })
                 .collect(Collectors.toList());
     }
-
 }

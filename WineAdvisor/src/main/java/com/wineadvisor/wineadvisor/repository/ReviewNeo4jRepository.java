@@ -1,31 +1,26 @@
 package com.wineadvisor.wineadvisor.repository;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.neo4j.core.Neo4jClient;
-import org.springframework.stereotype.Repository;
-import org.springframework.data.neo4j.repository.query.Query;
-import org.springframework.data.repository.query.Param;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.data.neo4j.core.Neo4jClient;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
 
-import jakarta.transaction.Transactional;
-
-import java.util.Map;
-import java.util.List;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.HashMap;
+import lombok.RequiredArgsConstructor;
 
 
 @Repository
 @RequiredArgsConstructor
 public class ReviewNeo4jRepository {
-
     private final Neo4jClient neo4jClient;
+
 
     public void createReviewForUser(String username, String firstName, String lastName, Long reviewId, String text, Double rating, Long wineId, String wineName, Integer wineYear, String wineImage, String thumbnail, Instant createdAtInstant) {
         OffsetDateTime createdAt = createdAtInstant.atOffset(ZoneOffset.UTC);
@@ -104,7 +99,6 @@ public class ReviewNeo4jRepository {
         .all());
     }
 
-
     public void updateReview(Long reviewId, String newText, Double newRating) {
         Map<String, Object> params = new HashMap<>();
         params.put("reviewId", reviewId);
@@ -121,7 +115,6 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-    @Transactional
     public void updateRecentReviewsForUser(String username, String firstName, String lastName, String thumbnail, ArrayList<Review> recentReviews) {
 
         // Creo o aggiorno l'utente
@@ -247,7 +240,6 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getPaginatedFeed(String username, int skip, int limit) {
         String query = """
             MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
@@ -273,15 +265,17 @@ public class ReviewNeo4jRepository {
             LIMIT $limit
         """;
 
-        return (List<Map<String, Object>>) (List<?>) neo4jClient.query(query)
-                .bindAll(Map.of(
+        return new ArrayList<>(
+            neo4jClient.query(query)
+                .bindAll(
+                    Map.of(
                         "username", username,
                         "skip", skip,
                         "limit", limit
-                ))
-                .fetchAs(Map.class)
-                .mappedBy((typeSystem, record) -> record.get("result").asMap())
-                .all();
+                    )
+                )
+                .fetch()
+                .all()
+        );
     }
-
 }

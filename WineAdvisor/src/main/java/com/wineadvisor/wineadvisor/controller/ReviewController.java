@@ -1,5 +1,8 @@
 package com.wineadvisor.wineadvisor.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import com.wineadvisor.wineadvisor.service.ReviewService;
 import com.wineadvisor.wineadvisor.DTO.reviews.CreateReviewDTO;
 import com.wineadvisor.wineadvisor.DTO.reviews.UpdateReviewDTO;
@@ -7,12 +10,6 @@ import com.wineadvisor.wineadvisor.model.reviews.Review;
 import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 
-import java.util.List;
-import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -40,6 +37,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
 
+
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
@@ -48,6 +46,7 @@ public class ReviewController {
     /////////// VARIABLES //////////
     ////////////////////////////////
     private final ReviewService reviewService;
+
 
     ////////////// POST //////////////
     @PostMapping
@@ -66,7 +65,6 @@ public class ReviewController {
         @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAllReviews(page));
     }
-    
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getReviewById(
@@ -213,7 +211,6 @@ public class ReviewController {
     }
 
     
-    
     ////////////// PUT //////////////
     @PutMapping("/{id}")
     @Secured({ "ROLE_USER" })
@@ -277,7 +274,4 @@ public class ReviewController {
         reviewService.deleteReviewsByVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body("Reviews successfully deleted.");
     }
-
-
-
 }
