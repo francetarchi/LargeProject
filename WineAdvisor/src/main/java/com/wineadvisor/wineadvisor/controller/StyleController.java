@@ -22,7 +22,6 @@ import com.wineadvisor.wineadvisor.DTO.styles.StyleDTO;
 import com.wineadvisor.wineadvisor.service.StyleService;
 
 
-
 @RestController
 @RequestMapping("/api/styles")
 @RequiredArgsConstructor

@@ -102,7 +102,7 @@ public class WineService {
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
     @Transactional
-    // @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "00 23 21 * * ?")    // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     protected void updateStatisticsPerVintage() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for vintage statistics update.");
@@ -182,7 +182,7 @@ public class WineService {
     }
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni wine
-    // @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "00 23 21 * * ?")    // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     protected void updateStatisticsPerWine() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for wine statistics update.");
@@ -234,7 +234,7 @@ public class WineService {
     // Aggiorna una volta al giorno il campo wines_count contenuto in grapes, in style, nella collection "wines"
     // Aggiorna anche il campo wines_count contenuto in grapes nella collection "styles"
     @Transactional
-    // @Scheduled(cron = "00 31 18 * * ?")    // Scheduling for debugging purposes.
+    // @Scheduled(cron = "00 23 21 * * ?")    // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
     protected void updateWinesCountInGrapesPerWine() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for grapes count update.");

@@ -147,7 +147,7 @@ public class UserService {
     //// Aggregation pipelines /////
 
     // Aggiorna una volta a settimana la lista degli wineTips per ogni utente
-    // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "00 54 21 * * ?")    // Scheduling for debugging purposes
     @Scheduled(cron = "0 0 3 * * MON")      // Ogni lunedì alle 3 di notte
     protected void updateWineTipsPerUser() {
         // Defining the name of the starting collection
@@ -342,7 +342,7 @@ public class UserService {
 
 
     // Aggiorna una volta a settimana la lista dei newWineTips per ogni utente
-    // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
+    // @Scheduled(cron = "00 54 21 * * ?")    // Scheduling for debugging purposes
     @Scheduled(cron = "0 0 3 * * MON")     // Ogni lunedì alle 3 di notte
     protected void updateNewWineTipsPerUser() {
         // Defining the name of the starting collection
@@ -1141,7 +1141,6 @@ public class UserService {
 
         userNeo4jRepository.unfollow(followerUsername, targetUsername);
     }
-
     
     public List<Map<String, Object>> getSuggestedFollows(String username) {
         List<Map<String, Object>> suggestions = userNeo4jRepository.getSuggestedFollows(username);
@@ -1164,7 +1163,6 @@ public class UserService {
     public List<Map<String, Object>> getFollowedByUser(String username) {
         return userNeo4jRepository.getFollowedByUser(username);
     }
-
 
 
     /// DELETE operations ///
@@ -1200,6 +1198,4 @@ public class UserService {
 
     //// END of crud operations ////
     ////////////////////////////////
-
-
 }

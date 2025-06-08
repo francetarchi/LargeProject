@@ -179,7 +179,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
     }
 
-    ///// Operazioni sui vini preferiti /////
     @PutMapping("/{username}/addFavorite")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addFavorite(
@@ -196,7 +195,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
 
-    ////////////// Follow //////////////
     @PutMapping("/{username}/follow/{targetUsername}")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> follow(
@@ -206,7 +204,6 @@ public class UserController {
         return ResponseEntity.ok("Now following " + targetUsername);
     }
 
-    /////////////// Unfollow //////////////
     @PutMapping("/{username}/unfollow/{targetUsername}")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> unfollow(
@@ -233,9 +230,4 @@ public class UserController {
         userService.deleteUser(username);
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }
-
-    
-
-
 }
-

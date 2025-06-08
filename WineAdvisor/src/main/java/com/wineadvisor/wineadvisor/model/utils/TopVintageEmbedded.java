@@ -14,6 +14,7 @@ public class TopVintageEmbedded {
     private String winery;
     private Integer year;
     private Double rating;
+    private Double price;
     private String image;
 
     @Field("ratings_count")

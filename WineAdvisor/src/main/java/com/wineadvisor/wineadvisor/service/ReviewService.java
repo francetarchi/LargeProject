@@ -208,43 +208,59 @@ public class ReviewService {
     ///// Aggregation pipelines /////
 
     // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
-    // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
+    // @Scheduled(cron = "00 53 22 * * ?")     // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     protected void updateTop10VintagesPerRegion() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"regions\".");
         List<Document> pipeline = Arrays.asList(
-                new Document("$lookup", new Document("from", "users")
-                        .append("localField", "user_id.username")
-                        .append("foreignField", "login.username")
-                        .append("as", "result")),
+                new Document("$lookup",
+                        new Document("from", "wines")
+                                .append("localField", "wine_id.id")
+                                .append("foreignField", "_id")
+                                .append("as", "result")),
 
-                new Document("$unwind", new Document("path", "$result")),
+                new Document("$unwind",
+                        new Document("path", "$result")),
 
-                new Document("$project", new Document("_id", 0)
-                        .append("wine_id", "$wine_id.id")
-                        .append("wine_name", "$wine_id.name")
-                        .append("wine_image", "$wine_id.image")
-                        .append("year", "$wine_id.year")
-                        .append("region", "$result.address.region")),
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("wine_id", "$wine_id.id")
+                                .append("wine_name", "$wine_id.name")
+                                .append("wine_image", "$wine_id.image")
+                                .append("year", "$wine_id.year")
+                                .append("region", "$result.region.name")),
 
-                new Document("$group", new Document("_id", new Document("wine_id", "$wine_id")
-                        .append("year", "$year")
-                        .append("region", "$region"))
-                        .append("wine_name", new Document("$first", "$wine_name"))
-                        .append("wine_image", new Document("$first", "$wine_image"))
-                        .append("count", new Document("$sum", 1))),
+                new Document("$group",
+                        new Document("_id",
+                                new Document("wine_id", "$wine_id")
+                                        .append("year", "$year"))
+                                .append("wine_name",
+                                        new Document("$first", "$wine_name"))
+                                .append("wine_image",
+                                        new Document("$first", "$wine_image"))
+                                .append("region",
+                                        new Document("$first", "$region"))
+                                .append("count",
+                                        new Document("$sum", 1L))),
 
-                new Document("$sort", new Document("count", -1)),
+                new Document("$sort",
+                        new Document("count", -1L)),
 
-                new Document("$group", new Document("_id", "$_id.region")
-                        .append("vintages", new Document("$push", new Document("wine_id", "$_id.wine_id")
-                                .append("wine_name", "$wine_name")
-                                .append("year", "$_id.year")
-                                .append("bottle", "$wine_image")
-                                .append("count", "$count")))),
+                new Document("$group",
+                        new Document("_id", "$region")
+                                .append("vintages",
+                                        new Document("$push",
+                                                new Document("wine_id", "$_id.wine_id")
+                                                        .append("wine_name", "$wine_name")
+                                                        .append("year", "$_id.year")
+                                                        .append("bottle", "$wine_image")
+                                                        .append("count", "$count")))),
 
-                new Document("$project", new Document("name", "$_id")
-                        .append("vintages", new Document("$slice", Arrays.asList("$vintages", 10)))),
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("name", "$_id")
+                                .append("vintages",
+                                        new Document("$slice", Arrays.asList("$vintages", 10L)))),
 
                 new Document("$project", new Document("_id", 0)
                         .append("name", 1)
@@ -267,17 +283,6 @@ public class ReviewService {
             );
         System.out.println("--- INFO: Ensured UNIQUE index on field \"name\" for collection \"regions\".");
 
-        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
-        mongoTemplate
-            .indexOps("users")
-            .ensureIndex(
-                new Index()
-                    .on("login.username", Sort.Direction.ASC)
-                    .named("on_username_UNIQUE")
-                    .unique()
-            );
-        System.out.println("--- INFO: Ensured INDEX on field \"login.username\" for collection \"users\".");
-
         System.out.println("--- INFO: Executing aggregation pipeline for collection \"regions\"...");
         mongoTemplate.getCollection("reviews").aggregate(pipeline).allowDiskUse(true).toCollection();
 
@@ -285,37 +290,38 @@ public class ReviewService {
     }
 
     // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
-    // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
+    // @Scheduled(cron = "00 53 22 * * ?")     // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
     protected void updateTop100VintagesPerCountry() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"countries\".");
         List<Document> pipeline = Arrays.asList(
                 new Document("$lookup",
-                        new Document("from", "users")
-                                .append("localField", "user_id.username")
-                                .append("foreignField", "login.username")
+                        new Document("from", "wines")
+                                .append("localField", "wine_id.id")
+                                .append("foreignField", "_id")
                                 .append("as", "result")),
 
                 new Document("$unwind",
                         new Document("path", "$result")),
-
+                        
                 new Document("$project",
                         new Document("_id", 0L)
                                 .append("wine_id", "$wine_id.id")
                                 .append("wine_name", "$wine_id.name")
                                 .append("wine_image", "$wine_id.image")
                                 .append("year", "$wine_id.year")
-                                .append("country", "$result.address.country")),
+                                .append("country", "$result.region.country.name")),
 
                 new Document("$group",
                         new Document("_id",
                                 new Document("wine_id", "$wine_id")
-                                        .append("year", "$year")
-                                        .append("country", "$country"))
+                                        .append("year", "$year"))
                                 .append("wine_name",
                                         new Document("$first", "$wine_name"))
                                 .append("wine_image",
                                         new Document("$first", "$wine_image"))
+                                .append("country",
+                                        new Document("$first", "$country"))
                                 .append("count",
                                         new Document("$sum", 1L))),
 
@@ -323,7 +329,7 @@ public class ReviewService {
                         new Document("count", -1L)),
 
                 new Document("$group",
-                        new Document("_id", "$_id.country")
+                        new Document("_id", "$country")
                                 .append("vintages",
                                         new Document("$push",
                                                 new Document("wine_id", "$_id.wine_id")
@@ -358,17 +364,6 @@ public class ReviewService {
                     .unique()
             );
         System.out.println("--- INFO: Ensured UNIQUE index on field \"name\" for collection \"countries\".");
-
-        // Assicuro che esistano gli indici FUNZIONALI alla pipeline.
-        mongoTemplate
-            .indexOps("users")
-            .ensureIndex(
-                new Index()
-                    .on("login.username", Sort.Direction.ASC)
-                    .named("on_username_UNIQUE")
-                    .unique()
-            );
-        System.out.println("--- INFO: Ensured INDEX on field \"login.username\" for collection \"users\".");
 
         System.out.println("--- INFO: Executing aggregation pipeline for collection \"countries\"...");
         mongoTemplate.getCollection("reviews").aggregate(pipeline).allowDiskUse(true).toCollection();
