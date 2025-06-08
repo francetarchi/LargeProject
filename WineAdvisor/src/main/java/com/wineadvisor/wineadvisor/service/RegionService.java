@@ -17,6 +17,7 @@ import com.wineadvisor.wineadvisor.repository.WineRepository;
 import com.wineadvisor.wineadvisor.repository.WineryRepository;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -118,6 +119,7 @@ public class RegionService {
     
     /// UPDATE operations ///
     // Aggiorna il country di una region
+    @Transactional
     public Region updateRegion(String name, String country_name) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         return regionRepository.findByName(name)
             .map(region -> {
@@ -163,8 +165,20 @@ public class RegionService {
     
     /// DELETE operations ///
     // Elimina tutte le regions dalla collection "regions"
+    @Transactional
     public void deleteAll() {
         regionRepository.deleteAll();
+    }
+
+    // Elimina tutte le regions di un determinato country
+    @Transactional
+    public void deleteRegionsByCountry(String country) throws ResourceNotFoundException {
+        // Controllo che il country esista
+        countryRepository.findByName(country).orElseThrow(
+            () -> new ResourceNotFoundException("Country " + country + " not found.")
+        );
+        
+        regionRepository.deleteAllByCountry(country);
     }
 
     // Elimina la region di nome name
@@ -175,16 +189,6 @@ public class RegionService {
         );
         
         regionRepository.deleteByName(name);
-    }
-
-    // Elimina tutte le regions di un determinato country
-    public void deleteRegionsByCountry(String country) throws ResourceNotFoundException {
-        // Controllo che il country esista
-        countryRepository.findByName(country).orElseThrow(
-            () -> new ResourceNotFoundException("Country " + country + " not found.")
-        );
-        
-        regionRepository.deleteAllByCountry(country);
     }
 
     //// END of CRUD operations ////

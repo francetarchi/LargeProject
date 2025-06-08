@@ -2,6 +2,7 @@ package com.wineadvisor.wineadvisor.service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.bson.Document;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
@@ -33,7 +35,7 @@ import com.wineadvisor.wineadvisor.model.utils.ReviewEmbedded;
 import com.wineadvisor.wineadvisor.model.wines.fields.Vintage;
 
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
@@ -110,8 +112,9 @@ public class UserService {
     //// Asynchronous operations ////
     
     // Per ogni utente, scorre l'array dei likes e l'array dei dislikes: per ogni reviewId, controlla che la review esista ancora (se NON esiste più, elimina il reviewId dall'array)
+    @Transactional
     @Scheduled(cron = "0 0 1 * * ?")    // Ogni giorno all'una di notte
-    private void cleanLikesAndDislikes() {
+    protected void cleanLikesAndDislikes() {
         System.out.println("--- INFO: Cleaning likes and dislikes from users...");
         userRepository.findAll().forEach(
             user -> {
@@ -146,7 +149,7 @@ public class UserService {
     // Aggiorna una volta a settimana la lista degli wineTips per ogni utente
     // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
     @Scheduled(cron = "0 0 3 * * MON")      // Ogni lunedì alle 3 di notte
-    private void updateWineTipsPerUser() {
+    protected void updateWineTipsPerUser() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "users";
 
@@ -341,7 +344,7 @@ public class UserService {
     // Aggiorna una volta a settimana la lista dei newWineTips per ogni utente
     // @Scheduled(cron = "00 17 15 * * ?")    // Scheduling for debugging purposes
     @Scheduled(cron = "0 0 3 * * MON")     // Ogni lunedì alle 3 di notte
-    private void updateNewWineTipsPerUser() {
+    protected void updateNewWineTipsPerUser() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "users";
 
@@ -729,20 +732,20 @@ public class UserService {
 
     /// CREATE operations ///
     // Aggiunge un utente alla collection "users" del database
+    @Transactional
     public User createUser(CreateUserDTO createUserDTO) throws ResourceAlreadyExistsException, BadRequestException {
         checkAccountParams(createUserDTO.getUsername(), createUserDTO.getEmail(), createUserDTO.getPasswordDTO());
         
         User newUser = createUserDTO.toUser();
         newUser.adjustFieldsForCreation(passwordEncoder.encode(createUserDTO.getPasswordDTO().getNewPass()));
-
+        
         User savedUser = userRepository.save(newUser);
 
         // Sincronizzazione con Neo4j
         userNeo4jRepository.createUser(savedUser.getLogin().getUsername(), savedUser.getName().getFirst(), savedUser.getName().getLast(), savedUser.getPicture().getThumbnail());
-
+        
         return savedUser;
-
-        }
+    }
     
     
     /// READ operations ///
@@ -789,6 +792,7 @@ public class UserService {
 
     /// UPDATE operations ///
     // Cerca il documento di un utente con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
+    @Transactional
     public User updateUser(String targetUsername, UpdateUserDTO updateUserDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         return userRepository
             .findByLogin_Username(targetUsername)
@@ -827,6 +831,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e ne modifica lo username
+    @Transactional
     public User updateUserUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException{
         if (targetUsername.equals(newUsername)) {
             throw new BadRequestException("Username not updatable because it is the same as the old one.");
@@ -896,6 +901,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e aggiunge un reviewId alla sua lista di likes
+    @Transactional
     public User addLike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
         return userRepository
             .findByLogin_Username(username)
@@ -940,6 +946,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e rimuove un reviewId dalla sua lista di likes
+    @Transactional
     public User removeLike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
         return userRepository
             .findByLogin_Username(username)
@@ -957,8 +964,7 @@ public class UserService {
 
                 // Controllo che l'utente abbia messo like alla recensione
                 if (!user.getLikes().contains(reviewId)) {
-                    throw new ResourceAlreadyExistsException(
-                            "User with username " + username + " has not liked this review.");
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has not liked this review.");
                 }
 
                 // Rimuovo l'utente dalla lista di chi ha messo like alla recensione e
@@ -982,6 +988,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e aggiunge un reviewId alla sua lista di dislikes
+    @Transactional
     public User addDislike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
         return userRepository
             .findByLogin_Username(username)
@@ -999,8 +1006,7 @@ public class UserService {
 
                 // Controllo che l'utente non abbia già messo dislike alla recensione
                 if (user.getDislikes().contains(reviewId)) {
-                    throw new ResourceAlreadyExistsException(
-                            "User with username " + username + " has already disliked this review.");
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has already disliked this review.");
                 }
 
                 // Se l'utente aveva messo in precedenza like alla recensione, rimuovo il like e
@@ -1031,6 +1037,7 @@ public class UserService {
     }
 
     // Cerca il documento di un utente e rimuove un reviewId dalla sua lista di dislikes
+    @Transactional
     public User removeDislike(String username, Long reviewId) throws IllegalArgumentException, ResourceNotFoundException, ResourceAlreadyExistsException {
         return userRepository
             .findByLogin_Username(username)
@@ -1048,8 +1055,7 @@ public class UserService {
 
                 // Controllo che l'utente abbia messo dislike alla recensione
                 if (!user.getDislikes().contains(reviewId)) {
-                    throw new ResourceAlreadyExistsException(
-                            "User with username " + username + " has not disliked this review.");
+                    throw new ResourceAlreadyExistsException("User with username " + username + " has not disliked this review.");
                 }
 
                 // Rimuovo l'utente dalla lista di chi ha messo dislike alla recensione e
@@ -1118,14 +1124,16 @@ public class UserService {
 
     /// DELETE operations ///
     // Elimina tutti gli utenti presenti nella collection "users" del database
+    @Transactional
     public void deleteAllUsers() {
         userRepository.deleteAll();
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         userNeo4jRepository.deleteAllUsers();
     }
 
     // Elimina un utente con un determinato username
+    @Transactional
     public void deleteUser(String targetUsername) throws ResourceNotFoundException {
         final User targetUser = userRepository
             .findByLogin_Username(targetUsername)
@@ -1141,10 +1149,9 @@ public class UserService {
 
         userRepository.delete(targetUser);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         userNeo4jRepository.deleteUserByUsername(targetUsername);
     }
-
 
     //// END of crud operations ////
     ////////////////////////////////

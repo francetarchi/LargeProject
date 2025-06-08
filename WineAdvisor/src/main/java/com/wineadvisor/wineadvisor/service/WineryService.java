@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.DTO.utils.PasswordDTO;
@@ -196,6 +197,7 @@ public class WineryService {
     
     /// CREATE operations ///
     // Aggiunge una winery alla collection "wineries" del database
+    @Transactional
     public Object createWinery(CreateWineryDTO createWineryDTO) throws ResourceAlreadyExistsException, BadRequestException {
 		checkAccountParams(createWineryDTO.getUsername(), createWineryDTO.getEmail(), createWineryDTO.getPasswordDTO());
         
@@ -241,8 +243,10 @@ public class WineryService {
         return wineryNeo4jRepository.findWineryByUsername(username);
     }
 
+
     /// UPDATE operations ///
     // Cerca il documento di una winery con un determinato username e aggiorna l'intero documento con il nuovo passato come argomento
+    @Transactional
     public Winery updateWinery(String targetUsername, UpdateWineryDTO updateWineryDTO) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         return wineryRepository
             .findByLogin_Username(targetUsername)
@@ -267,11 +271,15 @@ public class WineryService {
                     wineryNeo4jRepository.updateWinery(targetWinery.getLogin().getUsername(), targetWinery.getName(), targetWinery.getPicture().getThumbnail());
 
                     return savedWinery;
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist."));
-        }
+                }
+            )
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Winery with username \"" + targetUsername + "\" not updatable because it does not exist.")
+            );
+    }
 
     // Cerca il documento di una winery e ne modifica lo username
+    @Transactional
     public Winery updateWineryUsername(String targetUsername, String newUsername) throws ResourceNotFoundException, ResourceAlreadyExistsException, BadRequestException {
         if (targetUsername.equals(newUsername)) {
             throw new BadRequestException("Username not updatable because it is the same as the old one.");
@@ -373,14 +381,16 @@ public class WineryService {
 
     /// DELETE operations ///
     // Elimina tutte le wineries dalla collection "wineries"
+    @Transactional
     public void deleteAllWineries() {
         wineryRepository.deleteAll();
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         wineryNeo4jRepository.deleteAllWineries();
     }
 
     // Elimina una winery con un determinato username
+    @Transactional
     public void deleteWinery(String targetUsername) throws ResourceNotFoundException {
         final Winery targetWinery = wineryRepository
             .findByLogin_Username(targetUsername)
@@ -393,7 +403,7 @@ public class WineryService {
         
         wineryRepository.delete(targetWinery);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         wineryNeo4jRepository.deleteWineryByUsername(targetUsername);
     }
 

@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
@@ -83,8 +84,7 @@ public class AnalyticsService {
     private String checkType(String type) {
         type = type.toLowerCase();
 
-        if (
-            !type.equalsIgnoreCase("rosso")
+        if (!type.equalsIgnoreCase("rosso")
             && !type.equalsIgnoreCase("bianco")
             && !type.equalsIgnoreCase("rosato")
             && !type.equalsIgnoreCase("spumante")
@@ -237,8 +237,9 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la nostra formula.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_our_qop_per_type"
+    // @Scheduled(cron = "30 56 23 * * ?")     // Scheduling for debugging purposes
     @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTopVintagesByOurQoPPerType() {
+    protected void updateTopVintagesByOurQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
 
@@ -342,9 +343,9 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per qualità/prezzo, utilizzando la formula "base" (ratings_average/price).
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_qop_per_type"
-    @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTopVintagesByQoPPerType() {
+    // @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
+    protected void updateTopVintagesByQoPPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
 
@@ -444,9 +445,9 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top vintages per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_vintages_by_ratings_per_type"
-    @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTopVintagesByRatingsPerType() {
+    // @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
+    protected void updateTopVintagesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
 
@@ -515,9 +516,9 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wines per valutazione media.
     // Viene calcolata una classifica per ogni tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wines_by_ratings_per_type"
-    @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTopWinesByRatingsPerType() {
+    // @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
+    protected void updateTopWinesByRatingsPerType() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
 
@@ -583,9 +584,9 @@ public class AnalyticsService {
     // Una volta al mese, aggiorna la top wineries per valutazione media dei propri vini.
     // Viene calcolata una classifica unica, senza tener conto (come avviene invece per le altre classifiche) della suddivisione per tipologia di vino (rossi, bianchi, rosati...).
     // Il risultato viene memorizzato nel db nella "materialized view" chiamata "top_wineries_by_wines_ratings"
-    @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
-    // @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTopWineriesByWineRatings() {
+    // @Scheduled(cron = "30 56 23 * * ?")    // Scheduling for debugging purposes
+    @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
+    protected void updateTopWineriesByWineRatings() {
         // Defining the name of the starting collection
         final String SOURCE_COLLECTION_NAME = "wines";
 
@@ -764,8 +765,10 @@ public class AnalyticsService {
         return new PageImpl<>(paginatedList, pageable, vintages.size());
     }
 
+
     /// DELETE operations ///
     // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la nostra formula) per tipologia di vino.
+    @Transactional
     public void deleteTopVintagesByOurQopPerType() {
         topVintagesOurQopTypeRepository.deleteAll();
     }
@@ -781,6 +784,7 @@ public class AnalyticsService {
 
 
     // Elimina tutti i documenti dalla top vintages per qualità/prezzo (calcolati secondo la formula "base") per tipologia di vino.
+    @Transactional
     public void deleteTopVintagesByQopPerType() {
         topVintagesQopTypeRepository.deleteAll();
     }
@@ -796,6 +800,7 @@ public class AnalyticsService {
 
 
     // Elimina tutti i documenti dalla top vintages per valutazione media per tipologia di vino.
+    @Transactional
     public void deleteTopVintagesByRatingsPerType() {
         topVintagesRatingsTypeRepository.deleteAll();
     }
@@ -811,6 +816,7 @@ public class AnalyticsService {
 
 
     // Elimina tutti i documenti dalla top wines per valutazione media per tipologia di vino.
+    @Transactional
     public void deleteTopWinesByRatingsPerType() {
         topWinesRatingsTypeRepository.deleteAll();
     }
@@ -826,6 +832,7 @@ public class AnalyticsService {
 
 
     // Elimina tutti i documenti dalla top wineries per valutazione media dei propri vini.
+    @Transactional
     public void deleteTopWineriesByWinesRatings() {
         topWineriesRatingsRepository.deleteAll();
     }

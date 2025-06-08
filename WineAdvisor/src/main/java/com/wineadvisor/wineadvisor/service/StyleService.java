@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.wineadvisor.wineadvisor.DTO.styles.StyleDTO;
@@ -34,6 +35,7 @@ public class StyleService {
     /////////// COSTANTI ////////////
     private static final int PAGE_SIZE = 20;
 
+    
 
     ////////////////////////////////
     /////// PRIVATE METHODS ////////
@@ -54,6 +56,8 @@ public class StyleService {
 
     /// END of checking operations //
     /////////////////////////////////
+    
+
     
     /////////////////////////////////
     //////// PUBLIC METHODS /////////
@@ -98,6 +102,7 @@ public class StyleService {
         return styleRepository.save(newStyle);
     }
 
+
     /// READ operations ///
     // Restituisce lo style di nome style_name
     public Style getStyleByName(String style_name) throws ResourceNotFoundException {
@@ -114,8 +119,10 @@ public class StyleService {
         return styles;
     }
     
+
     /// UPDATE operations ///
     // Aggiorna uno style già esistente nella collection "styles" del db
+    @Transactional
     public Style updateStyle(StyleDTO style) throws ResourceNotFoundException {
         return styleRepository.findByName(style.getName())
             .map(style_to_update -> {
@@ -160,8 +167,23 @@ public class StyleService {
             );
     }
 
+
     /// DELETE operations ///
+    // Elimina tutti gli styles dalla collection "styles" del db
+    @Transactional
+    public void deleteAll() {
+        // Metto style = null in tutti i vini
+        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
+        for (Wine wine : wines) {
+            wine.setStyle(null);
+            wineRepository.save(wine);
+        }
+
+        styleRepository.deleteAll();
+    }
+    
     // Elimina uno style dalla collection "styles" del db
+    @Transactional
     public void deleteStyleByName(String style_name) throws ResourceNotFoundException {
         styleRepository.findByName(style_name)
             .orElseThrow(() -> new ResourceNotFoundException("Style " + style_name + " not found."));
@@ -174,18 +196,6 @@ public class StyleService {
         }
 
         styleRepository.deleteByName(style_name);
-    }
-
-    // Elimina tutti gli styles dalla collection "styles" del db
-    public void deleteAll() {
-        // Metto style = null in tutti i vini
-        ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
-        for (Wine wine : wines) {
-            wine.setStyle(null);
-            wineRepository.save(wine);
-        }
-
-        styleRepository.deleteAll();
     }
 
     //// END of crud operations ////

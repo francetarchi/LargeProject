@@ -1,8 +1,8 @@
 package com.wineadvisor.wineadvisor.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -50,16 +50,15 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
     
-    // TEST
+    // Configura la catena di filtri di sicurezza per gestire le richieste HTTP
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())   // Permette tutte le richieste senza autenticazione
             .csrf(csrf -> csrf.disable())   // Disabilito CSRF (utile per testare con Postman)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))   // Nessuna sessione
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/authentication/login").anonymous()       // Permetto l'accesso a /api/authentication/** solamente ad utenti non autenticati (endpoint di login)
-                // .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
+                .requestMatchers(HttpMethod.POST, "/api/users").anonymous()     // Permetto l'accesso a /api/users solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un utente)
                 .requestMatchers(HttpMethod.POST, "/api/wineries").anonymous()  // Permetto l'accesso a /api/wineries solamente ad utenti non autenticati per le richieste di tipo POST (endpoint di registrazione di un'azienda vinicola)
                 .requestMatchers("/api/admins/**").hasRole("ADMIN")     // Permetto l'accesso a /api/admins solamente ad utenti con ruolo ADMIN (endpoint di gestione degli admin)
                 .requestMatchers("/api/regions/**").hasRole("ADMIN")    // Permetto l'accesso a /api/countries solamente ad utenti con ruolo ADMIN (endpoint di gestione delle regioni)

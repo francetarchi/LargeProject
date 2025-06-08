@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.time.Instant;
 
 import com.wineadvisor.wineadvisor.repository.ReviewNeo4jRepository;
@@ -31,10 +32,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -176,7 +177,7 @@ public class ReviewService {
     
     // Operazione che una volta al giorno aggiorna le recensioni più recenti di ogni vino e di ogni utente (3 al massimo)
     @Scheduled(cron = "0 0 1 * * ?")   // Ogni giorno all'una di notte
-    private void updateReviewsEmbeddedWinesAndUsers() {
+    protected void updateReviewsEmbeddedWinesAndUsers() {
         System.out.println("--- INFO: Updating reviews embedded in wines...");
         ArrayList<Wine> wines = (ArrayList<Wine>) wineRepository.findAll();
         for (int i = 0; i < wines.size(); i++){
@@ -205,7 +206,7 @@ public class ReviewService {
     // Una volta al mese, aggiorna la top 10 vintages (per popolarità = n° recensioni) per ogni regione
     // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTop10VintagesPerRegion() {
+    protected void updateTop10VintagesPerRegion() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"regions\".");
         List<Document> pipeline = Arrays.asList(
                 new Document("$lookup", new Document("from", "users")
@@ -282,7 +283,7 @@ public class ReviewService {
     // Una volta al mese, aggiorna la top 100 vintages (per popolarità = n° recensioni) per ogni nazione
     // @Scheduled(cron = "30 03 17 * * ?")     // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 2 * * MON")      // Ogni lunedì alle 2 di notte
-    private void updateTop100VintagesPerCountry() {
+    protected void updateTop100VintagesPerCountry() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for collection \"countries\".");
         List<Document> pipeline = Arrays.asList(
                 new Document("$lookup",
@@ -385,6 +386,7 @@ public class ReviewService {
 
     /// CREATE operations ///
     // Aggiunge una recensione alla collection "reviews" del database
+    @Transactional
     public Review addReview(String username, CreateReviewDTO createdReview) throws ResourceNotFoundException, ResourceAlreadyExistsException {
         // Controllo se l'utente esiste
         User user = userRepository.findByLogin_Username(username)
@@ -583,6 +585,7 @@ public class ReviewService {
     
     /// UPDATE operations ///
     // Aggiorna una recensione nella collection "reviews" del db
+    @Transactional
     public Review updateReview(Long id, String username, UpdateReviewDTO updatedReview) throws ResourceNotFoundException, BadRequestException {
         return reviewRepository
             .findByIdAndUserId_Username(id, username)
@@ -640,14 +643,16 @@ public class ReviewService {
     
     /// DELETE operations ///
     // Cancella tutte le recensioni dalla collection "reviews"
+    @Transactional
     public void deleteAllReviews() {
         reviewRepository.deleteAll();
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         reviewNeo4jRepository.deleteAllReviews();
     }
 
     // Cancella la recensione con un id sepcifico
+    @Transactional
     public void deleteReviewById(Long id, String username, String role) throws ResourceNotFoundException, AccessDeniedException {
         // Controllo se la recensione esiste
         Review targetReview = reviewRepository.findById(id).orElseThrow(
@@ -655,7 +660,6 @@ public class ReviewService {
         );
 
         // Controllo che sia stato username a scrivere la recensione, a meno che non sia admin
-        System.out.println("--- DBG: role: \"" + role + "\".");
         if (!role.equals("ROLE_ADMIN")) {
             if (!targetReview.getUserId().getUsername().equals(username)) {
                 throw new AccessDeniedException();
@@ -695,11 +699,12 @@ public class ReviewService {
 
         reviewRepository.deleteById(id);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         reviewNeo4jRepository.deleteReviewById(id);
     }
 
     // Cancella tutte le recensioni di un utente specifico
+    @Transactional
     public void deleteReviewsByUser(String username) throws ResourceNotFoundException {
         // Controllo se l'utente esiste
         User user = userRepository.findByLogin_Username(username).orElseThrow(
@@ -740,11 +745,12 @@ public class ReviewService {
 
         reviewRepository.deleteAllByUserId_Username(username);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         reviewNeo4jRepository.deleteAllReviewsByUser(username);
     }
 
     // Cancella tutte le recensioni di un vino specifico
+    @Transactional
     public void deleteReviewsByWine(Long wineId) throws ResourceNotFoundException {
         // Controllo se il vino esiste
         Wine wine = wineRepository.findById(wineId)
@@ -775,11 +781,12 @@ public class ReviewService {
 
         reviewRepository.deleteAllByWineId_Id(wineId);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         reviewNeo4jRepository.deleteAllReviewsByWine(wineId);
     }
 
     // Cancella tutte le recensioni di un'annata specifica di un vino specifico
+    @Transactional
     public void deleteReviewsByVintage(Long wineId, Integer vintageYear) throws ResourceNotFoundException {
         // Controllo se il vino e la vintage esistono
         Wine wine = wineRepository.findById(wineId).orElseThrow(
@@ -812,10 +819,9 @@ public class ReviewService {
         
         reviewRepository.deleteAllByWineId_IdAndWineId_Year(wineId, vintageYear);
 
-        // Cancellazione da Neo4j
+        // Sincronizzazione con Neo4j
         reviewNeo4jRepository.deleteAllReviewsByVintage(wineId, vintageYear);
     }
-
 
     //// END of crud operations ////
     ////////////////////////////////

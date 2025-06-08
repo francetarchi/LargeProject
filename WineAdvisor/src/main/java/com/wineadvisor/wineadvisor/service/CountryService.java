@@ -3,6 +3,7 @@ package com.wineadvisor.wineadvisor.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceAlreadyExistsException;
@@ -136,6 +137,7 @@ public class CountryService {
 
     /// UPDATE operations ///
     // Cerca il documento di una nazione con un determinato name e lo aggiorna con i dati passati nel DTO
+    @Transactional
     public Country updateCountry(String name, UpdateCountryDTO updateCountryDTO) throws ResourceNotFoundException {
         return countryRepository
             .findByName(name)
@@ -155,6 +157,7 @@ public class CountryService {
     }
 
     // Cerca il documento di una nazione e ne modifica il name
+    @Transactional
     public Country updateCountryName(String targetName, String newName) throws ResourceNotFoundException {
         if (targetName.equals(newName)) {
             throw new BadRequestException("Name not updatable because it is the same as the old one.");
@@ -186,6 +189,7 @@ public class CountryService {
 
     /// DELETE operations ///
     // Elmina tutte le nazioni presenti nella collection "countries" del database
+    @Transactional
     public void deleteAllCountries() {
         countryRepository.deleteAll();
     }

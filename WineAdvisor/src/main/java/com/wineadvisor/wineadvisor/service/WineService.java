@@ -1,24 +1,25 @@
 package com.wineadvisor.wineadvisor.service;
 
-import org.bson.BsonNull;
-import org.bson.Document;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.time.Instant;
 
-import org.springframework.stereotype.Service;
+import org.bson.BsonNull;
+import org.bson.Document;
+
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Service;
 
 import com.mongodb.client.AggregateIterable;
 
@@ -74,6 +75,7 @@ public class WineService {
     private static final int PAGE_SIZE = 20;
 
 
+
     ////////////////////////////////
     /////// PRIVATE METHODS ////////
     ////////////////////////////////
@@ -99,9 +101,10 @@ public class WineService {
     /////// Async. operations ///////
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni vintage nella collection wines
-    @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
-    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
-    private void updateStatisticsPerVintage() {
+    @Transactional
+    // @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    protected void updateStatisticsPerVintage() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for vintage statistics update.");
         List<Document> pipeline = Arrays.asList(
                 new Document("$unwind", "$vintages"),
@@ -179,9 +182,9 @@ public class WineService {
     }
 
     // Aggiorna una volta al giorno l'oggetto statistics di ogni wine
-    @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
-    // @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
-    private void updateStatisticsPerWine() {
+    // @Scheduled(cron = "00 56 23 * * ?")    // Scheduling for debugging purposes.
+    @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
+    protected void updateStatisticsPerWine() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for wine statistics update.");
         List<Document> pipeline = Arrays.asList(
                 new Document("$project",
@@ -230,9 +233,10 @@ public class WineService {
 
     // Aggiorna una volta al giorno il campo wines_count contenuto in grapes, in style, nella collection "wines"
     // Aggiorna anche il campo wines_count contenuto in grapes nella collection "styles"
+    @Transactional
     // @Scheduled(cron = "00 31 18 * * ?")    // Scheduling for debugging purposes.
     @Scheduled(cron = "0 0 0 * * ?")    // Ogni giorno a mezzanotte
-    private void updateWinesCountInGrapesPerWine() {
+    protected void updateWinesCountInGrapesPerWine() {
         System.out.println("--- INFO: Declaring aggregation pipeline stages for grapes count update.");
         List<Document> pipeline = Arrays.asList(
                 new Document("$unwind",
@@ -398,7 +402,8 @@ public class WineService {
 
 
     /// UPDATE operations ///
-    // Modifica dati del vino 
+    // Modifica dati del vino
+    @Transactional
     public Wine updateWine(UpdateWineDTO updatedWine, String username) throws ResourceNotFoundException {
         return wineRepository.findById(updatedWine.getWineId())
             .map(wine -> {  
@@ -492,6 +497,7 @@ public class WineService {
     }
 
     // Modifica dati di una vintage di un vino
+    @Transactional
     public Wine updateVintage(UpdateVintageDTO updatedVintage, String username) throws ResourceNotFoundException {
         return wineRepository.findByIdAndVintages_Year(updatedVintage.getWineId(), updatedVintage.getYear())
             .map(wine -> {  
@@ -538,6 +544,7 @@ public class WineService {
     }
 
     // Elimina una vintage da un vino
+    @Transactional
     public Wine deleteVintage(UpdateVintageDTO targetVintage, String username) throws ResourceNotFoundException, AccessDeniedException {
         return wineRepository
             .findByIdAndVintages_Year(targetVintage.getWineId(), targetVintage.getYear())
@@ -582,11 +589,12 @@ public class WineService {
 
     /// DELETE operations ///
     // Elimina tutti i vini dalla collection "wines"
-    public void deleteAllWines(){  
+    public void deleteAllWines(){
         wineRepository.deleteAll();
     }
 
     // Elimina un vino in base al suo id
+    @Transactional
     public void deleteWineById(Long wineId, String username) throws ResourceNotFoundException {
         // Controllo che il vino specificato esista
         if (wineRepository.findById(wineId).isEmpty()){
@@ -598,23 +606,18 @@ public class WineService {
             throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + wineId + ".");
         }
         
-        // Se elimino un vino, devo eliminare anche tutte le recensioni fatte su quel vino e togliere
-        // l'id di quelle recensioni dagli array "likes"/"dislikes" degli users
+        // Se elimino un vino, devo eliminare anche tutte le recensioni fatte su quel vino
+        // e togliere l'id di quelle recensioni dagli array "likes"/"dislikes" degli users.
         ArrayList<Review> reviews_to_delete = reviewRepository.findByWineId_Id(wineId);
         ArrayList<User> users = (ArrayList<User>) userRepository.findAll();
         for (User user : users){
             boolean modified = user.getReviews().removeIf(r -> r.getWineId().getId().equals(wineId));
-
-            if (user.getLikes().removeIf(likeId ->
-                    reviews_to_delete.stream().anyMatch(r -> r.getId().equals(likeId)))) {
+            if (user.getLikes().removeIf(likeId -> reviews_to_delete.stream().anyMatch(r -> r.getId().equals(likeId)))) {
                 modified = true;
             }
-
-            if (user.getDislikes().removeIf(dislikeId ->
-                    reviews_to_delete.stream().anyMatch(r -> r.getId().equals(dislikeId)))) {
+            if (user.getDislikes().removeIf(dislikeId -> reviews_to_delete.stream().anyMatch(r -> r.getId().equals(dislikeId)))) {
                 modified = true;
             }
-
             if (modified) {
                 userRepository.save(user);
             }
