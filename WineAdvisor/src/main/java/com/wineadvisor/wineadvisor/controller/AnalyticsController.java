@@ -3,6 +3,8 @@ package com.wineadvisor.wineadvisor.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import com.wineadvisor.wineadvisor.service.AnalyticsService;
 
@@ -40,28 +45,28 @@ public class AnalyticsController {
     ////////////// GET //////////////
     @GetMapping("/top-vintages-our-qop-type/{type}")
     public ResponseEntity<?> getTopVintagesByOurQopPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
             @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
         return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByOurQopPerType(type, maxPrice));
     }
 
     @GetMapping("/top-vintages-qop-type/{type}")
     public ResponseEntity<?> getTopVintagesByQopPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
             @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
         return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByQopPerType(type, maxPrice));
     }
 
     @GetMapping("/top-vintages-ratings-type/{type}")
     public ResponseEntity<?> getTopVintagesByRatingsPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
             @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
         return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopVintagesByRatingsPerType(type, maxPrice));
     }
 
     @GetMapping("/top-wines-ratings-type/{type}")
     public ResponseEntity<?> getTopWinesByRatingsPerType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type,
             @Positive(message = "Max price must be positive.") @RequestParam(required = false, name = "max price", defaultValue = "1000000000") Double maxPrice) {
         return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTopWinesByRatingsPerType(type, maxPrice));
     }
@@ -72,16 +77,24 @@ public class AnalyticsController {
     }
 
     @GetMapping("/top-10-vintages")
-    public ResponseEntity<?> getTop10VintagesOfTheMonth() {
+    public ResponseEntity<?> getTop10VintagesOfTheMonth(
+        @RequestParam(required = false, name = "region name", defaultValue = "Toscana") String regionName) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop10VintagesOfTheWeek(username));
+        GrantedAuthority grantedAuthority = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().findFirst().orElseThrow(
+            () -> new InternalAuthenticationServiceException("No role found for authenticated user. Try with another account.")
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop10VintagesOfTheWeek(username, regionName, grantedAuthority.getAuthority()));
     }
 
     @GetMapping("/top-100-vintages")
     public ResponseEntity<?> getTop100VintagesOfTheMonth(
+        @RequestParam(required = false, name = "country name", defaultValue = "Italia") String countryName,
         @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop100VintagesOfTheWeek(username, page));
+        GrantedAuthority grantedAuthority = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().findFirst().orElseThrow(
+            () -> new InternalAuthenticationServiceException("No role found for authenticated user. Try with another account.")
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(analyticsService.getTop100VintagesOfTheWeek(username, page, countryName, grantedAuthority.getAuthority()));
     }
     
     ///////////// DELETE ////////////
@@ -95,7 +108,7 @@ public class AnalyticsController {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/top-vintages-our-qop-type/{type}")
     public ResponseEntity<?> deleteTopVintagesByOurQopPerTypeByType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
         analyticsService.deleteTopVintagesByOurQopPerTypeByType(type);
         return ResponseEntity.status(HttpStatus.OK).body("Document with type \"" +  type + "\" in ranking \"" +  TOP_VINTAGES_OUR_QOP + "\" deleted successfully.");
     }
@@ -111,7 +124,7 @@ public class AnalyticsController {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/top-vintages-qop-type/{type}")
     public ResponseEntity<?> deleteTopVintagesByQopPerTypeByType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
         analyticsService.deleteTopVintagesByQopPerTypeByType(type);
         return ResponseEntity.status(HttpStatus.OK).body("Document with type \"" +  type + "\" in ranking \"" +  TOP_VINTAGES_QOP + "\" deleted successfully.");
     }
@@ -127,7 +140,7 @@ public class AnalyticsController {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/top-vintages-ratings-type/{type}")
     public ResponseEntity<?> deleteTopVintagesByRatingsPerTypeByType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
         analyticsService.deleteTopVintagesByRatingsPerTypeByType(type);
         return ResponseEntity.status(HttpStatus.OK).body("Document with type \"" +  type + "\" in ranking \"" +  TOP_VINTAGES_RATINGS + "\" deleted successfully.");
     }
@@ -143,7 +156,7 @@ public class AnalyticsController {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/top-wines-ratings-type/{type}")
     public ResponseEntity<?> deleteTopWinesByRatingsPerTypeByType(
-            @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
+            @Parameter(description = "Wine type.", schema = @Schema(type = "string", example = "rosso")) @NotBlank(message = "Type cannot be blank.") @PathVariable String type) {
         analyticsService.deleteTopWinesByRatingsPerTypeByType(type);
         return ResponseEntity.status(HttpStatus.OK).body("Document with type \"" +  type + "\" in ranking \"" +  TOP_WINES_RATINGS + "\" deleted successfully.");
     }
@@ -159,7 +172,7 @@ public class AnalyticsController {
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/top-wineries-ratings/{winery_username}")
     public ResponseEntity<?> deleteTopWineriesByWinesRatingsByWineryUsername(
-            @NotBlank(message = "Winery username cannot be blank.") @PathVariable String winery_username) {
+            @Parameter(description = "Winery username.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Winery username cannot be blank.") @PathVariable String winery_username) {
         analyticsService.deleteTopWineriesByWinesRatingsByWineryUsername(winery_username);
         return ResponseEntity.status(HttpStatus.OK).body("Document with winery_username \"" +  winery_username + "\" in ranking \"" +  TOP_WINERIES_RATINGS + "\" deleted successfully.");
     }

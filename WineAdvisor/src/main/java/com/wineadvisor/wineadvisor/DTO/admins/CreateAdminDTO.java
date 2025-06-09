@@ -40,7 +40,7 @@ public class CreateAdminDTO {
 
     @NotBlank(message = "Email cannot be blank.")
     @Email(message = "Email must be a valid email address.")
-    @Schema(description = "Email of the new admin", example = "mariorossi@example.com")
+    @Schema(description = "Email of the new admin", example = "mariorossi1@example.com")
     private String email;
 
     @Pattern(regexp = "^\\+?[0-9\\s\\-()]+$", message = "Telephone must be a valid telephone number.")

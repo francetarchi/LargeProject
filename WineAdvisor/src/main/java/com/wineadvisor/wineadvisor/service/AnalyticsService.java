@@ -3,7 +3,6 @@ package com.wineadvisor.wineadvisor.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.data.domain.Page;
@@ -17,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wineadvisor.wineadvisor.exception.AccessDeniedException;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.exception.ResourceNotFoundException;
 import com.wineadvisor.wineadvisor.model.analytics.TopVintagesOurQopType;
@@ -708,24 +708,22 @@ public class AnalyticsService {
     }
 
     // Restituisce la top 10 vintages of the month della region dell'utente, (aggregation) contenuta in regions
-    public ArrayList<VintageEmbedded> getTop10VintagesOfTheWeek(String username) {
-        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+    public ArrayList<VintageEmbedded> getTop10VintagesOfTheWeek(String username, String regionName, String role) {
         String region_name = "";
-        
-        if(user_to_find.isEmpty()){
-            Winery winery = wineryRepository.findByLogin_Username(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
-            region_name = winery.getRegion();   
-        } else {
-            if(user_to_find.isEmpty()){
-                throw new ResourceNotFoundException("User " + username + " not found.");
-            }
-            User user = user_to_find.get();
+
+        if(role.equals("ROLE_ADMIN")) {
+            region_name = regionName;
+        } else if (role.equals("ROLE_USER")) {
+            User user = userRepository.findByLogin_Username(username).orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
             region_name = user.getAddress().getRegion();
+        } else if (role.equals("ROLE_WINERY")) {
+            Winery winery = wineryRepository.findByLogin_Username(username).orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
+            region_name = winery.getRegion();
+        } else {
+            throw new AccessDeniedException();
         }
 
-        Region region  = regionRepository.findByName(region_name)
-                .orElseThrow(() -> new ResourceNotFoundException("Region not found."));
+        Region region  = regionRepository.findByName(region_name).orElseThrow(() -> new ResourceNotFoundException("Region not found."));
 
         ArrayList<VintageEmbedded> vintages = region.getTop10VintagesOfTheWeek();
 
@@ -733,24 +731,22 @@ public class AnalyticsService {
     }
 
     // Restituisce la top 100 vintages of the month della country dell'utente, (aggregation) contenuta in countries
-    public Page<VintageEmbedded> getTop100VintagesOfTheWeek(String username, Integer page) {
-        Optional<User> user_to_find = userRepository.findByLogin_Username(username);
+    public Page<VintageEmbedded> getTop100VintagesOfTheWeek(String username, Integer page,  String countryName, String role) {
         String country_name = "";
-        
-        if(user_to_find.isEmpty()){
-            Winery winery = wineryRepository.findByLogin_Username(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
+
+        if(role.equals("ROLE_ADMIN")) {
+            country_name = countryName;
+        } else if (role.equals("ROLE_USER")) {
+            User user = userRepository.findByLogin_Username(username).orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
+            country_name = user.getAddress().getCountry();
+        } else if (role.equals("ROLE_WINERY")) {
+            Winery winery = wineryRepository.findByLogin_Username(username).orElseThrow(() -> new ResourceNotFoundException("User " + username + " not found."));
             country_name = winery.getCountry();
         } else {
-            if(user_to_find.isEmpty()){
-                throw new ResourceNotFoundException("User " + username + " not found.");
-            }
-            User user = user_to_find.get();
-            country_name = user.getAddress().getCountry();
+            throw new AccessDeniedException();
         }
 
-        Country country = countryRepository.findByName(country_name)
-                .orElseThrow(() -> new ResourceNotFoundException("Country not found."));
+        Country country = countryRepository.findByName(country_name).orElseThrow(() -> new ResourceNotFoundException("Country not found."));
 
         ArrayList<VintageEmbedded> vintages = country.getTop100VintagesOfTheWeek();
 
@@ -840,7 +836,7 @@ public class AnalyticsService {
     // Elimina il documento di una certa winery dalla top wineries per valutazione media dei propri vini.
     public void deleteTopWineriesByWinesRatingsByWineryUsername(String winery_username) {
         TopWineriesRatings topWineriesRatings = topWineriesRatingsRepository.findByWineryUsername(winery_username).orElseThrow(
-            () -> new ResourceNotFoundException("Top wineries by wines ratings for winery: " + winery_username + "\" not found.")
+            () -> new ResourceNotFoundException("Top wineries by wines ratings for winery \"" + winery_username + "\" not found.")
         );
 
         topWineriesRatingsRepository.delete(topWineriesRatings);
