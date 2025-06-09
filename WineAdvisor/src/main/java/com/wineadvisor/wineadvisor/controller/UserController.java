@@ -67,8 +67,8 @@ public class UserController {
 
     @GetMapping("/search")
     public ResponseEntity<?> getUsersByName(
-            @RequestParam(required = false, name = "first name", defaultValue = "Lorenzo") String firstName,
-            @RequestParam(required = false, name = "last name", defaultValue = "Iacovelli") String lastName,
+            @RequestParam(required = false, name = "first name") @Schema(example = "Lorenzo") String firstName,
+            @RequestParam(required = false, name = "last name") @Schema(example = "Iacovelli") String lastName,
             @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or omitted).") Integer page) {
         if (firstName == null && lastName == null) {
             throw new BadRequestException("firstName and lastName cannot be both null at the same time.");

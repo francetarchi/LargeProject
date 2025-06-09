@@ -88,16 +88,42 @@ public class WineController {
 
     @GetMapping("/search")
     public ResponseEntity<?> searchWines(
-            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page,
-            @RequestParam(required = false, name = "wine name", defaultValue = "Il Pettirosso") String name,
-            @RequestParam(required = false, name = "winery username", defaultValue = "arpepe3749") String winery,
-            @RequestParam(required = false, name = "region name", defaultValue = "Lombardia") String region,
-            @RequestParam(required = false, name = "country name", defaultValue = "Italia") String country,
-            @RequestParam(required = false, name = "wine type", defaultValue = "rosso") @Pattern(regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato", message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato.") String type,
-            @RequestParam(required = false, name = "grape name", defaultValue = "Nebbiolo") String grape,
-            @RequestParam(required = false, name = "min vintage price", defaultValue = "20.0") @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.") Double minPrice,
-            @RequestParam(required = false, name = "max vintage price", defaultValue = "120.0") @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.") Double maxPrice,
-            @RequestParam(required = false, name = "min rating", defaultValue = "2.0") @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.") @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.") Double minAverageRating) throws BadRequestException {
+            @RequestParam(required = false, name = "page number", defaultValue = "0")
+                @PositiveOrZero Integer page,
+            @RequestParam(required = false)
+                @Schema(description = "Wine name", example = "Il Pettirosso")
+                String name,
+            @RequestParam(required = false)
+                @Schema(description = "Winery username", example = "arpepe3749")
+                String winery,
+            @RequestParam(required = false)
+                @Schema(description = "Region name", example = "Lombardia")
+                String region,
+            @RequestParam(required = false)
+                @Schema(description = "Country name", example = "Italia")
+                String country,
+            @RequestParam(required = false)
+                @Pattern(regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato", message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato.")
+                @Schema(description = "Wine type info", example = "rosso")
+                String type,
+            @RequestParam(required = false)
+                @Schema(description = "Grape name", example = "Nebbiolo")
+                String grape,
+            @RequestParam(required = false)
+                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
+                @Schema(description = "Min vintage price", example = "20.0")
+                Double minPrice,
+            @RequestParam(required = false)
+                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
+                @Schema(description = "Max vintage price", example = "120.0")
+                Double maxPrice,
+            @RequestParam(required = false)
+                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
+                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
+                @Schema(description = "Min average wine rating", example = "2.0")
+                Double minAverageRating
+            ) throws BadRequestException {
+                
         name = (name == null) ? "" : name;
         winery = (winery == null) ? "" : winery;
         region = (region == null) ? "" : region;
