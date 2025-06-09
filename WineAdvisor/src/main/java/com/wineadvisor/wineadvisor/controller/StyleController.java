@@ -1,10 +1,5 @@
 package com.wineadvisor.wineadvisor.controller;
 
-import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.PositiveOrZero;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -21,6 +16,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.wineadvisor.wineadvisor.DTO.styles.StyleDTO;
 import com.wineadvisor.wineadvisor.service.StyleService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+
+import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/styles")
@@ -32,34 +36,39 @@ public class StyleController {
     private final StyleService styleService;
 
 
+
     ////////////// POST //////////////
     @PostMapping
     @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
-    public ResponseEntity<?> createStyle(@Valid @RequestBody StyleDTO style) {
+    public ResponseEntity<?> createStyle(
+            @Valid @RequestBody StyleDTO style) {
         return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/styles/" + style.getName()).body(styleService.createStyle(style));
     }
 
+    
     ////////////// GET //////////////
     @GetMapping
     public ResponseEntity<?> getAllStyles(
-        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(styleService.getAllStyles(page));
     }
 
     @GetMapping("/{name}")
     public ResponseEntity<?> getStyleByName(
-                @PathVariable @NotBlank(message = "Style name cannot be blank.") String name) {
+            @Parameter(description = "Name of the style to retrieve.", schema = @Schema(type = "string", example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
         return ResponseEntity.status(HttpStatus.OK).body(styleService.getStyleByName(name));
     }
 
+    
     ////////////// PUT //////////////
     @PutMapping
     @Secured({ "ROLE_ADMIN" })
-    public ResponseEntity<?> updateStyle(@Valid @RequestBody StyleDTO style) {
-        System.out.println("body: " + style);
+    public ResponseEntity<?> updateStyle(
+            @Valid @RequestBody StyleDTO style) {
         return ResponseEntity.status(HttpStatus.OK).body(styleService.updateStyle(style));
     }
 
+    
     ////////////// DELETE //////////////
     @DeleteMapping
     @Secured({ "ROLE_ADMIN" })
@@ -71,7 +80,7 @@ public class StyleController {
     @DeleteMapping("/{name}")
     @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteStyle(
-                @PathVariable @NotBlank(message = "Style name cannot be blank.") String name) {
+            @Parameter(description = "Name of the style to delete.", schema = @Schema(type = "string", example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
         styleService.deleteStyleByName(name);
         return ResponseEntity.status(HttpStatus.OK).body("Style " + name + " deleted successfully.");
     }

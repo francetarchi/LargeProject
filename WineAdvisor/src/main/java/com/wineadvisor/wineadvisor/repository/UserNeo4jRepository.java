@@ -38,18 +38,6 @@ public class UserNeo4jRepository {
         .run();
     }
 
-    // Find a user by their username
-    public Map<String, Object> findUserByUsername(String username) {
-        return neo4jClient.query("""
-                MATCH (u:User {username: $username})
-                RETURN u.username AS username, u.firstName AS firstName, u.lastName AS lastName, u.thumbnail AS thumbnail
-            """)
-            .bind(username).to("username")
-            .fetch()
-            .one()
-            .orElse(null);
-    }
-
     // Update user details by username
     public void updateUser(String username, String firstName, String lastName, String thumbnail) {
         Map<String, Object> params = new HashMap<>();
@@ -131,7 +119,7 @@ public class UserNeo4jRepository {
     }
 
     // Get recommended users to follow based on mutual follows
-    public List<Map<String, Object>> getSuggestedFollows(String username) {
+    public List<Map<String, Object>> getUserSuggestedFollows(String username) {
         String query = """
             MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
             MATCH (friend)-[:FOLLOWS]->(suggested)
@@ -192,7 +180,7 @@ public class UserNeo4jRepository {
     }
 
     // Get a list of users that follow a specific user
-    public List<Map<String, Object>> getFollowers(String username) {
+    public List<Map<String, Object>> getUserFollowers(String username) {
         String query = """
             MATCH (follower:User)-[:FOLLOWS]->(u:User {username: $username})
             RETURN follower.username AS username, follower.thumbnail AS thumbnail
@@ -207,7 +195,7 @@ public class UserNeo4jRepository {
     }
 
     // Get a list of users that a specific user follows
-    public List<Map<String, Object>> getFollowedByUser(String username) {
+    public List<Map<String, Object>> getUserFollowed(String username) {
         String query = """
             MATCH (u:User {username: $username})-[:FOLLOWS]->(followed)
             RETURN followed.username AS username,

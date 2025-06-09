@@ -11,6 +11,7 @@ import com.wineadvisor.wineadvisor.DTO.wines.NewVintageDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateWineDTO;
 import com.wineadvisor.wineadvisor.DTO.wines.UpdateVintageDTO;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.Valid;
@@ -65,64 +66,38 @@ public class WineController {
     @GetMapping
     @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> getAllWines(
-        @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page) {
         Page<Wine> wines = wineService.getAllWines(page);
         return ResponseEntity.status(HttpStatus.OK).body(wines);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getWineById(
-            @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) {
+            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) {
         Wine wine = wineService.getWineById(id);
         return ResponseEntity.status(HttpStatus.OK).body(wine);
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
     public ResponseEntity<?> getVintageById(
-            @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") Long wineId,
-            @PathVariable @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") Integer vintageYear) {
+            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId,
+            @Parameter(description = "Year of the vintage to retrieve.", schema = @Schema(type = "long", example = "2012")) @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
         Vintage vintage = wineService.getVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body(vintage);
     }
 
     @GetMapping("/search")
     public ResponseEntity<?> searchWines(
-            @RequestParam(required = false, name = "page number", defaultValue = "0")
-                @PositiveOrZero Integer page,
-            @RequestParam(required = false)
-                @Schema(description = "Wine name", example = "Il Pettirosso")
-                String name,
-            @RequestParam(required = false)
-                @Schema(description = "Winery username", example = "arpepe3749")
-                String winery,
-            @RequestParam(required = false)
-                @Schema(description = "Region name", example = "Lombardia")
-                String region,
-            @RequestParam(required = false)
-                @Schema(description = "Country name", example = "Italia")
-                String country,
-            @RequestParam(required = false)
-                @Pattern(regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato", message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato.")
-                @Schema(description = "Wine type info", example = "rosso")
-                String type,
-            @RequestParam(required = false)
-                @Schema(description = "Grape name", example = "Nebbiolo")
-                String grape,
-            @RequestParam(required = false)
-                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
-                @Schema(description = "Min vintage price", example = "20.0")
-                Double minPrice,
-            @RequestParam(required = false)
-                @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
-                @Schema(description = "Max vintage price", example = "120.0")
-                Double maxPrice,
-            @RequestParam(required = false)
-                @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
-                @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
-                @Schema(description = "Min average wine rating", example = "2.0")
-                Double minAverageRating
-            ) throws BadRequestException {
-                
+            @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero Integer page,
+            @RequestParam(required = false, name = "wine name", defaultValue = "Il Pettirosso") String name,
+            @RequestParam(required = false, name = "winery username", defaultValue = "arpepe3749") String winery,
+            @RequestParam(required = false, name = "region name", defaultValue = "Lombardia") String region,
+            @RequestParam(required = false, name = "country name", defaultValue = "Italia") String country,
+            @RequestParam(required = false, name = "wine type", defaultValue = "rosso") @Pattern(regexp = "rosso|bianco|rosato|spumante|vino macerato|vino da dessert|vino liquoroso|vino aromatizzato", message = "Type must be one of: rosso, bianco, rosato, spumante, vino macerato, vino da dessert, vino liquoroso, vino aromatizzato.") String type,
+            @RequestParam(required = false, name = "grape name", defaultValue = "Nebbiolo") String grape,
+            @RequestParam(required = false, name = "min vintage price", defaultValue = "20.0") @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.") Double minPrice,
+            @RequestParam(required = false, name = "max vintage price", defaultValue = "120.0") @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.") Double maxPrice,
+            @RequestParam(required = false, name = "min rating", defaultValue = "2.0") @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.") @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.") Double minAverageRating) throws BadRequestException {
         name = (name == null) ? "" : name;
         winery = (winery == null) ? "" : winery;
         region = (region == null) ? "" : region;
@@ -145,8 +120,7 @@ public class WineController {
     @PutMapping
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> updateWine(
-                @RequestBody @Valid UpdateWineDTO wine) {
-        // Prendo username della winery che vuole modificare il vino
+            @Valid @RequestBody UpdateWineDTO wine) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine updatedWine = wineService.updateWine(wine, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
@@ -155,12 +129,11 @@ public class WineController {
     @PutMapping("/vintages/addVintage")
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> addVintage(
-                @RequestBody @Valid NewVintageDTO newVintage) {
+            @Valid @RequestBody NewVintageDTO newVintage) {
         if (newVintage.getYear() != 0 && (newVintage.getYear() < 1500 || newVintage.getYear() > Year.now().getValue())) {
             throw new BadRequestException("Vintage year must be 0 or between 1500 and current year.");
         }
 
-        // Prendo username della winery che vuole aggiungere la vintage
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine savedWine = wineService.addVintage(newVintage, username);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
@@ -169,8 +142,7 @@ public class WineController {
     @PutMapping("/vintages/editVintage")
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> updateVintage(
-                @RequestBody @Valid UpdateVintageDTO vintage) {
-        // Prendo username della winery che vuole modificare la vintage
+            @Valid @RequestBody UpdateVintageDTO vintage) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine updatedWine = wineService.updateVintage(vintage, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
@@ -179,8 +151,7 @@ public class WineController {
     @PutMapping("/vintages/deleteVintage")
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> deleteVintage(
-                @RequestBody @Valid UpdateVintageDTO vintage) {
-        // Prendo username della winery che vuole togliere la vintage
+            @Valid @RequestBody UpdateVintageDTO vintage) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine updatedWine = wineService.deleteVintage(vintage, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
@@ -198,8 +169,7 @@ public class WineController {
     @DeleteMapping("/{id}")
     @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
     public ResponseEntity<?> deleteWine(
-                @PathVariable @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") Long id) {
-        // Prendo username della winery che vuole aggiungere la vintage al vino
+            @Parameter(description = "ID of the wine to delete.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") @PathVariable Long id) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         wineService.deleteWineById(id, username);
         return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");

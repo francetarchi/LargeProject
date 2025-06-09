@@ -16,6 +16,9 @@ import com.wineadvisor.wineadvisor.DTO.countries.CreateCountryDTO;
 import com.wineadvisor.wineadvisor.DTO.countries.UpdateCountryDTO;
 import com.wineadvisor.wineadvisor.service.CountryService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,9 +41,7 @@ public class CountryController {
     @PostMapping
     public ResponseEntity<?> createCountry(
             @NotNull(message = "New country info cannot be null.") @Valid @RequestBody CreateCountryDTO createCountryDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", "/api/countries/" + createCountryDTO.getName())
-                .body(countryService.createCountry(createCountryDTO));
+        return ResponseEntity.status(HttpStatus.CREATED).header("Location", "/api/countries/" + createCountryDTO.getName()).body(countryService.createCountry(createCountryDTO));
     }
     
 
@@ -53,7 +54,7 @@ public class CountryController {
 
     @GetMapping("/{name}")
     public ResponseEntity<?> getCountryByName(
-            @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
+            @Parameter(description = "Name of the country to retrieve.", schema = @Schema(type = "string", example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
         return ResponseEntity.status(HttpStatus.OK).body(countryService.getCountryByName(name));
     }
     

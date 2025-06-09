@@ -87,18 +87,6 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-    public List<Map<String, Object>> getReviewsByUser(String username) {
-        return new ArrayList<>(neo4jClient.query("""
-            MATCH (u:User {username: $username})-[:WROTE]->(r:Review)
-            RETURN r.text AS text, r.rating AS rating, r.wineName AS wineName, r.wineYear AS wineYear,
-                   r.wineImage AS wineImage, r.thumbnail AS thumbnail, r.createdAt AS createdAt
-            ORDER BY id(r) DESC
-        """)
-        .bind(username).to("username")
-        .fetch()
-        .all());
-    }
-
     public void updateReview(Long reviewId, String newText, Double newRating) {
         Map<String, Object> params = new HashMap<>();
         params.put("reviewId", reviewId);
@@ -240,7 +228,7 @@ public class ReviewNeo4jRepository {
         .run();
     }
 
-    public List<Map<String, Object>> getPaginatedFeed(String username, int skip, int limit) {
+    public List<Map<String, Object>> getPaginatedFeed(String username, Integer skip, Integer limit) {
         String query = """
             MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
             MATCH (friend)-[:WROTE]->(review:Review)

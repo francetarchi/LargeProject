@@ -784,9 +784,27 @@ public class UserService {
         );
         return user;
     }
+    
+    // Restiuisce i consigli di follow per un utente specifico
+    public List<Map<String, Object>> getUserSuggestedFollows(String username) {
+        List<Map<String, Object>> suggestions = userNeo4jRepository.getUserSuggestedFollows(username);
+        if (suggestions.size() < 10) {
+            int remaining = 10 - suggestions.size();
+            List<Map<String, Object>> randoms = userNeo4jRepository.getRandomFollows(username, remaining);
+            suggestions.addAll(randoms);
+        }
 
-    public Map<String, Object> getUserFromGraph(String username) {
-        return userNeo4jRepository.findUserByUsername(username);
+        return suggestions;
+    }
+
+    // Restituisce i followers di un utente specifico
+    public List<Map<String, Object>> getUserFollowers(String username) {
+        return userNeo4jRepository.getUserFollowers(username);
+    }
+
+    // Restituisce gli utenti che un utente specifico sta seguendo
+    public List<Map<String, Object>> getUserFollowed(String username) {
+        return userNeo4jRepository.getUserFollowed(username);
     }
 
 
@@ -1140,28 +1158,6 @@ public class UserService {
         }
 
         userNeo4jRepository.unfollow(followerUsername, targetUsername);
-    }
-    
-    public List<Map<String, Object>> getSuggestedFollows(String username) {
-        List<Map<String, Object>> suggestions = userNeo4jRepository.getSuggestedFollows(username);
-
-        if (suggestions.size() < 10) {
-            int remaining = 10 - suggestions.size();
-            List<Map<String, Object>> randoms = userNeo4jRepository.getRandomFollows(username, remaining);
-            suggestions.addAll(randoms);
-        }
-
-        return suggestions;
-    }
-
-    // Get all users that follow a specific user
-    public List<Map<String, Object>> getFollowers(String username) {
-        return userNeo4jRepository.getFollowers(username);
-    }
-
-    // Get all users that a specific user follows
-    public List<Map<String, Object>> getFollowedByUser(String username) {
-        return userNeo4jRepository.getFollowedByUser(username);
     }
 
 

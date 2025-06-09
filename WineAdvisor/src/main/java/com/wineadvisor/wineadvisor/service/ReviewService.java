@@ -553,32 +553,9 @@ public class ReviewService {
         return reviews;
     }
 
-    // Restituisce le num recensioni più popolari (con più like) di un'annata specifica per un determinato vino
-    public ArrayList<Review> getPopularReviewsByVintage(Long wineId, Integer vintageYear, int num) throws ResourceNotFoundException {
-        if (wineRepository.findById(wineId).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
-        }
-        if (wineRepository.findByIdAndVintages_Year(wineId, vintageYear) == null) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + vintageYear + " not found.");
-        }
-
-        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, vintageYear);
-
-        // Controllo se reviews è vuoto
-        if (reviews.isEmpty()) {
-            throw new ResourceNotFoundException("No reviews found for wine with id " + wineId + " and year " + vintageYear + ".");
-        }
-
-        // Ordino le recensioni in base al numero di like (likesCount) in ordine decrescente
-        ArrayList<Review> popularReviews = sortReviewsByField(reviews, "likesCount", false);
-        
-        // Prendo solo il numero richiesto di recensioni, evitando errori di indice
-        int limit = Math.min(num, popularReviews.size()); 
-        return new ArrayList<>(popularReviews.subList(0, limit));
-    }
-
-    public List<Map<String, Object>> getGraphReviewsByUser(String username) {
-        return reviewNeo4jRepository.getReviewsByUser(username);
+    public List<Map<String, Object>> getPersonalizedFeed(String username, Integer page) {
+        Integer skip = page * PAGE_SIZE;
+        return reviewNeo4jRepository.getPaginatedFeed(username, skip, PAGE_SIZE);
     }
 
     
@@ -852,12 +829,6 @@ public class ReviewService {
 
         return reviews;
     }
-
-    public List<Map<String, Object>> getPersonalizedFeed(String username, int page, int pageSize) {
-        int skip = (page - 1) * pageSize;
-        return reviewNeo4jRepository.getPaginatedFeed(username, skip, pageSize);
-    }
-
 
     /// END of util. pub. funct. ///
     ////////////////////////////////

@@ -20,12 +20,16 @@ import com.wineadvisor.wineadvisor.DTO.wineries.UpdateWineryDTO;
 import com.wineadvisor.wineadvisor.exception.BadRequestException;
 import com.wineadvisor.wineadvisor.service.WineryService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import lombok.RequiredArgsConstructor;
+
 
 @RestController
 @RequestMapping("/api/wineries")
@@ -58,23 +62,24 @@ public class WineryController {
 
     @GetMapping("/search")
     public ResponseEntity<?> getWineriesByName(
-            @NotBlank(message = "Name cannot be blank.") @RequestParam(required = true, name = "name") String name,
+            @NotBlank(message = "Name cannot be blank.") @RequestParam(required = true, name = "name", defaultValue = "ARPEPE") String name,
             @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or omitted).") Integer page) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.getWineriesByName(name, page));
     }
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getWineryByUsername(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the winery to retrieve.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.getWineryByUsername(username));
     }
+
 
     ////////////// PUT /////////////
     @PutMapping("/{username}")
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWinery(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Winery update info cannot be null.") @Valid @RequestBody UpdateWineryDTO UpdateWineryDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.updateWinery(username, UpdateWineryDTO));
     }
@@ -83,15 +88,15 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWineryUsername(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotBlank(message = "New username cannot be blank.") @RequestParam String newUsername) {
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "New username cannot be blank.") @RequestParam(required = true, defaultValue = "arpepe3750") String newUsername) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.updateWineryUsername(username, newUsername));
     }
 
     @PutMapping("{username}/password/update")
     @PreAuthorize("hasRole('ROLE_WINERY') and #username == authentication.principal.username")
     public ResponseEntity<?> updateWineryPassword(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
         if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
             throw new BadRequestException("Old password cannot null or blank.");
@@ -104,8 +109,8 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addImage(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true) String image) {
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true, defaultValue = "https://i.postimg.cc/50qR82Y4/winery174.jpg") String image) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.addImage(username, image));
     }
 
@@ -113,8 +118,8 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> removeImage(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
-            @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true) String image) {
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true, defaultValue = "https://i.postimg.cc/50qR82Y4/winery174.jpg") String image) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.removeImage(username, image));
     }
 
@@ -131,7 +136,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteWinery(
-            @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the winery to delete.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         wineryService.deleteWinery(username);
         return ResponseEntity.status(HttpStatus.OK).body("Winery \"" + username + "\" deleted successfully.");
     }
