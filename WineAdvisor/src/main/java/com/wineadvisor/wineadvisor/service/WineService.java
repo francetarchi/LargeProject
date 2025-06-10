@@ -395,7 +395,7 @@ public class WineService {
         Double max,
         Double minAverageRating) {
 
-        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(PageRequest.of(page, PAGE_SIZE), name, winery, region, country, type, grape, minAverageRating, min, max);
+        Page<Wine> wines = wineRepository.findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameAndRegion_Country_NameAndTypeAndStyle_Grapes_NameAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(PageRequest.of(page, PAGE_SIZE), name, winery, region, country, type, grape, minAverageRating, min, max);
         checkReturnedPage(wines, "No wines found with the specified filters.");
         return wines;
     }
