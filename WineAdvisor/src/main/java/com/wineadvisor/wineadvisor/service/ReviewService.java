@@ -511,30 +511,13 @@ public class ReviewService {
         return sum / reviews.size();
     }
 
-    // Calcola e restituisce la media dei rating di un'annata di un vino
-    public Double getAverageRatingByVintage(Long wineId, Integer year) throws ResourceNotFoundException {
-        if (wineRepository.findById(wineId).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
-        }
-        if (wineRepository.findByIdAndVintages_Year(wineId, year).isEmpty()) {
-            throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
-        }
-
-        ArrayList<Review> reviews = reviewRepository.findByWineId_IdAndWineId_Year(wineId, year);
-        Double sum = (double) 0;
-        for (Review review : reviews) {
-            sum += review.getRating();
-        }
-        return sum / reviews.size();
-    }
-
     // Restituisce le recensioni di un vino specifico in un range di rating specifico
     public Page<Review> getReviewsByWineAndRatingRange(Integer page, Long wineId, Double minRating, Double maxRating) {
         if (wineRepository.findById(wineId).isEmpty()) {
             throw new ResourceNotFoundException("Wine with id " + wineId + " not found.");
         }
         
-        Page<Review> reviews =  reviewRepository.findByWineId_IdAndRatingBetween(PageRequest.of(page, PAGE_SIZE), wineId, minRating, maxRating);
+        Page<Review> reviews =  reviewRepository.findByWineIdAndRatingBetween(wineId, minRating, maxRating, PageRequest.of(page, PAGE_SIZE));
         checkReturnedPage(reviews, "No reviews found for wine with id " + wineId + " in the rating range [" + minRating + ", " + maxRating + "].");
         return reviews;
     }
@@ -548,7 +531,8 @@ public class ReviewService {
             throw new ResourceNotFoundException("Wine with id " + wineId + " and year " + year + " not found.");
         }
 
-        Page<Review> reviews = reviewRepository.findByWineId_IdAndWineId_YearAndRatingBetween(PageRequest.of(page, PAGE_SIZE), wineId, year, minRating, maxRating);
+        Page<Review> reviews = reviewRepository.findByWineIdAndYearAndRatingBetween(wineId, year, minRating, maxRating, PageRequest.of(page, PAGE_SIZE));
+
         checkReturnedPage(reviews, "No reviews found for wine with id " + wineId + " and year " + year + " in the rating range [" + minRating + ", " + maxRating + "].");
         return reviews;
     }

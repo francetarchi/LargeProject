@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.wineadvisor.wineadvisor.model.reviews.Review;
@@ -31,10 +32,6 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
 
     Long countByWineId_IdAndWineId_Year(Long wineId, Integer year);
 
-    Page<Review> findByWineId_IdAndRatingBetween(Pageable pageable, Long wineId, Double minRating, Double maxRating);
-
-    Page<Review> findByWineId_IdAndWineId_YearAndRatingBetween(Pageable pageable, Long wineId, Integer year, Double minRating, Double maxRating);
-
     Optional<Review> findByIdAndUserId_Username(Long id, String username);
     
     Optional<Review> findByUserId_UsernameAndWineId_IdAndWineId_Year(String username, Long wineId, Integer year);   
@@ -45,4 +42,29 @@ public interface ReviewRepository extends MongoRepository<Review, Long> {
     void deleteAllByUserId_Username(String username);
 
     void deleteAllByWineId_IdAndWineId_Year(Long wineId, Integer year);
+
+    @Query("""
+    {
+        "wine_id.id": ?0,
+        "wine_id.year": ?1,
+        "rating": {
+            "$gte": ?2,
+            "$lte": ?3
+        }
+    }
+    """)
+    Page<Review> findByWineIdAndYearAndRatingBetween(Long wineId, Integer year, Double minRating, Double maxRating, Pageable pageable);
+
+    @Query("""
+    {
+        "wine_id.id": ?0,
+        "rating": {
+            "$gte": ?1,
+            "$lte": ?2
+        }
+    }
+    """)
+    Page<Review> findByWineIdAndRatingBetween(Long wineId, Double minRating, Double maxRating, Pageable pageable);
+
+        
 }
