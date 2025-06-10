@@ -35,6 +35,6 @@ public class UpdateWineDTO {
     @Field("is_natural")
     private Boolean isNatural;
 
-    @Schema(description = "Style name of the wine")
+    @Schema(description = "Style name of the wine", example = "Vino Nobile di Montepulciano")
     private String style;
 }

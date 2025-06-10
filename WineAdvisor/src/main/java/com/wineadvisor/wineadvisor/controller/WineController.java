@@ -73,15 +73,15 @@ public class WineController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getWineById(
-            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) {
+            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id) {
         Wine wine = wineService.getWineById(id);
         return ResponseEntity.status(HttpStatus.OK).body(wine);
     }
 
     @GetMapping("/wines/{wineId}/vintages/{vintageYear}")
     public ResponseEntity<?> getVintageById(
-            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId,
-            @Parameter(description = "Year of the vintage to retrieve.", schema = @Schema(type = "long", example = "2012")) @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
+            @Parameter(description = "ID of the wine to retrieve.", schema = @Schema(example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long wineId,
+            @Parameter(description = "Year of the vintage to retrieve.", schema = @Schema(example = "2012")) @NotNull(message = "Vintage year cannot be null.") @PositiveOrZero(message = "Vintage year must be positive.") @PathVariable Integer vintageYear) {
         Vintage vintage = wineService.getVintage(wineId, vintageYear);
         return ResponseEntity.status(HttpStatus.OK).body(vintage);
     }
@@ -107,7 +107,7 @@ public class WineController {
                 @Schema(description = "Wine type info", example = "rosso")
                 String type,
             @RequestParam(required = false)
-                @Schema(description = "Grape name", example = "Nebbiolo")
+                @Schema(description = "Grape name", example = "Sangiovese")
                 String grape,
             @RequestParam(required = false)
                 @DecimalMin(value = "0.0", inclusive = true, message = "Price must be at least 0.")
@@ -195,7 +195,7 @@ public class WineController {
     @DeleteMapping("/{id}")
     @Secured({ "ROLE_ADMIN", "ROLE_WINERY" })
     public ResponseEntity<?> deleteWine(
-            @Parameter(description = "ID of the wine to delete.", schema = @Schema(type = "long", example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") @PathVariable Long id) {
+            @Parameter(description = "ID of the wine to delete.", schema = @Schema(example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") @PathVariable Long id) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         wineService.deleteWineById(id, username);
         return ResponseEntity.status(HttpStatus.OK).body("Wine deleted successfully.");

@@ -69,7 +69,7 @@ public class WineryController {
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getWineryByUsername(
-            @Parameter(description = "Username of the winery to retrieve.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the winery to retrieve.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.getWineryByUsername(username));
     }
 
@@ -79,7 +79,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWinery(
-            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Winery update info cannot be null.") @Valid @RequestBody UpdateWineryDTO UpdateWineryDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.updateWinery(username, UpdateWineryDTO));
     }
@@ -88,7 +88,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateWineryUsername(
-            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "New username cannot be blank.") @RequestParam(required = true, defaultValue = "arpepe3750") String newUsername) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.updateWineryUsername(username, newUsername));
     }
@@ -96,7 +96,7 @@ public class WineryController {
     @PutMapping("{username}/password/update")
     @PreAuthorize("hasRole('ROLE_WINERY') and #username == authentication.principal.username")
     public ResponseEntity<?> updateWineryPassword(
-            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
         if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
             throw new BadRequestException("Old password cannot null or blank.");
@@ -109,7 +109,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addImage(
-            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true, defaultValue = "https://i.postimg.cc/50qR82Y4/winery174.jpg") String image) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.addImage(username, image));
     }
@@ -118,7 +118,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> removeImage(
-            @Parameter(description = "Username of the winery to update.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the winery to update.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Image link cannot be blank.") @RequestParam(name = "image", required = true, defaultValue = "https://i.postimg.cc/50qR82Y4/winery174.jpg") String image) {
         return ResponseEntity.status(HttpStatus.OK).body(wineryService.removeImage(username, image));
     }
@@ -136,7 +136,7 @@ public class WineryController {
     @Secured({"ROLE_ADMIN", "ROLE_WINERY" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteWinery(
-            @Parameter(description = "Username of the winery to delete.", schema = @Schema(type = "string", example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the winery to delete.", schema = @Schema(example = "arpepe3749")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         wineryService.deleteWinery(username);
         return ResponseEntity.status(HttpStatus.OK).body("Winery \"" + username + "\" deleted successfully.");
     }

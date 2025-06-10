@@ -54,7 +54,7 @@ public class CountryController {
 
     @GetMapping("/{name}")
     public ResponseEntity<?> getCountryByName(
-            @Parameter(description = "Name of the country to retrieve.", schema = @Schema(type = "string", example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
+            @Parameter(description = "Name of the country to retrieve.", schema = @Schema(example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
         return ResponseEntity.status(HttpStatus.OK).body(countryService.getCountryByName(name));
     }
     
@@ -62,16 +62,16 @@ public class CountryController {
     ///////////// PUT //////////////
     @PutMapping("/{name}")
     public ResponseEntity<?> updateCountry(
-            @NotBlank(message = "Name cannot be blank.") @PathVariable String name,
+            @Parameter(description = "Name of the country to update.", schema = @Schema(example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name,
             @NotNull(message = "Updated country info cannot be null.") @Valid @RequestBody UpdateCountryDTO updateCountryDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(countryService.updateCountry(name, updateCountryDTO));
     }
 
     @PutMapping("/{name}/name/update")
     public ResponseEntity<?> updateCountryName(
-            @NotBlank(message = "Name cannot be blank.") @PathVariable(name = "name") String targetName,
-            @NotBlank(message = "New name cannot be blank.") @RequestParam String newName) {
-        return ResponseEntity.status(HttpStatus.OK).body(countryService.updateCountryName(targetName, newName));
+            @Parameter(description = "Name of the country to update.", schema = @Schema(example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name,
+            @Parameter(description = "New name of the country to update.", schema = @Schema(example = "Italy")) @NotBlank(message = "New name cannot be blank.") @RequestParam String newName) {
+        return ResponseEntity.status(HttpStatus.OK).body(countryService.updateCountryName(name, newName));
     }
     
 
@@ -84,7 +84,7 @@ public class CountryController {
 
     @DeleteMapping("/{name}")
     public ResponseEntity<?> deleteCountry(
-            @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
+            @Parameter(description = "Name of the country to delete.", schema = @Schema(example = "Italia")) @NotBlank(message = "Name cannot be blank.") @PathVariable String name) {
         countryService.deleteCountry(name);
         return ResponseEntity.status(HttpStatus.OK).body("Country \"" + name + "\" deleted successfully.");
     }

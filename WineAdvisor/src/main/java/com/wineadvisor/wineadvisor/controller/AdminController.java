@@ -61,7 +61,7 @@ public class AdminController {
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getAdminByUsername(
-            @Parameter(description = "Username of the admin to retrieve.", schema = @Schema(type = "string", example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the admin to retrieve.", schema = @Schema(example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.getAdminByUsername(username));
     }
 
@@ -70,7 +70,7 @@ public class AdminController {
     @PutMapping("/{username}")
     @PreAuthorize("#username == authentication.principal.username")
     public ResponseEntity<?> updateAdmin(
-            @Parameter(description = "Username of the admin to update.", schema = @Schema(type = "string", example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the admin to update.", schema = @Schema(example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Admin update info cannot be null.") @Valid @RequestBody UpdateAdminDTO updateAdminDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateAdmin(username, updateAdminDTO));
     }
@@ -78,7 +78,7 @@ public class AdminController {
     @PutMapping("{username}/username/update")
     @PreAuthorize("#targetUsername == authentication.principal.username")
     public ResponseEntity<?> updateAdminUsername(
-            @Parameter(description = "Username of the admin to update.", schema = @Schema(type = "string", example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable(name = "username") String targetUsername,
+            @Parameter(description = "Username of the admin to update.", schema = @Schema(example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable(name = "username") String targetUsername,
             @NotBlank(message = "New username cannot be blank.") @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "The new username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.") @RequestParam(required = true, name = "newUsername", defaultValue = "admin123") String newUsername) {
         return ResponseEntity.status(HttpStatus.OK).body(adminService.updateAdminUsername(targetUsername, newUsername));
     }
@@ -86,7 +86,7 @@ public class AdminController {
     @PutMapping("{username}/password/update")
     @PreAuthorize("#username == authentication.principal.username")
     public ResponseEntity<?> updateAdminPassword(
-            @Parameter(description = "Username of the admin to update.", schema = @Schema(type = "string", example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the admin to update.", schema = @Schema(example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
         if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
             throw new BadRequestException("Old password cannot blank.");
@@ -100,7 +100,7 @@ public class AdminController {
     @DeleteMapping("/{username}")
     @PreAuthorize("#username == authentication.principal.username")
     public ResponseEntity<?> deleteAdmin(
-            @Parameter(description = "Username of the admin to delete.", schema = @Schema(type = "string", example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the admin to delete.", schema = @Schema(example = "admin")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         adminService.deleteAdmin(username);
         return ResponseEntity.status(HttpStatus.OK).body("Admin \"" + username + "\" deleted successfully.");
     }

@@ -16,13 +16,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class StyleDTO {
     @NotBlank(message = "Name is mandatory.")
-    @Schema(description = "Name of the wine style", example = "Vino Nobile di Montepulciano")
+    @Schema(description = "Name of the wine style", example = "Sauvignon Blanc")
     private String name;
 
-    @Schema(description = "Description of the wine style", example = "Vino Nobile di Montepulciano is a red wine from Tuscany, Italy, made primarily from Sangiovese grapes.")
+    @Schema(description = "Description of the wine style", example = "Sauvignon Blanc is a white grape variety known for its crisp acidity and fresh, aromatic profile. It often displays vibrant flavors of citrus, green apple, and tropical fruits, with a characteristic herbal note reminiscent of grass or freshly cut herbs.")
     private String description;
 
-    @Schema(description = "Interesting facts about the wine style", example = "[\"Vino Nobile di Montepulciano is one of the oldest wines in Italy.\", \"It was the first Italian wine to receive the Denominazione di Origine Controllata e Garantita (DOCG) status.\"]")
+    @Schema(description = "Interesting facts about the wine style", example = "[\"Originally from Bordeaux, France, Sauvignon Blanc is now grown in many wine regions around the world, including New Zealand, where it has become a signature grape.\", \"Sauvignon Blanc pairs exceptionally well with dishes like goat cheese, shellfish, and salads, thanks to its zesty acidity that complements the freshness of these foods.\"]")
     private ArrayList<String> interestingFacts;
 
     @Schema(description = "Food pairings for the wine style")

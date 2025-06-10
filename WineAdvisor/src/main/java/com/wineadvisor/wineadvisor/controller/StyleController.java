@@ -55,7 +55,7 @@ public class StyleController {
 
     @GetMapping("/{name}")
     public ResponseEntity<?> getStyleByName(
-            @Parameter(description = "Name of the style to retrieve.", schema = @Schema(type = "string", example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
+            @Parameter(description = "Name of the style to retrieve.", schema = @Schema(example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
         return ResponseEntity.status(HttpStatus.OK).body(styleService.getStyleByName(name));
     }
 
@@ -80,7 +80,7 @@ public class StyleController {
     @DeleteMapping("/{name}")
     @Secured({ "ROLE_ADMIN" })
     public ResponseEntity<?> deleteStyle(
-            @Parameter(description = "Name of the style to delete.", schema = @Schema(type = "string", example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
+            @Parameter(description = "Name of the style to delete.", schema = @Schema(example = "Vino Nobile di Montepulciano")) @NotBlank(message = "Style name cannot be blank.") @PathVariable String name) {
         styleService.deleteStyleByName(name);
         return ResponseEntity.status(HttpStatus.OK).body("Style " + name + " deleted successfully.");
     }

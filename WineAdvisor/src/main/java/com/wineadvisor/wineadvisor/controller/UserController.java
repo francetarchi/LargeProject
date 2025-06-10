@@ -67,8 +67,8 @@ public class UserController {
 
     @GetMapping("/search")
     public ResponseEntity<?> getUsersByName(
-            @RequestParam(required = false, name = "first name") @Schema(example = "Lorenzo") String firstName,
-            @RequestParam(required = false, name = "last name") @Schema(example = "Iacovelli") String lastName,
+            @Parameter(description = "First name", schema = @Schema(example = "Lorenzo")) @RequestParam(required = false) String firstName,
+            @Parameter(description = "Last name", schema = @Schema(example = "Iacovelli")) @RequestParam(required = false) String lastName,
             @RequestParam(required = false, name = "page number", defaultValue = "0") @PositiveOrZero(message = "Page number must be positive or zero (or omitted).") Integer page) {
         if (firstName == null && lastName == null) {
             throw new BadRequestException("firstName and lastName cannot be both null at the same time.");
@@ -93,7 +93,7 @@ public class UserController {
 
     @GetMapping("/{username}")
     public ResponseEntity<?> getUserByUsername(
-            @Parameter(description = "Username of the user to retrieve.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the user to retrieve.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserByUsername(username));
     }
 
@@ -101,19 +101,19 @@ public class UserController {
     @Secured({"ROLE_ADMIN", "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getUserSuggestedFollows(
-            @Parameter(description = "Username of the user for whom to retrieve suggested follows.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @PathVariable String username) {
+            @Parameter(description = "Username of the user for whom to retrieve suggested follows.", schema = @Schema(example = "yellowbutterfly631")) @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserSuggestedFollows(username));
     }
 
     @GetMapping("/{username}/followers")
     public ResponseEntity<?> getUserFollowers(
-            @Parameter(description = "Username of the user for whom to retrieve followers.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @PathVariable String username) {
+            @Parameter(description = "Username of the user for whom to retrieve followers.", schema = @Schema(example = "yellowbutterfly631")) @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserFollowers(username));
     }
 
     @GetMapping("/{username}/followed")
     public ResponseEntity<?> getUserFollowed(
-            @Parameter(description = "Username of the user for whom to retrieve followed users.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @PathVariable String username) {
+            @Parameter(description = "Username of the user for whom to retrieve followed users.", schema = @Schema(example = "yellowbutterfly631")) @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserFollowed(username));
     }
 
@@ -123,7 +123,7 @@ public class UserController {
     @Secured({ "ROLE_ADMIN", "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUser(
-            @Parameter(description = "Username of the user to update.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user to update.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "User update info cannot be null.") @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUser(username, updateUserDTO));
     }
@@ -132,7 +132,7 @@ public class UserController {
     @Secured({ "ROLE_ADMIN", "ROLE_USER" })
     @PreAuthorize("#targetUsername == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> updateUserUsername(
-            @Parameter(description = "Username of the user to update.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable(name = "username") String targetUsername,
+            @Parameter(description = "Username of the user to update.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable(name = "username") String targetUsername,
             @NotBlank(message = "New username cannot be blank.") @Pattern(regexp = "^[a-zA-Z0-9_]{3,50}$", message = "The new username must be between 3 and 50 characters long and can contain letters, numbers, and underscores.") @RequestParam(required = true, name = "newUsername", defaultValue = "yellowbutterfly6311") String newUsername) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserUsername(targetUsername, newUsername));
     }
@@ -140,7 +140,7 @@ public class UserController {
     @PutMapping("{username}/password/update")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> updateUserPassword(
-            @Parameter(description = "Username of the user to update.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user to update.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Password update info cannot be null.") @Valid @RequestBody PasswordDTO passwordDTO) throws BadRequestException {
         if (passwordDTO.getOldPass() == null || passwordDTO.getOldPass().isBlank()) {
             throw new BadRequestException("Old password cannot blank.");
@@ -153,7 +153,7 @@ public class UserController {
     @PutMapping("/{username}/addLike")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addLike(
-            @Parameter(description = "Username of the liker.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the liker.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true, defaultValue = "1") Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addLike(username, reviewId));
     }
@@ -161,7 +161,7 @@ public class UserController {
     @PutMapping("/{username}/removeLike")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeLike(
-            @Parameter(description = "Username of the unliker.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the unliker.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true, defaultValue = "1") Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeLike(username, reviewId));
     }
@@ -169,7 +169,7 @@ public class UserController {
     @PutMapping("/{username}/addDislike")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addDislike(
-            @Parameter(description = "Username of the disliker.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the disliker.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true, defaultValue = "1") Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addDislike(username, reviewId));
     }
@@ -177,7 +177,7 @@ public class UserController {
     @PutMapping("/{username}/removeDislike")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeDislike(
-            @Parameter(description = "Username of the undisliker.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the undisliker.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "reviewId cannot be null.") @Positive(message = "reviewId must be a positive integer number.") @RequestParam(name = "reviewId", required = true, defaultValue = "1") Long reviewId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeDislike(username, reviewId));
     }
@@ -186,7 +186,7 @@ public class UserController {
     @PutMapping("/{username}/addFavorite")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> addFavorite(
-            @Parameter(description = "Username of the user adding a favorite wine.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user adding a favorite wine.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Wine info cannot be null.") @Valid @RequestBody addFavoriteDTO addFavoriteDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.addFavorite(username, addFavoriteDTO));
     }
@@ -194,7 +194,7 @@ public class UserController {
     @PutMapping("/{username}/removeFavorite")
     @PreAuthorize("hasRole('ROLE_USER') and #username == authentication.principal.username")
     public ResponseEntity<?> removeFavorite(
-            @Parameter(description = "Username of the user removing a favorite wine.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user removing a favorite wine.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotNull(message = "Wine ID cannot be null.") @Positive(message = "Wine ID must be a positive integer number.") @RequestParam(name = "wineId", required = true, defaultValue = "1") Long wineId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.removeFavorite(username, wineId));
     }
@@ -204,7 +204,7 @@ public class UserController {
     @Secured({ "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username")
     public ResponseEntity<?> follow(
-            @Parameter(description = "Username of the user who wants to follow another user.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user who wants to follow another user.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Target username cannot be blank.") @RequestParam(name = "targetUsername", required = true, defaultValue = "yellowduck514") String targetUsername) {
         userService.follow(username, targetUsername);
         return ResponseEntity.status(HttpStatus.OK).body(("Now following " + targetUsername));
@@ -214,7 +214,7 @@ public class UserController {
     @Secured({ "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username")
     public ResponseEntity<?> unfollow(
-            @Parameter(description = "Username of the user who wants to unfollow another user.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
+            @Parameter(description = "Username of the user who wants to unfollow another user.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @NotBlank(message = "Target username cannot be blank.") @RequestParam(name = "targetUsername", required = true, defaultValue = "yellowduck514") String targetUsername) {
         userService.unfollow(username, targetUsername);
         return ResponseEntity.status(HttpStatus.OK).body(("Unfollowed " + targetUsername));
@@ -233,7 +233,7 @@ public class UserController {
     @Secured({ "ROLE_ADMIN", "ROLE_USER" })
     @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(
-            @Parameter(description = "Username of the user to delete.", schema = @Schema(type = "string", example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
+            @Parameter(description = "Username of the user to delete.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username) {
         userService.deleteUser(username);
         return ResponseEntity.status(HttpStatus.OK).body("User \"" + username + "\" deleted successfully.");
     }

@@ -56,7 +56,7 @@ public class CountryService {
     
 
     /////////////////////////////////
-    ///// Operations on reviews /////
+    ///// Operations on wines ///////
     
     // Ricerca i vini di una certa nazione e aggiorna correttamente il campo "currency" della nazione
     private void updateWine_Region_Country_CurrencyByCountryName(String targetName, Currency updatedCurrency) {
