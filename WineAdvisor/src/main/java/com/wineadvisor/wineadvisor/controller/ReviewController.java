@@ -109,7 +109,7 @@ public class ReviewController {
                 @NotBlank(message = "Username cannot be blank.")
                 String username,
             @PathVariable
-                @Parameter(description = "ID of the wine to retrieve reviews for.", schema = @Schema(example = "1"))
+                @Parameter(description = "ID of the wine to retrieve reviews for.", schema = @Schema(example = "1309"))
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
@@ -118,34 +118,19 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.getReviewsByUserAndWine(page, username, wineId));
     }
 
-    @GetMapping("/average/wines/{wineId}/vintages/{year}")
-    public ResponseEntity<?> getAverageRatingByVintage(
-            @PathVariable
-                @Parameter(description = "ID of the wine to retrieve average rating for.", schema = @Schema(example = "1"))
-                @NotNull(message = "ID cannot be null.")
-                @Positive(message = "ID must be positive.")
-                Long wineId,
-            @PathVariable
-                @Parameter(description = "Year of the wine to retrieve average rating for.", schema = @Schema(example = "2012"))
-                @NotNull(message = "Vintage year cannot be null.")
-                @PositiveOrZero(message = "Vintage year must be positive.")
-                Integer year) {
-        return ResponseEntity.status(HttpStatus.OK).body(reviewService.getAverageRatingByVintage(wineId, year));
-    }
-
-    @GetMapping("/wine/{wineId}/rating/{minRating}/{maxRating}")
+    @GetMapping("/wine/{wineId}/ratings/")
     public ResponseEntity<?> getReviewsByWineAndRating(
             @PathVariable 
                 @Parameter(description = "ID of the wine to retrieve reviews for.", schema = @Schema(example = "1"))
                 @NotNull(message = "ID cannot be null.")
                 @Positive(message = "ID must be positive.")
                 Long wineId,
-            @PathVariable
+            @RequestParam(required = true)
                 @Parameter(description = "Minimum rating to filter reviews.", schema = @Schema(example = "3.5"))
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double minRating,
-            @PathVariable
+            @RequestParam(required = true)
                 @Parameter(description = "Maximum rating to filter reviews.", schema = @Schema(example = "4.5"))
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
@@ -174,11 +159,11 @@ public class ReviewController {
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double minRating,
-            @RequestParam(required = true, name = "max rating", defaultValue = "4.5")
+            @RequestParam(required = true, name = "max rating", defaultValue = "5.0")
                 @DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.")
                 @DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.")
                 Double maxRating,
-            @RequestParam(required = false, name = "page number", defaultValue = "0")
+            @RequestParam(required = true, name = "page number", defaultValue = "0")
                 @PositiveOrZero Integer page) {
         if (minRating > maxRating) {
             throw new BadRequestException("Minimum rating cannot be greater than maximum rating.");
@@ -200,7 +185,7 @@ public class ReviewController {
     @PutMapping("/{id}")
     @Secured({ "ROLE_USER" })
     public ResponseEntity<?> updateReview(
-            @Parameter(description = "ID of the review to update.", schema = @Schema(example = "1")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id,
+            @Parameter(description = "ID of the review to update.", schema = @Schema(example = "283")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID must be positive.") @PathVariable Long id,
             @Valid @RequestBody UpdateReviewDTO updatedReview) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.status(HttpStatus.OK).body(reviewService.updateReview(id, username, updatedReview));
