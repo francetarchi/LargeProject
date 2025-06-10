@@ -233,22 +233,22 @@ public class ReviewNeo4jRepository {
             MATCH (me:User {username: $username})-[:FOLLOWS]->(friend:User)
             MATCH (friend)-[:WROTE]->(review:Review)
             WITH friend, review
-            ORDER BY review.created_at DESC
+            ORDER BY review.createdAt DESC
             WITH friend, collect(review)[0..3] AS recentReviews
             UNWIND recentReviews AS review
             RETURN {
-                authorUsername: friend.username,
-                authorThumbnail: friend.thumbnail,
+                reviewId: review.reviewId,
+                username: friend.username,
+                thumbnail: friend.thumbnail,
+                wineId: review.wineId,
                 wineName: review.wineName,
                 wineYear: review.wineYear,
-                wineId: review.wineId,
-                reviewText: review.text,
-                reviewId: review.reviewId,
+                wineImage: review.wineImage,
                 rating: review.rating,
-                wineImage: review.image,
-                date: review.created_at
+                reviewText: review.text,
+                createdAt: review.createdAt
             } AS result
-            ORDER BY result.date DESC
+            ORDER BY result.createdAt DESC
             SKIP $skip
             LIMIT $limit
         """;

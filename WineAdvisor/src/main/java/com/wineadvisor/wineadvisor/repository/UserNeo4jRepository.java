@@ -199,7 +199,7 @@ public class UserNeo4jRepository {
         String query = """
             MATCH (u:User {username: $username})-[:FOLLOWS]->(followed)
             RETURN followed.username AS username,
-                followed.thumbnail AS thumbnail,
+                followed.thumbnail AS thumbnail
         """;
 
         return neo4jClient.query(query)

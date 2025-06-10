@@ -188,7 +188,7 @@ public class ReviewController {
 
     @GetMapping("/users/{username}/feed")
     @Secured({ "ROLE_USER", "ROLE_ADMIN" })
-    @PreAuthorize("username == authentication.principal.username or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("#username == authentication.principal.username or hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getPersonalizedFeed(
             @Parameter(description = "Username of the user to retrieve personalized feed for.", schema = @Schema(example = "yellowbutterfly631")) @NotBlank(message = "Username cannot be blank.") @PathVariable String username,
             @RequestParam(required = false, name = "page number", defaultValue = "0") Integer page) {

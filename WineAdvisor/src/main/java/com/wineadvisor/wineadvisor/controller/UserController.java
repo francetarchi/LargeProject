@@ -113,7 +113,7 @@ public class UserController {
 
     @GetMapping("/{username}/followed")
     public ResponseEntity<?> getUserFollowed(
-            @Parameter(description = "Username of the user for whom to retrieve followed users.", schema = @Schema(example = "yellowbutterfly631")) @PathVariable String username) {
+            @Parameter(description = "Username of the user for whom to retrieve following users.", schema = @Schema(example = "yellowbutterfly631")) @PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserFollowed(username));
     }
 
