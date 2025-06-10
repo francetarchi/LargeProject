@@ -41,7 +41,7 @@ public interface WineRepository extends MongoRepository<Wine, Long> {
 
     Optional<Wine> findByIdAndWinery_Username(Long wineId, String username);
 
-    Page<Wine> findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameContainingIgnoreCaseAndRegion_Country_NameContainingIgnoreCaseAndTypeContainingIgnoreCaseAndStyle_Grapes_NameContainingIgnoreCaseAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(Pageable pageable, String name, String winery, String region, String country, String type, String grape, Double minAverageRating, Double min, Double max);
+    Page<Wine> findByNameContainingIgnoreCaseAndWinery_UsernameContainingIgnoreCaseAndRegion_NameAndRegion_Country_NameAndTypeAndStyle_Grapes_NameAndStatistics_RatingsAverageGreaterThanEqualAndVintages_PriceBetween(Pageable pageable, String name, String winery, String region, String country, String type, String grape, Double minAverageRating, Double min, Double max);
 
     ArrayList<Wine> findByStyle_Name(String style_name);
 
