@@ -803,8 +803,8 @@ public class UserService {
     }
 
     // Restituisce gli utenti che un utente specifico sta seguendo
-    public List<Map<String, Object>> getUserFollowed(String username) {
-        return userNeo4jRepository.getUserFollowed(username);
+    public List<Map<String, Object>> getUserFollowing(String username) {
+        return userNeo4jRepository.getUserFollowing(username);
     }
 
 

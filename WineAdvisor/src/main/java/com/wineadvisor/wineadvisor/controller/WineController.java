@@ -162,7 +162,7 @@ public class WineController {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Wine savedWine = wineService.addVintage(newVintage, username);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedWine);
+        return ResponseEntity.status(HttpStatus.OK).body(savedWine);
     }
 
     @PutMapping("/vintages/editVintage")

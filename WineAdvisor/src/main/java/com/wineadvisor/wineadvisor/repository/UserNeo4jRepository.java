@@ -195,7 +195,7 @@ public class UserNeo4jRepository {
     }
 
     // Get a list of users that a specific user follows
-    public List<Map<String, Object>> getUserFollowed(String username) {
+    public List<Map<String, Object>> getUserFollowing(String username) {
         String query = """
             MATCH (u:User {username: $username})-[:FOLLOWS]->(followed)
             RETURN followed.username AS username,
