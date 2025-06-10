@@ -13,7 +13,6 @@ public class TopVintageEmbedded {
     private String wine;
     private String winery;
     private Integer year;
-    private Double rating;
     private Double price;
     private String image;
 
