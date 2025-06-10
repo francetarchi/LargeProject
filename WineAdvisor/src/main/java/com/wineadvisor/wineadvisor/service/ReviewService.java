@@ -553,9 +553,10 @@ public class ReviewService {
         return reviews;
     }
 
-    public List<Map<String, Object>> getPersonalizedFeed(String username, Integer page) {
+    // Restituisce il feed di un utente specifico, con le recensioni degli utenti che segue presenti nel grafo, ordinate dalla più recente alla meno recente
+    public List<Map<String, Object>> getUserFeed(String username, Integer page) {
         Integer skip = page * PAGE_SIZE;
-        return reviewNeo4jRepository.getPaginatedFeed(username, skip, PAGE_SIZE);
+        return reviewNeo4jRepository.getUserFeed(username, skip, PAGE_SIZE);
     }
 
     

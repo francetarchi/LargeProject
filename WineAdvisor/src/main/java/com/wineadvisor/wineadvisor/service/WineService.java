@@ -404,12 +404,12 @@ public class WineService {
     /// UPDATE operations ///
     // Modifica dati del vino
     @Transactional
-    public Wine updateWine(UpdateWineDTO updatedWine, String username) throws ResourceNotFoundException {
-        return wineRepository.findById(updatedWine.getWineId())
-            .map(wine -> {  
+    public Wine updateWine(Long wineId, UpdateWineDTO updatedWine, String username) throws ResourceNotFoundException {
+        return wineRepository.findById(wineId)
+            .map(wine -> {
                 // Controllo che il vino sia della winery username
-                if(wineRepository.findByIdAndWinery_Username(updatedWine.getWineId(), username).isEmpty()){
-                    throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + updatedWine.getWineId() + ".");
+                if(wineRepository.findByIdAndWinery_Username(wineId, username).isEmpty()){
+                    throw new ResourceNotFoundException("Winery " + username + " does not own wine with id " + wineId + ".");
                 }
                 
                 wine.setName(updatedWine.getName());
@@ -431,11 +431,11 @@ public class WineService {
                 }
 
                 // Devo aggiornare il nome anche nelle reviews embedded nella collection users
-                ArrayList<User> users = userRepository.findByReviews_WineId_Id(updatedWine.getWineId());
+                ArrayList<User> users = userRepository.findByReviews_WineId_Id(wineId);
                 if (!users.isEmpty()){
                     for (User user : users){
                         for (ReviewEmbedded review : user.getReviews()){
-                            if (review.getWineId().getId().equals(updatedWine.getWineId())){
+                            if (review.getWineId().getId().equals(wineId)){
                                 review.getWineId().setName(updatedWine.getName());
                             }
                         }
@@ -444,7 +444,7 @@ public class WineService {
                 }
 
                 // Devo aggiornare il nome anche nelle reviews della collection reviews
-                ArrayList<Review> reviews = reviewRepository.findByWineId_Id(updatedWine.getWineId());
+                ArrayList<Review> reviews = reviewRepository.findByWineId_Id(wineId);
                 if (!reviews.isEmpty()){
                     for (Review review : reviews){
                         review.getWineId().setName(updatedWine.getName());
@@ -455,7 +455,7 @@ public class WineService {
                 return wineRepository.save(wine);
             })
             .orElseThrow(
-                () -> new ResourceNotFoundException("Wine with id " + updatedWine.getWineId() + " not found.")
+                () -> new ResourceNotFoundException("Wine with id " + wineId + " not found.")
             );
     }
 

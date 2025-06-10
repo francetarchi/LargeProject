@@ -14,12 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateWineDTO {
-    @NotNull(message = "Wine ID cannot be blank.")
-    @Schema(description = "Wine ID info", example = "1")
-    private Long wineId;
-
     @NotBlank(message = "Name info cannot be blank.")
-    @Schema(description = "Name info of the wine", example = "Chardonnay")
+    @Schema(description = "Name info of the wine", example = "Sassella Ultimi Raggi")
     private String name;
 
     @NotBlank(message = "Type info cannot be blank.")
@@ -31,10 +27,10 @@ public class UpdateWineDTO {
     private String type;
 
     @NotNull(message = "IsNatural info cannot be blank.")
-    @Schema(description = "IsNatural info of the wine", example = "true")
+    @Schema(description = "IsNatural info of the wine", example = "false")
     @Field("is_natural")
     private Boolean isNatural;
 
-    @Schema(description = "Style name of the wine", example = "Vino Nobile di Montepulciano")
+    @Schema(description = "Style name of the wine", example = "Nebbiolo Italiano")
     private String style;
 }

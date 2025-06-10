@@ -143,12 +143,13 @@ public class WineController {
 
     
     ////////////// PUT //////////////
-    @PutMapping
+    @PutMapping("/{id}")
     @Secured({ "ROLE_WINERY" })
     public ResponseEntity<?> updateWine(
+            @Parameter(description = "ID of the wine to update.", schema = @Schema(example = "1120")) @NotNull(message = "ID cannot be null.") @Positive(message = "ID cannot be negative.") @PathVariable Long id,
             @Valid @RequestBody UpdateWineDTO wine) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Wine updatedWine = wineService.updateWine(wine, username);
+        Wine updatedWine = wineService.updateWine(id, wine, username);
         return ResponseEntity.status(HttpStatus.OK).body(updatedWine);
     }
 
